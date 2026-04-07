@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-Wall",
+      "-fPIC",
+      "-c",
+      "-o",
+      "moc/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/mjesbar/Github/mjesbar/gladys",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/main.cpp",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/moc/main.o"
+  }
+]
