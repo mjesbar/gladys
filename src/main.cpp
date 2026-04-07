@@ -7,7 +7,6 @@
 #include <QWidget>
 
 #include "mainwindow.h"
-#include "globalhotkeymonitor_x11.h"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
@@ -58,13 +57,6 @@ int main(int argc, char *argv[]) {
     }
 
     window.show();
-
-#ifdef Q_OS_LINUX
-    GlobalHotkeyMonitorX11 *hotkeyMonitor = new GlobalHotkeyMonitorX11(&app);
-    QObject::connect(hotkeyMonitor, &GlobalHotkeyMonitorX11::hotkeyPressed, &window, &MainWindow::toggleVisibility);
-#else
-    qWarning() << "Global hotkeys are not implemented for this platform.";
-#endif
 
     return app.exec();
 }

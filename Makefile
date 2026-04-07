@@ -8,34 +8,30 @@ LDFLAGS = $(QT_LDFLAGS) -lX11 -Wl,--no-as-needed
 
 MOC = /usr/lib/qt6/libexec/moc
 
-# OBJECTS
-OBJ_FILES = moc/main.o \
-            moc/mainwindow.o \
-            moc/globalhotkeymonitor_x11.o \
-            moc/mainwindow.moc.o \
-            moc/globalhotkeymonitor_x11.moc.o
+# OBJECTS FOR GLADYS
+GLADYS_OBJS = moc/main.o \
+              moc/mainwindow.o \
+              moc/mainwindow.moc.o
 
 TARGET = gladys
+DAEMON_TARGET = gladysd
 
 .PHONY: all clean run build
 
-all: $(TARGET)
+all: $(TARGET) $(DAEMON_TARGET)
 
 build:
 	@$(MAKE) clean
 	bear -- $(MAKE) all
 
-$(TARGET): $(OBJ_FILES) icons/mic-light.png icons/mic-dark.png
-	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $(OBJ_FILES) -o $@ $(LDFLAGS)
+$(TARGET): $(GLADYS_OBJS) icons/mic-light.png icons/mic-dark.png
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $(GLADYS_OBJS) -o $@ $(LDFLAGS)
+
+$(DAEMON_TARGET): src/daemon.cpp
+	$(CXX) $(CXXFLAGS) src/daemon.cpp -o $@ -lX11
 
 # MOC rules
 moc/mainwindow.moc.cpp: src/mainwindow.h
-	@mkdir -p moc
-	$(MOC) $< -o $(@:.cpp=)
-	@echo "#include <QObject>" > $@
-	@cat $(@:.cpp=) >> $@
-
-moc/globalhotkeymonitor_x11.moc.cpp: src/lib/globalhotkeymonitor_x11.h
 	@mkdir -p moc
 	$(MOC) $< -o $(@:.cpp=)
 	@echo "#include <QObject>" > $@
@@ -50,15 +46,7 @@ moc/mainwindow.o: src/mainwindow.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
-moc/globalhotkeymonitor_x11.o: src/lib/globalhotkeymonitor_x11.cpp
-	@mkdir -p moc
-	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
-
 moc/mainwindow.moc.o: moc/mainwindow.moc.cpp
-	@mkdir -p moc
-	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
-
-moc/globalhotkeymonitor_x11.moc.o: moc/globalhotkeymonitor_x11.moc.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
@@ -66,7 +54,7 @@ icons/%.png: icons/%.svg
 	convert -background none -size 64x64 $< $@
 
 clean:
-	rm -f $(TARGET) moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
+	rm -f $(TARGET) $(DAEMON_TARGET) moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
 
 run:
 	@if [ "$$XDG_SESSION_TYPE" = "wayland" ]; then \

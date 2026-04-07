@@ -76,34 +76,6 @@
       "-DQT_CORE_LIB",
       "-c",
       "-o",
-      "moc/globalhotkeymonitor_x11.o",
-      "src/lib/globalhotkeymonitor_x11.cpp"
-    ],
-    "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/globalhotkeymonitor_x11.cpp",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/moc/globalhotkeymonitor_x11.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/g++",
-      "-std=c++17",
-      "-Wall",
-      "-fPIC",
-      "-DQ_OS_LINUX",
-      "-Isrc",
-      "-Isrc/lib",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
-      "-I/usr/include/x86_64-linux-gnu/qt6",
-      "-DQT_WIDGETS_LIB",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtCore",
-      "-I/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtGui",
-      "-DQT_GUI_LIB",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtNetwork",
-      "-DQT_NETWORK_LIB",
-      "-DQT_CORE_LIB",
-      "-c",
-      "-o",
       "moc/mainwindow.moc.o",
       "moc/mainwindow.moc.cpp"
     ],
@@ -114,29 +86,19 @@
   {
     "arguments": [
       "/usr/bin/g++",
+      "-c",
       "-std=c++17",
       "-Wall",
       "-fPIC",
       "-DQ_OS_LINUX",
       "-Isrc",
       "-Isrc/lib",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
-      "-I/usr/include/x86_64-linux-gnu/qt6",
-      "-DQT_WIDGETS_LIB",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtCore",
-      "-I/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtGui",
-      "-DQT_GUI_LIB",
-      "-I/usr/include/x86_64-linux-gnu/qt6/QtNetwork",
-      "-DQT_NETWORK_LIB",
-      "-DQT_CORE_LIB",
-      "-c",
       "-o",
-      "moc/globalhotkeymonitor_x11.moc.o",
-      "moc/globalhotkeymonitor_x11.moc.cpp"
+      "gladysd",
+      "src/daemon.cpp"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/globalhotkeymonitor_x11.moc.cpp",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/moc/globalhotkeymonitor_x11.moc.o"
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/daemon.cpp",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/gladysd"
   }
 ]
