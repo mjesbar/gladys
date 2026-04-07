@@ -5,6 +5,15 @@
       "-std=c++17",
       "-Wall",
       "-fPIC",
+      "-DQ_OS_LINUX",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+      "-I/usr/include/x86_64-linux-gnu/qt6",
+      "-DQT_WIDGETS_LIB",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtCore",
+      "-I/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtGui",
+      "-DQT_GUI_LIB",
+      "-DQT_CORE_LIB",
       "-c",
       "-o",
       "moc/main.o",
@@ -13,5 +22,29 @@
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
     "file": "/home/mjesbar/Github/mjesbar/gladys/src/main.cpp",
     "output": "/home/mjesbar/Github/mjesbar/gladys/moc/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-Wall",
+      "-fPIC",
+      "-DQ_OS_LINUX",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+      "-I/usr/include/x86_64-linux-gnu/qt6",
+      "-DQT_WIDGETS_LIB",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtCore",
+      "-I/usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++",
+      "-I/usr/include/x86_64-linux-gnu/qt6/QtGui",
+      "-DQT_GUI_LIB",
+      "-DQT_CORE_LIB",
+      "-c",
+      "-o",
+      "moc/mainwindow.o",
+      "src/mainwindow.cpp"
+    ],
+    "directory": "/home/mjesbar/Github/mjesbar/gladys",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/mainwindow.cpp",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/moc/mainwindow.o"
   }
 ]

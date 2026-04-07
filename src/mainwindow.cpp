@@ -8,7 +8,11 @@
 #include <QPoint>
 #include <QKeySequence>
 #include <QDebug>
-#include <QShortcut>
+
+
+#include <QMenu>
+#include <QAction>
+#include <QIcon>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -18,16 +22,28 @@ MainWindow::MainWindow(QWidget *parent)
     , m_targetYSubtle(10)
     , m_isProminent(true)
     , m_originalSize(size())
-    , m_shortcut(new QShortcut(QKeySequence(Qt::ControlModifier | Qt::Key_I), this))
+    , m_trayIcon(new QSystemTrayIcon(this))
+    , m_trayMenu(new QMenu(this))
 {
     setFixedSize(60, 60);
     setWindowTitle("Gladys");
-    setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool); // Added Qt::Tool
+    setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus | Qt::NoDropShadowWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_ShowWithoutActivating);
+    setStyleSheet("background: transparent; border: none;");
 
     QPalette palette = this->palette();
     palette.setColor(QPalette::Window, Qt::transparent);
     setPalette(palette);
+
+    // Tray Setup
+    QAction *quitAction = m_trayMenu->addAction("Quit");
+    connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+    m_trayIcon->setContextMenu(m_trayMenu);
+    m_trayIcon->setIcon(QIcon("icons/mic-light.png"));
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, &MainWindow::onTrayIconActivated);
+    m_trayIcon->show();
 
     // Setup position animation
     m_positionAnimation->setDuration(500); // 0.5 seconds
@@ -39,13 +55,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_opacityAnimation, &QPropertyAnimation::finished, this, &MainWindow::handleOpacityAnimationFinished);
 
     // Connect QShortcut signal
-    connect(m_shortcut, &QShortcut::activated, this, &MainWindow::toggleVisibility);
+
 }
 
 MainWindow::~MainWindow() {
     delete m_positionAnimation;
     delete m_opacityAnimation;
-    delete m_shortcut;
+
 }
 
 void MainWindow::toggleVisibility() {
@@ -67,7 +83,7 @@ void MainWindow::toggleVisibility() {
         endOpacity = 0.0; // Fully transparent
     } else {
         // Transition to prominent (fading in and moving down)
-        setFixedSize(m_originalSize); // Restore size before animating
+        setFixedSize(60, 60); // Use explicit size instead of m_originalSize
         endPos = QPoint(startPos.x(), m_targetYVisible);
         startOpacity = 0.0;
         endOpacity = 1.0; // Fully opaque
@@ -91,12 +107,20 @@ void MainWindow::handleOpacityAnimationFinished() {
     }
 }
 
+void MainWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
+    if (reason == QSystemTrayIcon::Trigger) {
+        toggleVisibility();
+    }
+}
+
 void MainWindow::paintEvent(QPaintEvent *event) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    // Explicitly fill with transparent color to ensure no background
+    // Force absolute transparency for the background using Source composition mode
+    p.setCompositionMode(QPainter::CompositionMode_Source);
     p.fillRect(rect(), Qt::transparent);
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
     p.setBrush(Qt::white);
     p.setPen(Qt::NoPen);

@@ -2,18 +2,18 @@
 #include <QScreen>
 #include <QRect>
 #include <QDebug>
-#include <QX11Info>
+
 #include "mainwindow.h"
 
-#ifdef Q_OS_LINUX
-#include "globalhotkeymonitor_x11.h"
-#endif
+
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("Gladys");
+    app.setQuitOnLastWindowClosed(false);
 
-    MainWindow window;
+    QWidget dummy;
+    MainWindow window(&dummy);
 
     // Positioning logic here before window.show()
     QScreen *screen = QApplication::primaryScreen();
@@ -27,9 +27,7 @@ int main(int argc, char *argv[]) {
     window.show();
 
 #ifdef Q_OS_LINUX
-    GlobalHotkeyMonitorX11 *hotkeyMonitor = new GlobalHotkeyMonitorX11(&app);
-    QObject::connect(hotkeyMonitor, &GlobalHotkeyMonitorX11::hotkeyPressed, &window, &MainWindow::toggleVisibility);
-    app.installNativeEventFilter(hotkeyMonitor);
+    qWarning() << "Global hotkeys are not implemented for this platform.";
 #else
     qWarning() << "Global hotkeys are not implemented for this platform.";
 #endif

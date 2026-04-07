@@ -6,7 +6,9 @@
 #include <QPropertyAnimation>
 #include <QEasingCurve>
 #include <QSize>
-#include <QShortcut>
+#include <QSystemTrayIcon>
+#include <QMenu>
+
 
 class MainWindow : public QWidget {
     Q_OBJECT
@@ -18,6 +20,7 @@ public:
 public slots:
     void toggleVisibility();
     void handleOpacityAnimationFinished();
+    void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -29,8 +32,8 @@ private:
     int m_targetYSubtle;
     bool m_isProminent;
     QSize m_originalSize;
-
-    QShortcut *m_shortcut; // Reverted to QShortcut instance
+    QSystemTrayIcon *m_trayIcon;
+    QMenu *m_trayMenu;
 };
 
 #endif // MAINWINDOW_H
