@@ -17,8 +17,8 @@ int main() {
   }
 
   Window root = DefaultRootWindow(display);
-  KeyCode keycode = XKeysymToKeycode(display, XK_I);
-  unsigned int modifiers = ControlMask | ShiftMask;
+  KeyCode keycode = XKeysymToKeycode(display, XK_P);
+  unsigned int modifiers = ControlMask | Mod1Mask;
 
   // Grab Ctrl+I
   XGrabKey(display, keycode, modifiers, root, True, GrabModeAsync,
