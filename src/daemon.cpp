@@ -3,8 +3,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/prctl.h>
+#include <signal.h>
 
 int main() {
+    // Set parent death signal to SIGTERM
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+
     Display* display = XOpenDisplay(NULL);
     if (!display) {
         fprintf(stderr, "Unable to open X display\n");
@@ -17,19 +22,35 @@ int main() {
 
     // Grab Ctrl+I
     XGrabKey(display, keycode, modifiers, root, True, GrabModeAsync, GrabModeAsync);
-    // Also grab with NumLock/CapsLock to be robust
     XGrabKey(display, keycode, modifiers | Mod2Mask, root, True, GrabModeAsync, GrabModeAsync);
     XGrabKey(display, keycode, modifiers | LockMask, root, True, GrabModeAsync, GrabModeAsync);
     XGrabKey(display, keycode, modifiers | Mod2Mask | LockMask, root, True, GrabModeAsync, GrabModeAsync);
+
+    // Get the absolute path of the current executable to find 'gladys'
+    char path[1024];
+    ssize_t len = readlink("/proc/self/exe", path, sizeof(path)-1);
+    if (len != -1) {
+        path[len] = '\0';
+        // Remove 'gladysd' from path to get the directory
+        for (int i = len - 1; i >= 0; i--) {
+            if (path[i] == '/') {
+                path[i+1] = '\0';
+                break;
+            }
+        }
+    } else {
+        path[0] = '.'; path[1] = '/'; path[2] = '\0';
+    }
+
+    char gladys_cmd[2048];
+    snprintf(gladys_cmd, sizeof(gladys_cmd), "QT_QPA_PLATFORM=xcb %sgladys", path);
 
     XEvent event;
     while (1) {
         XNextEvent(display, &event);
         if (event.type == KeyPress) {
-            // Use fork and exec to avoid blocking the daemon
             if (fork() == 0) {
-                // Child process
-                execlp("sh", "sh", "-c", "QT_QPA_PLATFORM=xcb ./gladys", (char*)NULL);
+                execlp("sh", "sh", "-c", gladys_cmd, (char*)NULL);
                 _exit(1);
             }
         }

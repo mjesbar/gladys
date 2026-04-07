@@ -5,6 +5,8 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QWidget>
+#include <QProcess>
+#include <QDir>
 
 #include "mainwindow.h"
 
@@ -30,6 +32,14 @@ int main(int argc, char *argv[]) {
     QLocalServer server;
     if (!server.listen(serverName)) {
         qWarning() << "Could not start local server:" << server.errorString();
+    }
+
+    // Start daemon
+    QProcess daemonProcess;
+    QString daemonPath = QCoreApplication::applicationDirPath() + QDir::separator() + "gladysd";
+    daemonProcess.start(daemonPath);
+    if (!daemonProcess.waitForStarted()) {
+        qWarning() << "Could not start daemon at" << daemonPath;
     }
 
     QWidget dummy;
