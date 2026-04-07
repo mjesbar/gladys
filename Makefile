@@ -1,48 +1,64 @@
 CXX = g++
 
-# Compiler Flags
-CXXFLAGS = -std=c++17 -Wall -fPIC -DQ_OS_LINUX
-
-# Qt6 Flags (using pkg-config for simplicity)
-QT_CXXFLAGS = $(shell pkg-config --cflags Qt6Widgets Qt6Gui Qt6Core)
-QT_LDFLAGS = $(shell pkg-config --libs Qt6Widgets Qt6Gui Qt6Core)
-
-# Linker Flags
-LDFLAGS = $(QT_LDFLAGS) -lX11 -Wl,--no-as-needed # -lX11 is for X11 related functionality if needed by QtCore/QtGui directly
+# FLAGS
+CXXFLAGS = -std=c++17 -Wall -fPIC -DQ_OS_LINUX -Isrc -Isrc/lib
+QT_CXXFLAGS = $(shell pkg-config --cflags Qt6Widgets Qt6Gui Qt6Core Qt6Network)
+QT_LDFLAGS = $(shell pkg-config --libs Qt6Widgets Qt6Gui Qt6Core Qt6Network)
+LDFLAGS = $(QT_LDFLAGS) -lX11 -Wl,--no-as-needed
 
 MOC = /usr/lib/qt6/libexec/moc
 
-# Source files
-APP_CPP_SOURCES = src/main.cpp src/mainwindow.cpp
-APP_HEADERS = src/mainwindow.h
-
-# MOC generated files
-MOC_CPP_SOURCES = $(APP_HEADERS:src/%.h=moc/%.moc.cpp)
-
-# Object files
-OBJ_FILES = $(APP_CPP_SOURCES:src/%.cpp=moc/%.o) $(MOC_CPP_SOURCES:moc/%.cpp=moc/%.o)
+# OBJECTS
+OBJ_FILES = moc/main.o \
+            moc/mainwindow.o \
+            moc/globalhotkeymonitor_x11.o \
+            moc/mainwindow.moc.o \
+            moc/globalhotkeymonitor_x11.moc.o
 
 TARGET = gladys
 
-.PHONY: all clean run
+.PHONY: all clean run build
 
 all: $(TARGET)
 
+build:
+	@$(MAKE) clean
+	bear -- $(MAKE) all
+
 $(TARGET): $(OBJ_FILES) icons/mic-light.png icons/mic-dark.png
-	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $(OBJ_FILES) -o $@ $(LDFLAGS)
 
-moc/%.moc.cpp: src/%.h
+# MOC rules
+moc/mainwindow.moc.cpp: src/mainwindow.h
 	@mkdir -p moc
 	$(MOC) $< -o $(@:.cpp=)
 	@echo "#include <QObject>" > $@
 	@cat $(@:.cpp=) >> $@
 
-moc/%.o: moc/%.cpp
+moc/globalhotkeymonitor_x11.moc.cpp: src/lib/globalhotkeymonitor_x11.h
+	@mkdir -p moc
+	$(MOC) $< -o $(@:.cpp=)
+	@echo "#include <QObject>" > $@
+	@cat $(@:.cpp=) >> $@
+
+# Compilation rules
+moc/main.o: src/main.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
-moc/%.o: src/%.cpp
+moc/mainwindow.o: src/mainwindow.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/globalhotkeymonitor_x11.o: src/lib/globalhotkeymonitor_x11.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/mainwindow.moc.o: moc/mainwindow.moc.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/globalhotkeymonitor_x11.moc.o: moc/globalhotkeymonitor_x11.moc.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
@@ -50,7 +66,7 @@ icons/%.png: icons/%.svg
 	convert -background none -size 64x64 $< $@
 
 clean:
-	rm -f $(TARGET) moc/*.o moc/*.moc moc/*.moc.cpp
+	rm -f $(TARGET) moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
 
 run:
 	@if [ "$$XDG_SESSION_TYPE" = "wayland" ]; then \
