@@ -4,5 +4,6 @@
     "edit": "allow",
     "bash": "ask",
     "webfetch": "allow"
-  }
+  },
+  "instructions": [".opencode/*.md"]
 }
