@@ -20,7 +20,7 @@ GladysWindow::GladysWindow(QWidget *parent)
       m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(false),
       m_originalSize(size()), m_trayIcon(new QSystemTrayIcon(this)),
       m_trayMenu(new QMenu(this)) {
-  setFixedSize(60, 60);
+    setFixedSize(48, 48);
   setWindowTitle("Gladys");
   setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus |
@@ -71,7 +71,7 @@ void GladysWindow::toggleVisibility() {
     startOpacity = 1.0;
     endOpacity = 0.0;
   } else {
-    setFixedSize(60, 60);
+  setFixedSize(48, 48);
     endPos = QPoint(startPos.x(), m_targetYVisible);
     startOpacity = 0.0;
     endOpacity = 1.0;
@@ -111,14 +111,14 @@ void GladysWindow::paintEvent(QPaintEvent *event) {
 
   p.setBrush(Qt::white);
   p.setPen(Qt::NoPen);
-  p.drawEllipse(0, 0, 60, 60);
+  p.drawEllipse(0, 0, 48, 48);
 
   QImage image("icons/mic-light.png");
   if (!image.isNull()) {
     QPixmap pix = QPixmap::fromImage(
-        image.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    int x = 14;
-    int y = 14;
+            image.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    int x = 8;
+    int y = 8;
     p.drawPixmap(x, y, pix);
   }
 }
