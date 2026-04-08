@@ -1,5 +1,5 @@
-gladys
-gladysd
-bin/
+bin/obj/
+bin/gladys
+bin/gladysd
 .cache/
 moc/
