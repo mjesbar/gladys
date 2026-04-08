@@ -13,7 +13,7 @@ all: bin/gladys bin/gladysd
 
 build:
 	$(MAKE) clean
-	$(MAKE) all
+	bear -- $(MAKE) all
 
 bin/gladys: bin/obj/gladys.o bin/obj/gladyswindow.o bin/obj/ipc_server.o \
            moc/gladyswindow.moc.cc moc/ipc_server.moc.cc
