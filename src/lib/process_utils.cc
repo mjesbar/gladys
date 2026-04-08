@@ -1,5 +1,6 @@
 #include "process_utils.h"
 #include <stdio.h>
+#include <QDebug>
 
 ProcessUtils::ProcessUtils(QObject *parent) : QObject(parent) {
 }

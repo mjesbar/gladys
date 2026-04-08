@@ -5,6 +5,7 @@
 #include <QLocalSocket>
 #include <QObject>
 #include <QString>
+#include <QDebug>
 
 class IpcServer : public QObject {
   Q_OBJECT

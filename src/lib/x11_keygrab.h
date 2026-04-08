@@ -2,6 +2,7 @@
 #define X11_KEYGRAB_HPP
 
 #include <QObject>
+#include <QDebug>
 #include <X11/Xlib.h>
 
 class X11KeyGrab : public QObject {

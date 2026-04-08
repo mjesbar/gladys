@@ -2,6 +2,7 @@
 #include <QSocketNotifier>
 #include <X11/Xlib.h>
 #include <stdio.h>
+#include <QDebug>
 
 #include "lib/ipc_server.h"
 #include "lib/process_utils.h"
