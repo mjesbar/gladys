@@ -4,8 +4,8 @@
 #include <QScreen>
 #include <QWidget>
 
-#include "lib/gladyswindow.hpp"
-#include "lib/ipc_server.hpp"
+#include "lib/gladyswindow.h"
+#include "lib/ipc_server.h"
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);

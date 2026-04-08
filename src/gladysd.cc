@@ -3,9 +3,9 @@
 #include <X11/Xlib.h>
 #include <stdio.h>
 
-#include "lib/ipc_server.hpp"
-#include "lib/process_utils.hpp"
-#include "lib/x11_keygrab.hpp"
+#include "lib/ipc_server.h"
+#include "lib/process_utils.h"
+#include "lib/x11_keygrab.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication app(argc, argv);

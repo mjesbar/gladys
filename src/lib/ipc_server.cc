@@ -1,4 +1,4 @@
-#include "ipc_server.hpp"
+#include "ipc_server.h"
 #include <QDebug>
 
 IpcServer::IpcServer(const QString &serverName, QObject *parent)
