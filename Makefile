@@ -1,7 +1,7 @@
 CXX = g++
 
 # FLAGS
-CXXFLAGS = -std=c++17 -O3 -Wall -fPIC -DQ_OS_LINUX -Isrc -Isrc/lib
+CXXFLAGS = -std=c++17 -O3 -Wall -fPIC -Isrc -Isrc/lib
 QT_CXXFLAGS = $(shell pkg-config --cflags Qt6Widgets Qt6Gui Qt6Core Qt6Network)
 QT_LDFLAGS = $(shell pkg-config --libs Qt6Widgets Qt6Gui Qt6Core Qt6Network)
 LDFLAGS = $(QT_LDFLAGS) -lX11 -Wl,--no-as-needed

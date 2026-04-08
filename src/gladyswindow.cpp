@@ -1,4 +1,5 @@
 #include "gladyswindow.h"
+#include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
 #include <QImage>
@@ -16,7 +17,7 @@
 GladysWindow::GladysWindow(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
       m_opacityAnimation(new QPropertyAnimation(this, "windowOpacity")),
-      m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(true),
+      m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(false),
       m_originalSize(size()), m_trayIcon(new QSystemTrayIcon(this)),
       m_trayMenu(new QMenu(this)) {
   setFixedSize(60, 60);
@@ -25,9 +26,7 @@ GladysWindow::GladysWindow(QWidget *parent)
                  Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus |
                  Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
-  setAttribute(Qt::WA_NoSystemBackground);
   setAttribute(Qt::WA_ShowWithoutActivating);
-  setStyleSheet("background: transparent; border: none;");
 
   QPalette palette = this->palette();
   palette.setColor(QPalette::Window, Qt::transparent);
@@ -43,16 +42,14 @@ GladysWindow::GladysWindow(QWidget *parent)
   m_trayIcon->show();
 
   // Setup position animation
-  m_positionAnimation->setDuration(500); // 0.5 seconds
+  m_positionAnimation->setDuration(250); // 0.25 seconds
   m_positionAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
   // Setup opacity animation
-  m_opacityAnimation->setDuration(500); // 0.5 seconds
+  m_opacityAnimation->setDuration(250); // 0.25 seconds
   m_opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
           &GladysWindow::handleOpacityAnimationFinished);
-
-  // Connect QShortcut signal
 }
 
 GladysWindow::~GladysWindow() {
@@ -103,7 +100,8 @@ void GladysWindow::handleOpacityAnimationFinished() {
   }
 }
 
-void GladysWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
+void GladysWindow::onTrayIconActivated(
+    QSystemTrayIcon::ActivationReason reason) {
   if (reason == QSystemTrayIcon::Trigger) {
     toggleVisibility();
   }

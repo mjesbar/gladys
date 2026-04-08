@@ -40,6 +40,15 @@ int main(int argc, char *argv[]) {
 
   fprintf(stderr, "Daemon: Listening for Ctrl+Alt+P...\n");
 
+  // Launch gladys immediately
+  QProcess *proc = new QProcess();
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  env.insert("QT_QPA_PLATFORM", "xcb");
+  proc->setProcessEnvironment(env);
+  proc->setProgram("bin/gladys");
+  proc->start();
+  fprintf(stderr, "Daemon: gladys launched.\n");
+
   int x11_fd = ConnectionNumber(display);
   QSocketNotifier *notifier =
       new QSocketNotifier(x11_fd, QSocketNotifier::Read, &app);

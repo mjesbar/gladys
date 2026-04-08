@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
   QLocalServer::removeServer(serverName);
   QLocalServer server;
   if (!server.listen(serverName)) {
-    qWarning() << "Gladys: Could not start local server:" << server.errorString();
+    qWarning() << "Gladys: Could not start local server:"
+               << server.errorString();
     return 1;
   }
 
@@ -48,8 +49,9 @@ int main(int argc, char *argv[]) {
   if (screen) {
     QRect rect = screen->availableGeometry();
     int x = rect.left() + (rect.width() - window.width()) / 2;
-    int y = 30;
+    int y = 10;
     window.setGeometry(x, y, window.width(), window.height());
+    window.setWindowOpacity(0.0);
   }
 
   window.show();
