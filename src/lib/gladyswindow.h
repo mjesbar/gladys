@@ -20,6 +20,7 @@ public slots:
   void toggleVisibility();
   void handleOpacityAnimationFinished();
   void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
+  void removeShadow();
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -27,6 +28,7 @@ protected:
 private:
   QPropertyAnimation *m_positionAnimation;
   QPropertyAnimation *m_opacityAnimation;
+  QPropertyAnimation *m_sizeAnimation;
   int m_targetYVisible;
   int m_targetYSubtle;
   bool m_isProminent;

@@ -13,20 +13,34 @@
 #include <QAction>
 #include <QIcon>
 #include <QMenu>
+#include <X11/Xlib.h> // just to remove the shadow
+
+static const QSize PROMINENT_SIZE = QSize(48, 48);
+static const QSize SUBTLE_SIZE = QSize(24, 24);
+
+static const qreal PROMINENT_OPACITY = 1.0;
+static const qreal SUBTLE_OPACITY = 0.0;
+
+static const QPoint PROMINENT_POS = QPoint(936, 72);
+static const QPoint SUBTLE_POS = QPoint(948, 12);
 
 GladysWindow::GladysWindow(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
       m_opacityAnimation(new QPropertyAnimation(this, "windowOpacity")),
+      m_sizeAnimation(new QPropertyAnimation(this, "size")),
       m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(false),
       m_originalSize(size()), m_trayIcon(new QSystemTrayIcon(this)),
       m_trayMenu(new QMenu(this)) {
-    setFixedSize(48, 48);
+  resize(PROMINENT_SIZE);
   setWindowTitle("Gladys");
   setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus |
                  Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
   setAttribute(Qt::WA_ShowWithoutActivating);
+  // Hint for some X11 window managers
+  setProperty("_kde_no_shadows", true);
+  setProperty("_KDE_NET_WM_SHADOW", false);
 
   QPalette palette = this->palette();
   palette.setColor(QPalette::Window, Qt::transparent);
@@ -47,39 +61,59 @@ GladysWindow::GladysWindow(QWidget *parent)
   m_opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
           &GladysWindow::handleOpacityAnimationFinished);
+
+  m_sizeAnimation->setDuration(250);
+  m_sizeAnimation->setEasingCurve(QEasingCurve::OutCubic);
 }
 
 GladysWindow::~GladysWindow() {
   delete m_positionAnimation;
   delete m_opacityAnimation;
+  delete m_sizeAnimation;
+}
+
+void GladysWindow::removeShadow() {
+  Display *d = XOpenDisplay(NULL);
+  XDeleteProperty(d, (Window)winId(),
+                  XInternAtom(d, "_KDE_NET_WM_SHADOW", False));
+  XCloseDisplay(d);
 }
 
 void GladysWindow::toggleVisibility() {
   if (m_positionAnimation->state() == QPropertyAnimation::Running ||
-      m_opacityAnimation->state() == QPropertyAnimation::Running) {
+      m_opacityAnimation->state() == QPropertyAnimation::Running ||
+      m_sizeAnimation->state() == QPropertyAnimation::Running) {
     return;
   }
 
   QPoint startPos = pos();
   QPoint endPos;
 
+  QSize startSize = size();
+  QSize endSize;
+
   qreal startOpacity;
   qreal endOpacity;
 
   if (m_isProminent) {
-    endPos = QPoint(startPos.x(), m_targetYSubtle);
-    startOpacity = 1.0;
-    endOpacity = 0.0;
+    endPos = SUBTLE_POS;
+    endSize = SUBTLE_SIZE;
+    startOpacity = PROMINENT_OPACITY;
+    endOpacity = SUBTLE_OPACITY;
   } else {
-  setFixedSize(48, 48);
-    endPos = QPoint(startPos.x(), m_targetYVisible);
-    startOpacity = 0.0;
-    endOpacity = 1.0;
+    endPos = PROMINENT_POS;
+    endSize = PROMINENT_SIZE;
+    startOpacity = SUBTLE_OPACITY;
+    endOpacity = PROMINENT_OPACITY;
   }
 
   m_positionAnimation->setStartValue(startPos);
   m_positionAnimation->setEndValue(endPos);
   m_positionAnimation->start();
+
+  m_sizeAnimation->setStartValue(startSize);
+  m_sizeAnimation->setEndValue(endSize);
+  m_sizeAnimation->start();
 
   m_opacityAnimation->setStartValue(startOpacity);
   m_opacityAnimation->setEndValue(endOpacity);
@@ -90,7 +124,6 @@ void GladysWindow::toggleVisibility() {
 
 void GladysWindow::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
-    setFixedSize(1, 1);
   }
 }
 
@@ -111,14 +144,18 @@ void GladysWindow::paintEvent(QPaintEvent *event) {
 
   p.setBrush(Qt::white);
   p.setPen(Qt::NoPen);
-  p.drawEllipse(0, 0, 48, 48);
+
+  int currentCircleSize = width();
+  int offset = (width() - currentCircleSize) / 2;
+  p.drawEllipse(offset, offset, currentCircleSize, currentCircleSize);
 
   QImage image("icons/mic-light.png");
   if (!image.isNull()) {
     QPixmap pix = QPixmap::fromImage(
-            image.scaled(32, 32, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    int x = 8;
-    int y = 8;
+        image.scaled(currentCircleSize * 32 / 48, currentCircleSize * 32 / 48,
+                     Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    int x = (width() - pix.width()) / 2;
+    int y = (height() - pix.height()) / 2;
     p.drawPixmap(x, y, pix);
   }
 }

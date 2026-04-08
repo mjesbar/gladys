@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
   }
 
   window.show();
+  window.removeShadow();
   qDebug() << "Gladys: Window shown";
 
   return app.exec();
