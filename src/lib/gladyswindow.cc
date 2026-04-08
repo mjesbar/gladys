@@ -54,16 +54,16 @@ GladysWindow::GladysWindow(QWidget *parent)
           &GladysWindow::onTrayIconActivated);
   m_trayIcon->show();
 
-  m_positionAnimation->setDuration(250);
-  m_positionAnimation->setEasingCurve(QEasingCurve::OutCubic);
+  m_positionAnimation->setDuration(500);
+  m_positionAnimation->setEasingCurve(QEasingCurve::InOutBack);
 
-  m_opacityAnimation->setDuration(250);
-  m_opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
+  m_opacityAnimation->setDuration(500);
+  m_opacityAnimation->setEasingCurve(QEasingCurve::InOutBack);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
           &GladysWindow::handleOpacityAnimationFinished);
 
-  m_sizeAnimation->setDuration(250);
-  m_sizeAnimation->setEasingCurve(QEasingCurve::OutCubic);
+  m_sizeAnimation->setDuration(500);
+  m_sizeAnimation->setEasingCurve(QEasingCurve::InOutBack);
 }
 
 GladysWindow::~GladysWindow() {
