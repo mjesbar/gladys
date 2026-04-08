@@ -3,6 +3,7 @@
     "arguments": [
       "/usr/bin/g++",
       "-std=c++17",
+      "-O3",
       "-Wall",
       "-fPIC",
       "-DQ_OS_LINUX",
@@ -31,6 +32,7 @@
     "arguments": [
       "/usr/bin/g++",
       "-std=c++17",
+      "-O3",
       "-Wall",
       "-fPIC",
       "-DQ_OS_LINUX",
@@ -59,6 +61,7 @@
     "arguments": [
       "/usr/bin/g++",
       "-std=c++17",
+      "-O3",
       "-Wall",
       "-fPIC",
       "-DQ_OS_LINUX",
@@ -88,17 +91,18 @@
       "/usr/bin/g++",
       "-c",
       "-std=c++17",
+      "-O3",
       "-Wall",
       "-fPIC",
       "-DQ_OS_LINUX",
       "-Isrc",
       "-Isrc/lib",
       "-o",
-      "gladysd",
+      "bin/gladysd",
       "src/daemon.cpp"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
     "file": "/home/mjesbar/Github/mjesbar/gladys/src/daemon.cpp",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/gladysd"
+    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladysd"
   }
 ]

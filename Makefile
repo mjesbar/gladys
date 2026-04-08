@@ -13,8 +13,8 @@ GLADYS_OBJS = moc/main.o \
               moc/mainwindow.o \
               moc/mainwindow.moc.o
 
-TARGET = gladys
-DAEMON_TARGET = gladysd
+TARGET = bin/gladys
+DAEMON_TARGET = bin/gladysd
 
 .PHONY: all clean run build
 
@@ -25,9 +25,11 @@ build:
 	bear -- $(MAKE) all
 
 $(TARGET): $(GLADYS_OBJS) icons/mic-light.png icons/mic-dark.png
+	@mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $(GLADYS_OBJS) -o $@ $(LDFLAGS)
 
 $(DAEMON_TARGET): src/daemon.cpp
+	@mkdir -p bin
 	$(CXX) $(CXXFLAGS) src/daemon.cpp -o $@ -lX11
 
 # MOC rules
@@ -54,13 +56,13 @@ icons/%.png: icons/%.svg
 	convert -background none -size 64x64 $< $@
 
 clean:
-	rm -f $(TARGET) $(DAEMON_TARGET) moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
+	rm -rf bin moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
 
 run:
 	@if [ "$$XDG_SESSION_TYPE" = "wayland" ]; then \
 		echo "Running on Wayland, forcing XWayland..."; \
-		QT_QPA_PLATFORM=xcb ./$(TARGET) & \
+		QT_QPA_PLATFORM=xcb ./bin/gladys & \
 	else \
 		echo "Running on X11 or other session type..."; \
-		./$(TARGET) & \
+		./bin/gladys & \
 	fi
