@@ -1,14 +1,12 @@
 #include <QApplication>
 #include <QDebug>
-#include <QDir>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QProcess>
 #include <QRect>
 #include <QScreen>
 #include <QWidget>
 
-#include "mainwindow.h"
+#include "gladyswindow.h"
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
@@ -17,41 +15,27 @@ int main(int argc, char *argv[]) {
 
   QString serverName = "gladys-ipc-server";
 
-  // Try to connect to existing instance
-  QLocalSocket socket;
-  socket.connectToServer(serverName);
-  if (socket.waitForConnected(200)) {
-    socket.write("toggle");
-    socket.waitForBytesWritten(1000);
-    socket.disconnectFromServer();
-    return 0;
-  }
-
-  // No existing instance, start server
   QLocalServer::removeServer(serverName);
   QLocalServer server;
   if (!server.listen(serverName)) {
-    qWarning() << "Could not start local server:" << server.errorString();
+    qWarning() << "Gladys: Could not start local server:" << server.errorString();
+    return 1;
   }
 
-  // Start daemon
-  QProcess daemonProcess;
-  QString daemonPath =
-      QCoreApplication::applicationDirPath() + QDir::separator() + "gladysd";
-  daemonProcess.start(daemonPath);
-  if (!daemonProcess.waitForStarted()) {
-    qWarning() << "Could not start daemon at" << daemonPath;
-  }
+  qDebug() << "Gladys: Server listening on" << serverName;
 
   QWidget dummy;
-  MainWindow window(&dummy);
+  GladysWindow window(&dummy);
 
   QObject::connect(&server, &QLocalServer::newConnection, [&]() {
+    qDebug() << "Gladys: New connection";
     QLocalSocket *clientConnection = server.nextPendingConnection();
     QObject::connect(clientConnection, &QLocalSocket::readyRead,
                      [clientConnection, &window]() {
                        QByteArray data = clientConnection->readAll();
+                       qDebug() << "Gladys: Received:" << data;
                        if (data == "toggle") {
+                         qDebug() << "Gladys: Toggling visibility";
                          window.toggleVisibility();
                        }
                        clientConnection->disconnectFromServer();
@@ -60,16 +44,16 @@ int main(int argc, char *argv[]) {
                      clientConnection, &QLocalSocket::deleteLater);
   });
 
-  // Positioning logic here before window.show()
   QScreen *screen = QApplication::primaryScreen();
   if (screen) {
     QRect rect = screen->availableGeometry();
     int x = rect.left() + (rect.width() - window.width()) / 2;
-    int y = 30; // Initial Y position at 30px from top
+    int y = 30;
     window.setGeometry(x, y, window.width(), window.height());
   }
 
   window.show();
+  qDebug() << "Gladys: Window shown";
 
   return app.exec();
 }

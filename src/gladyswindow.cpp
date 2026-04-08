@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+#include "gladyswindow.h"
 #include <QApplication>
 #include <QDebug>
 #include <QImage>
@@ -13,7 +13,7 @@
 #include <QIcon>
 #include <QMenu>
 
-MainWindow::MainWindow(QWidget *parent)
+GladysWindow::GladysWindow(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
       m_opacityAnimation(new QPropertyAnimation(this, "windowOpacity")),
       m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(true),
@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
   m_trayIcon->setContextMenu(m_trayMenu);
   m_trayIcon->setIcon(QIcon("icons/mic-light.png"));
   connect(m_trayIcon, &QSystemTrayIcon::activated, this,
-          &MainWindow::onTrayIconActivated);
+          &GladysWindow::onTrayIconActivated);
   m_trayIcon->show();
 
   // Setup position animation
@@ -50,17 +50,17 @@ MainWindow::MainWindow(QWidget *parent)
   m_opacityAnimation->setDuration(500); // 0.5 seconds
   m_opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
-          &MainWindow::handleOpacityAnimationFinished);
+          &GladysWindow::handleOpacityAnimationFinished);
 
   // Connect QShortcut signal
 }
 
-MainWindow::~MainWindow() {
+GladysWindow::~GladysWindow() {
   delete m_positionAnimation;
   delete m_opacityAnimation;
 }
 
-void MainWindow::toggleVisibility() {
+void GladysWindow::toggleVisibility() {
   if (m_positionAnimation->state() == QPropertyAnimation::Running ||
       m_opacityAnimation->state() == QPropertyAnimation::Running) {
     return; // Avoid re-triggering while animating
@@ -96,20 +96,20 @@ void MainWindow::toggleVisibility() {
   m_isProminent = !m_isProminent;
 }
 
-void MainWindow::handleOpacityAnimationFinished() {
+void GladysWindow::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
     // If we just finished fading out to the subtle state, resize to 1x1
     setFixedSize(1, 1);
   }
 }
 
-void MainWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
+void GladysWindow::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
   if (reason == QSystemTrayIcon::Trigger) {
     toggleVisibility();
   }
 }
 
-void MainWindow::paintEvent(QPaintEvent *event) {
+void GladysWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 

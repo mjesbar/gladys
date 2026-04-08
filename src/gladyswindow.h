@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef GLADYSWINDOW_H
+#define GLADYSWINDOW_H
 
 #include <QApplication>
 #include <QEasingCurve>
@@ -9,12 +9,12 @@
 #include <QSystemTrayIcon>
 #include <QWidget>
 
-class MainWindow : public QWidget {
+class GladysWindow : public QWidget {
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = nullptr);
-  ~MainWindow() override;
+  explicit GladysWindow(QWidget *parent = nullptr);
+  ~GladysWindow() override;
 
 public slots:
   void toggleVisibility();
@@ -35,4 +35,4 @@ private:
   QMenu *m_trayMenu;
 };
 
-#endif // MAINWINDOW_H
+#endif // GLADYSWINDOW_H
