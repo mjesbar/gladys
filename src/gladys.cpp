@@ -1,48 +1,28 @@
 #include <QApplication>
 #include <QDebug>
-#include <QLocalServer>
-#include <QLocalSocket>
 #include <QRect>
 #include <QScreen>
 #include <QWidget>
 
-#include "gladyswindow.h"
+#include "lib/gladyswindow.hpp"
+#include "lib/ipc_server.hpp"
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
 
-  QString serverName = "gladys-ipc-server";
-
-  QLocalServer::removeServer(serverName);
-  QLocalServer server;
-  if (!server.listen(serverName)) {
-    qWarning() << "Gladys: Could not start local server:"
-               << server.errorString();
+  IpcServer server("gladys-ipc-server");
+  if (!server.start()) {
     return 1;
   }
-
-  qDebug() << "Gladys: Server listening on" << serverName;
 
   QWidget dummy;
   GladysWindow window(&dummy);
 
-  QObject::connect(&server, &QLocalServer::newConnection, [&]() {
-    qDebug() << "Gladys: New connection";
-    QLocalSocket *clientConnection = server.nextPendingConnection();
-    QObject::connect(clientConnection, &QLocalSocket::readyRead,
-                     [clientConnection, &window]() {
-                       QByteArray data = clientConnection->readAll();
-                       qDebug() << "Gladys: Received:" << data;
-                       if (data == "toggle") {
-                         qDebug() << "Gladys: Toggling visibility";
-                         window.toggleVisibility();
-                       }
-                       clientConnection->disconnectFromServer();
-                     });
-    QObject::connect(clientConnection, &QLocalSocket::disconnected,
-                     clientConnection, &QLocalSocket::deleteLater);
+  QObject::connect(&server, &IpcServer::toggleRequested, [&]() {
+    qDebug() << "Gladys: Toggling visibility";
+    window.toggleVisibility();
   });
 
   QScreen *screen = QApplication::primaryScreen();

@@ -1,5 +1,5 @@
-#ifndef GLADYSWINDOW_H
-#define GLADYSWINDOW_H
+#ifndef GLADYSWINDOW_HPP
+#define GLADYSWINDOW_HPP
 
 #include <QApplication>
 #include <QEasingCurve>
@@ -35,4 +35,4 @@ private:
   QMenu *m_trayMenu;
 };
 
-#endif // GLADYSWINDOW_H
+#endif // GLADYSWINDOW_HPP

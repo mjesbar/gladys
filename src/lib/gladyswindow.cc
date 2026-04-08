@@ -1,4 +1,4 @@
-#include "gladyswindow.h"
+#include "gladyswindow.hpp"
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
@@ -32,7 +32,6 @@ GladysWindow::GladysWindow(QWidget *parent)
   palette.setColor(QPalette::Window, Qt::transparent);
   setPalette(palette);
 
-  // Tray Setup
   QAction *quitAction = m_trayMenu->addAction("Quit");
   connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
   m_trayIcon->setContextMenu(m_trayMenu);
@@ -41,12 +40,10 @@ GladysWindow::GladysWindow(QWidget *parent)
           &GladysWindow::onTrayIconActivated);
   m_trayIcon->show();
 
-  // Setup position animation
-  m_positionAnimation->setDuration(250); // 0.25 seconds
+  m_positionAnimation->setDuration(250);
   m_positionAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-  // Setup opacity animation
-  m_opacityAnimation->setDuration(250); // 0.25 seconds
+  m_opacityAnimation->setDuration(250);
   m_opacityAnimation->setEasingCurve(QEasingCurve::OutCubic);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
           &GladysWindow::handleOpacityAnimationFinished);
@@ -60,7 +57,7 @@ GladysWindow::~GladysWindow() {
 void GladysWindow::toggleVisibility() {
   if (m_positionAnimation->state() == QPropertyAnimation::Running ||
       m_opacityAnimation->state() == QPropertyAnimation::Running) {
-    return; // Avoid re-triggering while animating
+    return;
   }
 
   QPoint startPos = pos();
@@ -70,16 +67,14 @@ void GladysWindow::toggleVisibility() {
   qreal endOpacity;
 
   if (m_isProminent) {
-    // Transition to subtle (fading out and moving up slightly)
     endPos = QPoint(startPos.x(), m_targetYSubtle);
     startOpacity = 1.0;
-    endOpacity = 0.0; // Fully transparent
+    endOpacity = 0.0;
   } else {
-    // Transition to prominent (fading in and moving down)
-    setFixedSize(60, 60); // Use explicit size instead of m_originalSize
+    setFixedSize(60, 60);
     endPos = QPoint(startPos.x(), m_targetYVisible);
     startOpacity = 0.0;
-    endOpacity = 1.0; // Fully opaque
+    endOpacity = 1.0;
   }
 
   m_positionAnimation->setStartValue(startPos);
@@ -95,7 +90,6 @@ void GladysWindow::toggleVisibility() {
 
 void GladysWindow::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
-    // If we just finished fading out to the subtle state, resize to 1x1
     setFixedSize(1, 1);
   }
 }
@@ -111,8 +105,6 @@ void GladysWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  // Force absolute transparency for the background using Source composition
-  // mode
   p.setCompositionMode(QPainter::CompositionMode_Source);
   p.fillRect(rect(), Qt::transparent);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);

@@ -10,8 +10,17 @@ MOC = /usr/lib/qt6/libexec/moc
 
 # OBJECTS FOR GLADYS
 GLADYS_OBJS = moc/gladys.o \
-              moc/gladyswindow.o \
-              moc/gladyswindow.moc.o
+              lib/gladyswindow.o \
+              moc/gladyswindow.moc.o \
+              lib/ipc_server.o \
+              moc/ipc_server.moc.o
+
+DAEMON_OBJS = lib/ipc_server.o \
+              lib/process_utils.o \
+              lib/x11_keygrab.o \
+              moc/ipc_server.moc.o \
+              moc/process_utils.moc.o \
+              moc/x11_keygrab.moc.o
 
 TARGET = bin/gladys
 DAEMON_TARGET = bin/gladysd
@@ -28,12 +37,30 @@ $(TARGET): $(GLADYS_OBJS) icons/mic-light.png icons/mic-dark.png
 	@mkdir -p bin
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $(GLADYS_OBJS) -o $@ $(LDFLAGS)
 
-$(DAEMON_TARGET): src/gladysd.cpp
+$(DAEMON_TARGET): $(DAEMON_OBJS) src/gladysd.cpp
 	@mkdir -p bin
-	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) src/gladysd.cpp -o $@ $(QT_LDFLAGS) -lX11
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) src/gladysd.cpp $(DAEMON_OBJS) -o $@ $(LDFLAGS)
 
 # MOC rules
-moc/gladyswindow.moc.cpp: src/gladyswindow.h
+moc/gladyswindow.moc.cpp: src/lib/gladyswindow.hpp
+	@mkdir -p moc
+	$(MOC) $< -o $(@:.cpp=)
+	@echo "#include <QObject>" > $@
+	@cat $(@:.cpp=) >> $@
+
+moc/ipc_server.moc.cpp: src/lib/ipc_server.hpp
+	@mkdir -p moc
+	$(MOC) $< -o $(@:.cpp=)
+	@echo "#include <QObject>" > $@
+	@cat $(@:.cpp=) >> $@
+
+moc/process_utils.moc.cpp: src/lib/process_utils.hpp
+	@mkdir -p moc
+	$(MOC) $< -o $(@:.cpp=)
+	@echo "#include <QObject>" > $@
+	@cat $(@:.cpp=) >> $@
+
+moc/x11_keygrab.moc.cpp: src/lib/x11_keygrab.hpp
 	@mkdir -p moc
 	$(MOC) $< -o $(@:.cpp=)
 	@echo "#include <QObject>" > $@
@@ -44,19 +71,43 @@ moc/gladys.o: src/gladys.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
-moc/gladyswindow.o: src/gladyswindow.cpp
-	@mkdir -p moc
+lib/gladyswindow.o: src/lib/gladyswindow.cc
+	@mkdir -p lib
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
 moc/gladyswindow.moc.o: moc/gladyswindow.moc.cpp
 	@mkdir -p moc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
 
+lib/ipc_server.o: src/lib/ipc_server.cc
+	@mkdir -p lib
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/ipc_server.moc.o: moc/ipc_server.moc.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/process_utils.moc.o: moc/process_utils.moc.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+moc/x11_keygrab.moc.o: moc/x11_keygrab.moc.cpp
+	@mkdir -p moc
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+lib/process_utils.o: src/lib/process_utils.cc
+	@mkdir -p lib
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
+lib/x11_keygrab.o: src/lib/x11_keygrab.cc
+	@mkdir -p lib
+	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) -c $< -o $@
+
 icons/%.png: icons/%.svg
 	convert -background none -size 64x64 $< $@
 
 clean:
-	rm -rf bin moc/*.o moc/*.moc moc/*.moc.cpp compile_commands.json
+	rm -rf bin moc/*.o moc/*.moc moc/*.moc.cpp lib/*.o compile_commands.json
 
 run:
 	@if [ "$$XDG_SESSION_TYPE" = "wayland" ]; then \
