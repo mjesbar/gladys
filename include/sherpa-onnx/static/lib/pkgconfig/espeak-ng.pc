@@ -1,5 +1,5 @@
-prefix=/tmp/sherpa-onnx/static
-exec_prefix=/tmp/sherpa-onnx/static
+prefix=/home/mjesbar/Github/mjesbar/gladys/include/sherpa-onnx/static
+exec_prefix=/home/mjesbar/Github/mjesbar/gladys/include/sherpa-onnx/static
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 

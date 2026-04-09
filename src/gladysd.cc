@@ -7,11 +7,19 @@
 #include "lib/ipc_server.h"
 #include "lib/process_utils.h"
 #include "lib/x11_keygrab.h"
+#include "lib/stt.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication app(argc, argv);
 
   fprintf(stderr, "Daemon: Starting...\n");
+
+  // Load the STT model
+  std::string model_path = "./bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
+  if (!SST::load(model_path)) {
+      fprintf(stderr, "Daemon: Failed to load STT model.\n");
+      return 1;
+  }
 
   X11KeyGrab keyGrab;
   Display *display = XOpenDisplay(NULL);
@@ -39,6 +47,16 @@ int main(int argc, char *argv[]) {
 
   QObject::connect(&keyGrab, &X11KeyGrab::keyPressed, [&]() {
     fprintf(stderr, "Daemon: Ctrl+Alt+P detected!\n");
+
+    static bool stt_running = false;
+
+    if (stt_running) {
+        SST::stop();
+        stt_running = false;
+    } else {
+        SST::start();
+        stt_running = true;
+    }
 
     IpcClient client("gladys-ipc-server");
     if (client.sendToggle()) {

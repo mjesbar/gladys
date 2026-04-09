@@ -7,7 +7,7 @@
 #
 #   pkg-config --define-variable=prefix=/path/to/the/dir/containing/this/file --cflags sherpa-onnx
 
-prefix="/tmp/sherpa-onnx/static"
+prefix="/home/mjesbar/Github/mjesbar/gladys/include/sherpa-onnx/static"
 exec_prefix="${prefix}"
 includedir="${prefix}/include"
 libdir="${exec_prefix}/lib"
