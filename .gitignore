@@ -1,3 +1,16 @@
-bin/
+bin/*
+bin/cuda/*
+!bin/
+!bin/cuda/
+!bin/cuda/install.sh
+
 .cache/
 moc/
+
+include/*
+!include/miniaudio/
+include/sherpa-onnx/*
+!include/sherpa-onnx/
+!include/sherpa-onnx/shared/
+!include/sherpa-onnx/build.sh
+!include/sherpa-onnx/env.sh
