@@ -1,24 +1,29 @@
 #include <QCoreApplication>
-#include <QSocketNotifier>
-#include <X11/Xlib.h>
-#include <stdio.h>
 #include <QDebug>
+#include <QSocketNotifier>
+#include <QTimer>
+#include <X11/Xlib.h>
 
 #include "lib/ipc.h"
-#include "lib/process.h"
 #include "lib/keygrab.h"
+#include "lib/process.h"
 #include "lib/stt.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication app(argc, argv);
 
+  // Initialize ProcessManager as daemon role
+  ProcessManager *pm = ProcessManager::instance();
+  pm->init(ProcessManager::RoleDaemon);
+
   fprintf(stderr, "Daemon: Starting...\n");
 
   // Load the STT model
-  std::string model_path = "./bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
+  std::string model_path =
+      "./bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
   if (!SST::load(model_path)) {
-      fprintf(stderr, "Daemon: Failed to load STT model.\n");
-      return 1;
+    fprintf(stderr, "Daemon: Failed to load STT model.\n");
+    return 1;
   }
 
   X11KeyGrab keyGrab;
@@ -34,16 +39,20 @@ int main(int argc, char *argv[]) {
 
   fprintf(stderr, "Daemon: Listening for Ctrl+Alt+P...\n");
 
-  ProcessUtils processUtils;
-  processUtils.launchGladys();
+  pm->launchWindowApp();
+
+  // If window app exits, close daemon
+  QObject::connect(pm, &ProcessManager::windowAppExited, [&]() {
+    fprintf(stderr, "Daemon: window app exited, closing.\n");
+    app.quit();
+  });
 
   int x11_fd = ConnectionNumber(display);
   QSocketNotifier *notifier =
       new QSocketNotifier(x11_fd, QSocketNotifier::Read, &app);
 
-  QObject::connect(notifier, &QSocketNotifier::activated, [&keyGrab, &processUtils]() {
-    keyGrab.processEvents();
-  });
+  QObject::connect(notifier, &QSocketNotifier::activated,
+                   [&keyGrab]() { keyGrab.processEvents(); });
 
   QObject::connect(&keyGrab, &X11KeyGrab::keyPressed, [&]() {
     fprintf(stderr, "Daemon: Ctrl+Alt+P detected!\n");
@@ -51,11 +60,11 @@ int main(int argc, char *argv[]) {
     static bool stt_running = false;
 
     if (stt_running) {
-        SST::stop();
-        stt_running = false;
+      SST::stop();
+      stt_running = false;
     } else {
-        SST::start();
-        stt_running = true;
+      SST::start();
+      stt_running = true;
     }
 
     IPCClient client("gladys-ipc-server");
@@ -63,7 +72,7 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Daemon: Toggle sent.\n");
     } else {
       fprintf(stderr, "Daemon: No server running, launching gladys...\n");
-      processUtils.launchGladys();
+      pm->launchWindowApp();
     }
   });
 

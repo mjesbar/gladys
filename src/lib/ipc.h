@@ -17,10 +17,10 @@ public:
   ~IPCServer() override;
 
   bool start();
-  void sendToggle();
 
 signals:
   void toggleRequested();
+  void quitRequested();
 
 private:
   void onNewConnection();
@@ -36,6 +36,7 @@ public:
   explicit IPCClient(const QString &serverName, QObject *parent = nullptr);
 
   bool sendToggle();
+  bool sendQuit();
 
 private:
   QString m_serverName;

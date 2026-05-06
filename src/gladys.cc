@@ -4,8 +4,9 @@
 #include <QScreen>
 #include <QWidget>
 
-#include "lib/window.h"
 #include "lib/ipc.h"
+#include "lib/process.h"
+#include "lib/window.h"
 
 int main(int argc, char *argv[]) {
   // Force X11 (xcb) platform - not Wayland
@@ -14,6 +15,16 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
+
+  // Initialize ProcessManager as window app role
+  ProcessManager *pm = ProcessManager::instance();
+  pm->init(ProcessManager::RoleWindowApp);
+
+  // Monitor: if daemon exits, close window app
+  QObject::connect(pm, &ProcessManager::daemonExited, [&]() {
+    fprintf(stderr, "Gladys: daemon exited, closing.\n");
+    app.quit();
+  });
 
   IPCServer server("gladys-ipc-server");
   if (!server.start()) {
@@ -28,6 +39,13 @@ int main(int argc, char *argv[]) {
     window.toggleVisibility();
   });
 
+  // When quit requested, use ProcessManager to close both
+  QObject::connect(&window, &GladysWindow::quitRequested, [&]() {
+    fprintf(stderr, "Gladys: Quit requested, closing.\n");
+    pm->close();
+    app.quit();
+  });
+
   QScreen *screen = QApplication::primaryScreen();
   if (screen) {
     QRect rect = screen->availableGeometry();
@@ -39,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   window.show();
   window.removeShadow();
-  qDebug() << "Gladys: Window shown";
+  qDebug() << "Gladys: Window shown (daemon PID: " << pm->daemonPid() << ")";
 
   return app.exec();
 }

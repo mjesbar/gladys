@@ -21,6 +21,10 @@ public slots:
   void handleOpacityAnimationFinished();
   void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
   void removeShadow();
+  void quitApp();
+
+signals:
+  void quitRequested();
 
 protected:
   void paintEvent(QPaintEvent *event) override;

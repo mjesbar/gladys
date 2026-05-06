@@ -15,6 +15,8 @@
 #include <QMenu>
 #include <X11/Xlib.h> // just to remove the shadow
 
+#include "ipc.h"
+
 static const QSize PROMINENT_SIZE = QSize(48, 48);
 static const QSize SUBTLE_SIZE = QSize(24, 24);
 
@@ -47,7 +49,7 @@ GladysWindow::GladysWindow(QWidget *parent)
   setPalette(palette);
 
   QAction *quitAction = m_trayMenu->addAction("Quit");
-  connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+  connect(quitAction, &QAction::triggered, this, &GladysWindow::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
   m_trayIcon->setIcon(QIcon("icons/mic-light.png"));
   connect(m_trayIcon, &QSystemTrayIcon::activated, this,
@@ -132,6 +134,12 @@ void GladysWindow::onTrayIconActivated(
   if (reason == QSystemTrayIcon::Trigger) {
     toggleVisibility();
   }
+}
+
+void GladysWindow::quitApp() {
+  qDebug() << "GladysWindow: Quit requested";
+  emit quitRequested();
+  QApplication::quit();
 }
 
 void GladysWindow::paintEvent(QPaintEvent *event) {

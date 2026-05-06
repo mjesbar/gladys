@@ -23,8 +23,8 @@ build:
 	$(MAKE) clean
 	bear -- $(MAKE) all
 
-bin/gladys: bin/obj/gladys.o bin/obj/window.o bin/obj/ipc.o \
-           moc/window.moc.cc moc/ipc.moc.cc
+bin/gladys: bin/obj/gladys.o bin/obj/window.o bin/obj/ipc.o bin/obj/process.o \
+           moc/window.moc.cc moc/ipc.moc.cc moc/process.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
 bin/gladysd: bin/obj/gladysd.o bin/obj/window.o bin/obj/ipc.o \

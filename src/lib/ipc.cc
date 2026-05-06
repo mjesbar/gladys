@@ -27,6 +27,8 @@ void IPCServer::onNewConnection() {
             qDebug() << "IPCServer: Received:" << data;
             if (data == "toggle") {
               emit toggleRequested();
+            } else if (data == "quit") {
+              emit quitRequested();
             }
             clientConnection->disconnectFromServer();
           });
@@ -45,6 +47,18 @@ bool IPCClient::sendToggle() {
     return false;
   }
   socket.write("toggle");
+  socket.waitForBytesWritten(1000);
+  socket.disconnectFromServer();
+  return true;
+}
+
+bool IPCClient::sendQuit() {
+  QLocalSocket socket;
+  socket.connectToServer(m_serverName);
+  if (!socket.waitForConnected(200)) {
+    return false;
+  }
+  socket.write("quit");
   socket.waitForBytesWritten(1000);
   socket.disconnectFromServer();
   return true;
