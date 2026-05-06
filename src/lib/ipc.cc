@@ -1,30 +1,30 @@
-#include "ipc_server.h"
+#include "ipc.h"
 #include <QDebug>
 
-IpcServer::IpcServer(const QString &serverName, QObject *parent)
+IPCServer::IPCServer(const QString &serverName, QObject *parent)
     : QObject(parent), m_server(new QLocalServer(this)), m_serverName(serverName) {
 }
 
-IpcServer::~IpcServer() = default;
+IPCServer::~IPCServer() = default;
 
-bool IpcServer::start() {
+bool IPCServer::start() {
   QLocalServer::removeServer(m_serverName);
   if (!m_server->listen(m_serverName)) {
-    qWarning() << "IpcServer: Could not start server:" << m_server->errorString();
+    qWarning() << "IPCServer: Could not start server:" << m_server->errorString();
     return false;
   }
-  qDebug() << "IpcServer: Listening on" << m_serverName;
-  connect(m_server, &QLocalServer::newConnection, this, &IpcServer::onNewConnection);
+  qDebug() << "IPCServer: Listening on" << m_serverName;
+  connect(m_server, &QLocalServer::newConnection, this, &IPCServer::onNewConnection);
   return true;
 }
 
-void IpcServer::onNewConnection() {
-  qDebug() << "IpcServer: New connection";
+void IPCServer::onNewConnection() {
+  qDebug() << "IPCServer: New connection";
   QLocalSocket *clientConnection = m_server->nextPendingConnection();
   connect(clientConnection, &QLocalSocket::readyRead,
           [this, clientConnection]() {
             QByteArray data = clientConnection->readAll();
-            qDebug() << "IpcServer: Received:" << data;
+            qDebug() << "IPCServer: Received:" << data;
             if (data == "toggle") {
               emit toggleRequested();
             }
@@ -34,11 +34,11 @@ void IpcServer::onNewConnection() {
           clientConnection, &QLocalSocket::deleteLater);
 }
 
-IpcClient::IpcClient(const QString &serverName, QObject *parent)
+IPCClient::IPCClient(const QString &serverName, QObject *parent)
     : QObject(parent), m_serverName(serverName) {
 }
 
-bool IpcClient::sendToggle() {
+bool IPCClient::sendToggle() {
   QLocalSocket socket;
   socket.connectToServer(m_serverName);
   if (!socket.waitForConnected(200)) {

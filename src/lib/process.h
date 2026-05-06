@@ -1,5 +1,5 @@
-#ifndef PROCESS_UTILS_HPP
-#define PROCESS_UTILS_HPP
+#ifndef PROCESS_HPP
+#define PROCESS_HPP
 
 #include <QObject>
 #include <QProcess>
@@ -17,4 +17,4 @@ private:
   QProcess *createGladysProcess();
 };
 
-#endif // PROCESS_UTILS_HPP
+#endif // PROCESS_HPP

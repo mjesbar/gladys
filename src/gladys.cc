@@ -5,14 +5,17 @@
 #include <QWidget>
 
 #include "lib/window.h"
-#include "lib/ipc_server.h"
+#include "lib/ipc.h"
 
 int main(int argc, char *argv[]) {
+  // Force X11 (xcb) platform - not Wayland
+  qputenv("QT_QPA_PLATFORM", "xcb");
+
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
 
-  IpcServer server("gladys-ipc-server");
+  IPCServer server("gladys-ipc-server");
   if (!server.start()) {
     return 1;
   }
@@ -20,7 +23,7 @@ int main(int argc, char *argv[]) {
   QWidget dummy;
   GladysWindow window(&dummy);
 
-  QObject::connect(&server, &IpcServer::toggleRequested, [&]() {
+  QObject::connect(&server, &IPCServer::toggleRequested, [&]() {
     qDebug() << "Gladys: Toggling visibility";
     window.toggleVisibility();
   });

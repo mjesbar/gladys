@@ -1,4 +1,4 @@
-#include "x11_keygrab.h"
+#include "keygrab.h"
 #include <X11/keysym.h>
 #include <stdio.h>
 

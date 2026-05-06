@@ -85,12 +85,12 @@
       "-DQT_CORE_LIB",
       "-c",
       "-o",
-      "bin/obj/ipc_server.o",
-      "src/lib/ipc_server.cc"
+      "bin/obj/ipc.o",
+      "src/lib/ipc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/ipc_server.cc",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/ipc_server.o"
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/ipc.cc",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/ipc.o"
   },
   {
     "arguments": [
@@ -117,7 +117,7 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladys.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
+      "bin/obj/ipc.o",
       "-o",
       "bin/gladys",
       "moc/window.moc.cc"
@@ -151,13 +151,13 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladys.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
+      "bin/obj/ipc.o",
       "-o",
       "bin/gladys",
-      "moc/ipc_server.moc.cc"
+      "moc/ipc.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/ipc_server.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/ipc.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladys"
   },
   {
@@ -215,12 +215,12 @@
       "-DQT_CORE_LIB",
       "-c",
       "-o",
-      "bin/obj/process_utils.o",
-      "src/lib/process_utils.cc"
+      "bin/obj/process.o",
+      "src/lib/process.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/process_utils.cc",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/process_utils.o"
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/process.cc",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/process.o"
   },
   {
     "arguments": [
@@ -246,12 +246,12 @@
       "-DQT_CORE_LIB",
       "-c",
       "-o",
-      "bin/obj/x11_keygrab.o",
-      "src/lib/x11_keygrab.cc"
+      "bin/obj/keygrab.o",
+      "src/lib/keygrab.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/x11_keygrab.cc",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/x11_keygrab.o"
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/keygrab.cc",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/keygrab.o"
   },
   {
     "arguments": [
@@ -310,9 +310,9 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
-      "bin/obj/process_utils.o",
-      "bin/obj/x11_keygrab.o",
+      "bin/obj/ipc.o",
+      "bin/obj/process.o",
+      "bin/obj/keygrab.o",
       "bin/obj/stt.o",
       "-o",
       "bin/gladysd",
@@ -347,16 +347,16 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
-      "bin/obj/process_utils.o",
-      "bin/obj/x11_keygrab.o",
+      "bin/obj/ipc.o",
+      "bin/obj/process.o",
+      "bin/obj/keygrab.o",
       "bin/obj/stt.o",
       "-o",
       "bin/gladysd",
-      "moc/ipc_server.moc.cc"
+      "moc/ipc.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/ipc_server.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/ipc.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladysd"
   },
   {
@@ -384,16 +384,16 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
-      "bin/obj/process_utils.o",
-      "bin/obj/x11_keygrab.o",
+      "bin/obj/ipc.o",
+      "bin/obj/process.o",
+      "bin/obj/keygrab.o",
       "bin/obj/stt.o",
       "-o",
       "bin/gladysd",
-      "moc/process_utils.moc.cc"
+      "moc/process.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/process_utils.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/process.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladysd"
   },
   {
@@ -421,16 +421,16 @@
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
       "bin/obj/window.o",
-      "bin/obj/ipc_server.o",
-      "bin/obj/process_utils.o",
-      "bin/obj/x11_keygrab.o",
+      "bin/obj/ipc.o",
+      "bin/obj/process.o",
+      "bin/obj/keygrab.o",
       "bin/obj/stt.o",
       "-o",
       "bin/gladysd",
-      "moc/x11_keygrab.moc.cc"
+      "moc/keygrab.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/x11_keygrab.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/keygrab.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladysd"
   }
 ]

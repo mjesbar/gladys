@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <QDebug>
 
-#include "lib/ipc_server.h"
-#include "lib/process_utils.h"
-#include "lib/x11_keygrab.h"
+#include "lib/ipc.h"
+#include "lib/process.h"
+#include "lib/keygrab.h"
 #include "lib/stt.h"
 
 int main(int argc, char *argv[]) {
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         stt_running = true;
     }
 
-    IpcClient client("gladys-ipc-server");
+    IPCClient client("gladys-ipc-server");
     if (client.sendToggle()) {
       fprintf(stderr, "Daemon: Toggle sent.\n");
     } else {

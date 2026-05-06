@@ -1,5 +1,5 @@
-#ifndef X11_KEYGRAB_HPP
-#define X11_KEYGRAB_HPP
+#ifndef KEYGRAB_HPP
+#define KEYGRAB_HPP
 
 #include <QObject>
 #include <QDebug>
@@ -30,4 +30,4 @@ private:
   unsigned int m_modifiers;
 };
 
-#endif // X11_KEYGRAB_HPP
+#endif // KEYGRAB_HPP
