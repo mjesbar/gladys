@@ -83,7 +83,7 @@ bool SST::load(const std::string &model_path) {
 
   config.model_config.num_threads = 1; // Explicitly set number of threads
 
-  config.model_config.provider = "cpu"; // Optionally "cpu"
+  config.model_config.provider = "cpu";
 
   config.decoding_method = "greedy_search";
   config.feat_config.sample_rate = 16000; // Assuming 16kHz
