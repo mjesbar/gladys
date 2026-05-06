@@ -5,5 +5,11 @@
     "bash": "ask",
     "webfetch": "allow"
   },
-  "instructions": [".opencode/*.md"]
+  "instructions": [
+    ".opencode/C.md",
+    ".opencode/CPP.md",
+    ".opencode/RULES.md",
+    ".opencode/OPENCODE.md"
+  ],
+  "default_agent": "write code"
 }
