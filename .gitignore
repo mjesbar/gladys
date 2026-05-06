@@ -14,3 +14,5 @@ include/sherpa-onnx/*
 !include/sherpa-onnx/shared/
 !include/sherpa-onnx/build.sh
 !include/sherpa-onnx/env.sh
+
+.opencode/fragments
