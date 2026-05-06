@@ -1,4 +1,4 @@
-#include "window.h"
+#include "ui.h"
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
@@ -26,7 +26,7 @@ static const qreal SUBTLE_OPACITY = 0.0;
 static const QPoint PROMINENT_POS = QPoint(936, 72);
 static const QPoint SUBTLE_POS = QPoint(948, 12);
 
-GladysWindow::GladysWindow(QWidget *parent)
+UI::UI(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
       m_opacityAnimation(new QPropertyAnimation(this, "windowOpacity")),
       m_sizeAnimation(new QPropertyAnimation(this, "size")),
@@ -49,11 +49,11 @@ GladysWindow::GladysWindow(QWidget *parent)
   setPalette(palette);
 
   QAction *quitAction = m_trayMenu->addAction("Quit");
-  connect(quitAction, &QAction::triggered, this, &GladysWindow::quitApp);
+  connect(quitAction, &QAction::triggered, this, &UI::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
   m_trayIcon->setIcon(QIcon("icons/mic-light.png"));
   connect(m_trayIcon, &QSystemTrayIcon::activated, this,
-          &GladysWindow::onTrayIconActivated);
+          &UI::onTrayIconActivated);
   m_trayIcon->show();
 
   m_positionAnimation->setDuration(500);
@@ -62,26 +62,26 @@ GladysWindow::GladysWindow(QWidget *parent)
   m_opacityAnimation->setDuration(500);
   m_opacityAnimation->setEasingCurve(QEasingCurve::InOutBack);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
-          &GladysWindow::handleOpacityAnimationFinished);
+          &UI::handleOpacityAnimationFinished);
 
   m_sizeAnimation->setDuration(500);
   m_sizeAnimation->setEasingCurve(QEasingCurve::InOutBack);
 }
 
-GladysWindow::~GladysWindow() {
+UI::~UI() {
   delete m_positionAnimation;
   delete m_opacityAnimation;
   delete m_sizeAnimation;
 }
 
-void GladysWindow::removeShadow() {
+void UI::removeShadow() {
   Display *d = XOpenDisplay(NULL);
   XDeleteProperty(d, (Window)winId(),
                   XInternAtom(d, "_KDE_NET_WM_SHADOW", False));
   XCloseDisplay(d);
 }
 
-void GladysWindow::toggleVisibility() {
+void UI::toggleVisibility() {
   if (m_positionAnimation->state() == QPropertyAnimation::Running ||
       m_opacityAnimation->state() == QPropertyAnimation::Running ||
       m_sizeAnimation->state() == QPropertyAnimation::Running) {
@@ -124,25 +124,25 @@ void GladysWindow::toggleVisibility() {
   m_isProminent = !m_isProminent;
 }
 
-void GladysWindow::handleOpacityAnimationFinished() {
+void UI::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
   }
 }
 
-void GladysWindow::onTrayIconActivated(
+void UI::onTrayIconActivated(
     QSystemTrayIcon::ActivationReason reason) {
   if (reason == QSystemTrayIcon::Trigger) {
     toggleVisibility();
   }
 }
 
-void GladysWindow::quitApp() {
-  qDebug() << "GladysWindow: Quit requested";
+void UI::quitApp() {
+  qDebug() << "UI: Quit requested";
   emit quitRequested();
   QApplication::quit();
 }
 
-void GladysWindow::paintEvent(QPaintEvent *event) {
+void UI::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 

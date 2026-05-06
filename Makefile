@@ -23,14 +23,14 @@ build:
 	$(MAKE) clean
 	bear -- $(MAKE) all
 
-bin/gladys: bin/obj/gladys.o bin/obj/window.o bin/obj/ipc.o bin/obj/process.o \
-           moc/window.moc.cc moc/ipc.moc.cc moc/process.moc.cc
+bin/gladys: bin/obj/gladys.o bin/obj/ui.o bin/obj/ipc.o bin/obj/pm.o \
+           moc/ui.moc.cc moc/ipc.moc.cc moc/pm.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
-bin/gladysd: bin/obj/gladysd.o bin/obj/window.o bin/obj/ipc.o \
-              bin/obj/process.o bin/obj/keygrab.o bin/obj/stt.o \
-              moc/window.moc.cc moc/ipc.moc.cc \
-              moc/process.moc.cc moc/keygrab.moc.cc
+bin/gladysd: bin/obj/gladysd.o bin/obj/ui.o bin/obj/ipc.o \
+              bin/obj/pm.o bin/obj/keygrab.o bin/obj/stt.o \
+              moc/ui.moc.cc moc/ipc.moc.cc \
+              moc/pm.moc.cc moc/keygrab.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
 bin/obj/%.o: src/%.cc

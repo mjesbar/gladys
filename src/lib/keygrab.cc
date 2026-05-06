@@ -2,20 +2,20 @@
 #include <X11/keysym.h>
 #include <stdio.h>
 
-X11KeyGrab::X11KeyGrab(QObject *parent)
+KeyGrab::KeyGrab(QObject *parent)
     : QObject(parent), m_display(nullptr), m_root(0), m_keycode(0), m_modifiers(0) {
 }
 
-X11KeyGrab::~X11KeyGrab() {
+KeyGrab::~KeyGrab() {
   if (m_display) {
     XCloseDisplay(m_display);
   }
 }
 
-bool X11KeyGrab::init(Display *display) {
+bool KeyGrab::init(Display *display) {
   m_display = display;
   if (!m_display) {
-    fprintf(stderr, "X11KeyGrab: display is null\n");
+    fprintf(stderr, "KeyGrab: display is null\n");
     return false;
   }
 
@@ -26,7 +26,7 @@ bool X11KeyGrab::init(Display *display) {
   m_keycode = XKeysymToKeycode(m_display, XK_P);
   m_modifiers = ControlMask | Mod1Mask;
 
-  fprintf(stderr, "X11KeyGrab: Grabbing Ctrl+Alt+P (keycode=%d)...\n", m_keycode);
+  fprintf(stderr, "KeyGrab: Grabbing Ctrl+Alt+P (keycode=%d)...\n", m_keycode);
 
   XGrabKey(m_display, m_keycode, m_modifiers, m_root, True, GrabModeAsync,
            GrabModeAsync);
@@ -41,7 +41,7 @@ bool X11KeyGrab::init(Display *display) {
   return true;
 }
 
-void X11KeyGrab::processEvents() {
+void KeyGrab::processEvents() {
   if (!m_display) return;
 
   XEvent event;

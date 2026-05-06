@@ -4,20 +4,27 @@
 #include <vector>
 
 // Initialize static members
-SST *SST::m_instance = nullptr;
-ma_device SST::m_audio_device;
-ma_device_config SST::m_audio_config;
-ma_context SST::m_audio_context;
-const SherpaOnnxOnlineRecognizer *SST::m_recognizer = nullptr;
-const SherpaOnnxOnlineStream *SST::m_stream = nullptr;
+STT *STT::m_instance = nullptr;
+ma_device STT::m_audio_device;
+ma_device_config STT::m_audio_config;
+ma_context STT::m_audio_context;
+const SherpaOnnxOnlineRecognizer *STT::m_recognizer = nullptr;
+const SherpaOnnxOnlineStream *STT::m_stream = nullptr;
 
-std::string SST::m_encoder_path;
-std::string SST::m_decoder_path;
-std::string SST::m_joiner_path;
-std::string SST::m_tokens_path;
-bool SST::m_is_audio_context_initialized = false;
+std::string STT::m_encoder_path;
+std::string STT::m_decoder_path;
+std::string STT::m_joiner_path;
+std::string STT::m_tokens_path;
+bool STT::m_is_audio_context_initialized = false;
 
-SST::~SST() {
+STT *STT::instance() {
+  if (!m_instance) {
+    m_instance = new STT();
+  }
+  return m_instance;
+}
+
+STT::~STT() {
   // Cleanup resources if they were initialized
   if (m_recognizer) {
     SherpaOnnxDestroyOnlineRecognizer(m_recognizer);
@@ -32,10 +39,9 @@ SST::~SST() {
   }
 }
 
-bool SST::load(const std::string &model_path) {
-  if (m_instance == nullptr) {
-    m_instance = new SST();
-  }
+bool STT::load(const std::string &model_path) {
+  // Use instance() to ensure singleton is created
+  instance();
 
   std::cout << "SST: Loading STT model from: " << model_path << std::endl;
 
@@ -115,7 +121,7 @@ bool SST::load(const std::string &model_path) {
   m_audio_config.sampleRate = 16000;             // 16kHz sample rate
   m_audio_config.dataCallback = data_callback;
   m_audio_config.pUserData =
-      m_instance; // Pass the SST instance to the callback
+      m_instance; // Pass the STT instance to the callback
 
   result = ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
   if (result != MA_SUCCESS) {
@@ -128,7 +134,7 @@ bool SST::load(const std::string &model_path) {
   return true;
 }
 
-void SST::start() {
+void STT::start() {
   if (m_instance == nullptr || !m_recognizer) {
     std::cerr << "SST: Module not loaded. Call load() first." << std::endl;
     return;
@@ -154,7 +160,7 @@ void SST::start() {
   std::cout << "SST: Audio recording started." << std::endl;
 }
 
-void SST::stop() {
+void STT::stop() {
   if (m_instance == nullptr || !m_recognizer) {
     std::cerr << "SST: Module not loaded. Call load() first." << std::endl;
     return;
@@ -186,13 +192,13 @@ void SST::stop() {
   }
 }
 
-void SST::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
+void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                         ma_uint32 frameCount) {
-  // Cast pUserData back to SST instance
-  SST *sst_instance = static_cast<SST *>(pDevice->pUserData);
+  // Cast pUserData back to STT instance
+  STT *stt_instance = static_cast<STT *>(pDevice->pUserData);
 
-  if (sst_instance == nullptr || sst_instance->m_recognizer == nullptr ||
-      sst_instance->m_stream == nullptr) {
+  if (stt_instance == nullptr || stt_instance->m_recognizer == nullptr ||
+      stt_instance->m_stream == nullptr) {
     return; // Not initialized or started yet
   }
 
@@ -203,18 +209,18 @@ void SST::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   for (ma_uint32 i = 0; i < frameCount; ++i) {
     float_samples[i] = static_cast<float>(pcm_samples[i]) / 32768.0f;
   }
-  SherpaOnnxOnlineStreamAcceptWaveform(sst_instance->m_stream,
-                                       sst_instance->m_audio_config.sampleRate,
+  SherpaOnnxOnlineStreamAcceptWaveform(stt_instance->m_stream,
+                                       stt_instance->m_audio_config.sampleRate,
                                        float_samples.data(), frameCount);
 
   // Decode and get results
-  if (SherpaOnnxIsOnlineStreamReady(sst_instance->m_recognizer,
-                                    sst_instance->m_stream)) {
-    SherpaOnnxDecodeOnlineStream(sst_instance->m_recognizer,
-                                 sst_instance->m_stream);
+  if (SherpaOnnxIsOnlineStreamReady(stt_instance->m_recognizer,
+                                    stt_instance->m_stream)) {
+    SherpaOnnxDecodeOnlineStream(stt_instance->m_recognizer,
+                                 stt_instance->m_stream);
     const SherpaOnnxOnlineRecognizerResult *result =
-        SherpaOnnxGetOnlineStreamResult(sst_instance->m_recognizer,
-                                        sst_instance->m_stream);
+        SherpaOnnxGetOnlineStreamResult(stt_instance->m_recognizer,
+                                        stt_instance->m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Transcription: " << result->text << std::endl;
     }

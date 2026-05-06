@@ -5,8 +5,8 @@
 #include <QWidget>
 
 #include "lib/ipc.h"
-#include "lib/process.h"
-#include "lib/window.h"
+#include "lib/pm.h"
+#include "lib/ui.h"
 
 int main(int argc, char *argv[]) {
   // Force X11 (xcb) platform - not Wayland
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   }
 
   QWidget dummy;
-  GladysWindow window(&dummy);
+  UI window(&dummy);
 
   QObject::connect(&server, &IPCServer::toggleRequested, [&]() {
     qDebug() << "Gladys: Toggling visibility";
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   });
 
   // When quit requested, use ProcessManager to close both
-  QObject::connect(&window, &GladysWindow::quitRequested, [&]() {
+  QObject::connect(&window, &UI::quitRequested, [&]() {
     fprintf(stderr, "Gladys: Quit requested, closing.\n");
     pm->close();
     app.quit();

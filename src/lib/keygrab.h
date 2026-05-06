@@ -5,12 +5,12 @@
 #include <QDebug>
 #include <X11/Xlib.h>
 
-class X11KeyGrab : public QObject {
+class KeyGrab : public QObject {
   Q_OBJECT
 
 public:
-  explicit X11KeyGrab(QObject *parent = nullptr);
-  ~X11KeyGrab() override;
+  explicit KeyGrab(QObject *parent = nullptr);
+  ~KeyGrab() override;
 
   bool init(Display *display);
   KeyCode keycode() const { return m_keycode; }

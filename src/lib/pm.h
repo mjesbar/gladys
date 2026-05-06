@@ -1,5 +1,5 @@
-#ifndef PROCESS_HPP
-#define PROCESS_HPP
+#ifndef PM_HPP
+#define PM_HPP
 
 #include <QObject>
 #include <QProcess>
@@ -49,4 +49,4 @@ private:
   QTimer *m_daemonTimer;
 };
 
-#endif // PROCESS_HPP
+#endif // PM_HPP

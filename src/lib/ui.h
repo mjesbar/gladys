@@ -1,5 +1,5 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef UI_HPP
+#define UI_HPP
 
 #include <QApplication>
 #include <QEasingCurve>
@@ -9,12 +9,12 @@
 #include <QSystemTrayIcon>
 #include <QWidget>
 
-class GladysWindow : public QWidget {
+class UI : public QWidget {
   Q_OBJECT
 
 public:
-  explicit GladysWindow(QWidget *parent = nullptr);
-  ~GladysWindow() override;
+  explicit UI(QWidget *parent = nullptr);
+  ~UI() override;
 
 public slots:
   void toggleVisibility();
@@ -41,4 +41,4 @@ private:
   QMenu *m_trayMenu;
 };
 
-#endif // GLADYSWINDOW_HPP
+#endif // UI_HPP

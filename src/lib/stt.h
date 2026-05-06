@@ -5,21 +5,22 @@
 #include "sherpa-onnx/c-api/c-api.h" // Placeholder, will be resolved by Makefile
 #include <string>
 
-class SST {
+class STT {
 public:
   // Delete copy constructor and assignment operator for singleton
-  SST(const SST &) = delete;
-  SST &operator=(const SST &) = delete;
+  STT(const STT &) = delete;
+  STT &operator=(const STT &) = delete;
 
+  static STT *instance();
   static bool load(const std::string &model_path);
   static void start();
   static void stop();
 
 private:
-  SST() = default; // Private constructor to enforce singleton
-  ~SST();          // Private destructor for cleanup
+  STT() = default; // Private constructor to enforce singleton
+  ~STT();          // Private destructor for cleanup
 
-  static SST *m_instance;
+  static STT *m_instance;
   static ma_device m_audio_device;
   static ma_device_config m_audio_config;
   static ma_context m_audio_context;
