@@ -14,8 +14,11 @@ ProcessManager *ProcessManager::instance() {
 
 ProcessManager::ProcessManager(QObject *parent)
     : QObject(parent), m_role(RoleDaemon), m_windowAppPid(0), m_daemonPid(0),
+      m_ydotoolPid(0),
       m_windowAppProcess(nullptr), m_daemonProcess(nullptr),
-      m_windowAppTimer(new QTimer(this)), m_daemonTimer(new QTimer(this)) {
+      m_ydotoolProcess(nullptr),
+      m_windowAppTimer(new QTimer(this)), m_daemonTimer(new QTimer(this)),
+      m_ydotoolTimer(new QTimer(this)) {
   // Monitor window app
   connect(m_windowAppTimer, &QTimer::timeout, this, [this]() {
     if (m_windowAppPid > 0 && kill(m_windowAppPid, 0) != 0) {
@@ -31,6 +34,15 @@ ProcessManager::ProcessManager(QObject *parent)
       m_daemonTimer->stop();
       fprintf(stderr, "ProcessManager: daemon exited.\n");
       emit daemonExited();
+    }
+  });
+
+  // Monitor ydotoold
+  connect(m_ydotoolTimer, &QTimer::timeout, this, [this]() {
+    if (m_ydotoolPid > 0 && kill(m_ydotoolPid, 0) != 0) {
+      m_ydotoolTimer->stop();
+      fprintf(stderr, "ProcessManager: ydotoold exited.\n");
+      emit ydotoolExited();
     }
   });
 }
@@ -94,6 +106,8 @@ void ProcessManager::launchProcess(const QString &program, qint64 &pid, qint64 o
 
   if (program.contains("gladys") && !program.contains("d")) {
     m_windowAppProcess = proc;
+  } else if (program.contains("ydotoold")) {
+    m_ydotoolProcess = proc;
   } else {
     m_daemonProcess = proc;
   }
@@ -114,6 +128,11 @@ void ProcessManager::launchDaemon() {
   m_daemonTimer->start(1000);
 }
 
+void ProcessManager::launchYdotool() {
+  launchProcess("bin/ydotool/ydotoold", m_ydotoolPid, 0);
+  m_ydotoolTimer->start(1000);
+}
+
 void ProcessManager::killProcess(qint64 pid) {
   if (pid > 0 && (kill(pid, 0) == 0 || errno == EPERM)) {
     kill(pid, SIGTERM);
@@ -122,9 +141,11 @@ void ProcessManager::killProcess(qint64 pid) {
 }
 
 void ProcessManager::close() {
-  fprintf(stderr, "ProcessManager: closing both processes.\n");
+  fprintf(stderr, "ProcessManager: closing all processes.\n");
   killProcess(m_windowAppPid);
   killProcess(m_daemonPid);
+  killProcess(m_ydotoolPid);
   m_windowAppTimer->stop();
   m_daemonTimer->stop();
+  m_ydotoolTimer->stop();
 }

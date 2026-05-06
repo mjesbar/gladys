@@ -26,6 +26,12 @@ int main(int argc, char *argv[]) {
     app.quit();
   });
 
+  // If ydotoold exits, close window app
+  QObject::connect(pm, &ProcessManager::ydotoolExited, [&]() {
+    fprintf(stderr, "Gladys: ydotoold exited, closing.\n");
+    app.quit();
+  });
+
   IPCServer server("gladys-ipc-server");
   if (!server.start()) {
     return 1;

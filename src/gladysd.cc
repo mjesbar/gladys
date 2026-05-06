@@ -40,10 +40,17 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "Daemon: Listening for Ctrl+Alt+P...\n");
 
   pm->launchWindowApp();
+  pm->launchYdotool();
 
   // If window app exits, close daemon
   QObject::connect(pm, &ProcessManager::windowAppExited, [&]() {
     fprintf(stderr, "Daemon: window app exited, closing.\n");
+    app.quit();
+  });
+
+  // If ydotoold exits, close all
+  QObject::connect(pm, &ProcessManager::ydotoolExited, [&]() {
+    fprintf(stderr, "Daemon: ydotoold exited, closing.\n");
     app.quit();
   });
 
