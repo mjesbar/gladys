@@ -192,6 +192,9 @@ void STT::stop() {
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
   }
+
+  // Reset KeyType state for fresh session
+  KeyType::instance()->reset();
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,

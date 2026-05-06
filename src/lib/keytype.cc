@@ -6,6 +6,12 @@ KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false) {
   m_process = new QProcess(this);
 }
 
+void KeyType::reset() {
+  m_lastTyped.clear();
+  m_queue.clear();
+  m_processing = false;
+}
+
 KeyType *KeyType::instance() {
   if (!s_instance) {
     s_instance = new KeyType();
@@ -58,13 +64,12 @@ QString KeyType::normalizeText(const QString &text) {
   result.replace("Í", "I");
   result.replace("Ó", "O");
   result.replace("Ú", "U");
-
   // Spanish special chars
   result.replace("ñ", "n");
   result.replace("Ñ", "N");
-  result.replace("¿", "¿");
-  result.replace("?", "?");
-  result.replace("¡", "i"); // ¡ → i (sounds like 'i')
+  result.replace("¿", "");
+  result.replace("¡", "");
+  result.replace("?", "_");
 
   // Other common
   result.replace("ü", "u");

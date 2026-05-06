@@ -11,6 +11,7 @@ class KeyType : public QObject {
 
 public:
   static KeyType *instance();
+  void reset();
 
   void push(const QString &chunk);
 
