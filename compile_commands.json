@@ -54,12 +54,12 @@
       "-DQT_CORE_LIB",
       "-c",
       "-o",
-      "bin/obj/gladyswindow.o",
-      "src/lib/gladyswindow.cc"
+      "bin/obj/window.o",
+      "src/lib/window.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/gladyswindow.cc",
-    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/gladyswindow.o"
+    "file": "/home/mjesbar/Github/mjesbar/gladys/src/lib/window.cc",
+    "output": "/home/mjesbar/Github/mjesbar/gladys/bin/obj/window.o"
   },
   {
     "arguments": [
@@ -116,14 +116,14 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladys.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "-o",
       "bin/gladys",
-      "moc/gladyswindow.moc.cc"
+      "moc/window.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/gladyswindow.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/window.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladys"
   },
   {
@@ -150,7 +150,7 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladys.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "-o",
       "bin/gladys",
@@ -309,17 +309,17 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "bin/obj/process_utils.o",
       "bin/obj/x11_keygrab.o",
       "bin/obj/stt.o",
       "-o",
       "bin/gladysd",
-      "moc/gladyswindow.moc.cc"
+      "moc/window.moc.cc"
     ],
     "directory": "/home/mjesbar/Github/mjesbar/gladys",
-    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/gladyswindow.moc.cc",
+    "file": "/home/mjesbar/Github/mjesbar/gladys/moc/window.moc.cc",
     "output": "/home/mjesbar/Github/mjesbar/gladys/bin/gladysd"
   },
   {
@@ -346,7 +346,7 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "bin/obj/process_utils.o",
       "bin/obj/x11_keygrab.o",
@@ -383,7 +383,7 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "bin/obj/process_utils.o",
       "bin/obj/x11_keygrab.o",
@@ -420,7 +420,7 @@
       "-DQT_NETWORK_LIB",
       "-DQT_CORE_LIB",
       "bin/obj/gladysd.o",
-      "bin/obj/gladyswindow.o",
+      "bin/obj/window.o",
       "bin/obj/ipc_server.o",
       "bin/obj/process_utils.o",
       "bin/obj/x11_keygrab.o",

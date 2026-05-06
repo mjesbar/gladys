@@ -4,7 +4,7 @@
 #include <QScreen>
 #include <QWidget>
 
-#include "lib/gladyswindow.h"
+#include "lib/window.h"
 #include "lib/ipc_server.h"
 
 int main(int argc, char *argv[]) {

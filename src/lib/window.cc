@@ -1,4 +1,4 @@
-#include "gladyswindow.h"
+#include "window.h"
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>

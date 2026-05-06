@@ -23,13 +23,13 @@ build:
 	$(MAKE) clean
 	bear -- $(MAKE) all
 
-bin/gladys: bin/obj/gladys.o bin/obj/gladyswindow.o bin/obj/ipc_server.o \
-           moc/gladyswindow.moc.cc moc/ipc_server.moc.cc
+bin/gladys: bin/obj/gladys.o bin/obj/window.o bin/obj/ipc_server.o \
+           moc/window.moc.cc moc/ipc_server.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
-bin/gladysd: bin/obj/gladysd.o bin/obj/gladyswindow.o bin/obj/ipc_server.o \
+bin/gladysd: bin/obj/gladysd.o bin/obj/window.o bin/obj/ipc_server.o \
              bin/obj/process_utils.o bin/obj/x11_keygrab.o bin/obj/stt.o \
-             moc/gladyswindow.moc.cc moc/ipc_server.moc.cc \
+             moc/window.moc.cc moc/ipc_server.moc.cc \
              moc/process_utils.moc.cc moc/x11_keygrab.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 

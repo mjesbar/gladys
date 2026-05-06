@@ -1,5 +1,5 @@
-#ifndef GLADYSWINDOW_HPP
-#define GLADYSWINDOW_HPP
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
 
 #include <QApplication>
 #include <QEasingCurve>
