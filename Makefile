@@ -24,13 +24,15 @@ build:
 	bear -- $(MAKE) all
 
 bin/gladys: bin/obj/gladys.o bin/obj/ui.o bin/obj/ipc.o bin/obj/pm.o \
-           moc/ui.moc.cc moc/ipc.moc.cc moc/pm.moc.cc
+           bin/obj/keytype.o \
+           moc/ui.moc.cc moc/ipc.moc.cc moc/pm.moc.cc moc/keytype.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
 bin/gladysd: bin/obj/gladysd.o bin/obj/ui.o bin/obj/ipc.o \
               bin/obj/pm.o bin/obj/keygrab.o bin/obj/stt.o \
+              bin/obj/keytype.o \
               moc/ui.moc.cc moc/ipc.moc.cc \
-              moc/pm.moc.cc moc/keygrab.moc.cc
+              moc/pm.moc.cc moc/keygrab.moc.cc moc/keytype.moc.cc
 	$(CXX) $(CXXFLAGS) $(QT_CXXFLAGS) $^ -o $@ $(LDFLAGS) $(CUDA_LDFLAGS)
 
 bin/obj/%.o: src/%.cc

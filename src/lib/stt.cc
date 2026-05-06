@@ -1,4 +1,5 @@
 #include "stt.h"
+#include "keytype.h"
 #include <cstring> // For memset
 #include <iostream>
 #include <vector>
@@ -184,6 +185,7 @@ void STT::stop() {
         SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Final Transcription: " << result->text << std::endl;
+      KeyType::instance()->push(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
 
@@ -223,6 +225,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                                         stt_instance->m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Transcription: " << result->text << std::endl;
+      KeyType::instance()->push(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
   }
