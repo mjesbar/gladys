@@ -83,5 +83,10 @@ int main(int argc, char *argv[]) {
     }
   });
 
+  QObject::connect(STT::instance(), &STT::audioLevelUpdated, [&]() {
+    IPCClient client("gladys-ipc-server");
+    client.sendAudioLevels(STT::getAudioLevels());
+  });
+
   return app.exec();
 }

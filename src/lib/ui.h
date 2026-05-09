@@ -7,6 +7,7 @@
 #include <QPropertyAnimation>
 #include <QSize>
 #include <QSystemTrayIcon>
+#include <QVector>
 #include <QWidget>
 
 class UI : public QWidget {
@@ -22,6 +23,7 @@ public slots:
   void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
   void removeShadow();
   void quitApp();
+  void updateAudioLevels(const QVector<double> &levels);
 
 signals:
   void quitRequested();
@@ -39,6 +41,11 @@ private:
   QSize m_originalSize;
   QSystemTrayIcon *m_trayIcon;
   QMenu *m_trayMenu;
+  QVector<double> m_audioLevels;
+  QVariantAnimation *m_scaleAnimation;
+
+private:
+  void drawAudioWave(QPainter &p, const QSize &size, double scale);
 };
 
 #endif // UI_HPP

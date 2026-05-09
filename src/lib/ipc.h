@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QString>
 #include <QDebug>
+#include <QVector>
 
 class IPCServer : public QObject {
   Q_OBJECT
@@ -21,6 +22,7 @@ public:
 signals:
   void toggleRequested();
   void quitRequested();
+  void audioLevelUpdated(const QVector<double> &levels);
 
 private:
   void onNewConnection();
@@ -37,6 +39,7 @@ public:
 
   bool sendToggle();
   bool sendQuit();
+  bool sendAudioLevels(const QVector<double> &levels);
 
 private:
   QString m_serverName;

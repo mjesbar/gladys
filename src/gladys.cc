@@ -45,6 +45,9 @@ int main(int argc, char *argv[]) {
     window.toggleVisibility();
   });
 
+  QObject::connect(&server, &IPCServer::audioLevelUpdated, &window,
+                   &UI::updateAudioLevels);
+
   // When quit requested, use ProcessManager to close both
   QObject::connect(&window, &UI::quitRequested, [&]() {
     fprintf(stderr, "Gladys: Quit requested, closing.\n");
@@ -54,10 +57,7 @@ int main(int argc, char *argv[]) {
 
   QScreen *screen = QApplication::primaryScreen();
   if (screen) {
-    QRect rect = screen->availableGeometry();
-    int x = rect.left() + (rect.width() - window.width()) / 2;
-    int y = 10;
-    window.setGeometry(x, y, window.width(), window.height());
+    window.move(960 - window.width() / 2, 10);
     window.setWindowOpacity(0.0);
   }
 

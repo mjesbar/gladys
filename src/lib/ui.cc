@@ -9,22 +9,28 @@
 #include <QPoint>
 #include <QRegion>
 #include <QScreen>
+#include <QTimer>
+#include <cmath>
 
 #include <QAction>
 #include <QIcon>
 #include <QMenu>
 #include <X11/Xlib.h> // just to remove the shadow
 
-#include "ipc.h"
+static const int WAVE_BAR_COUNT = 30;
+static const int WAVE_BAR_WIDTH = 2;
+static const int WAVE_BAR_SPACING = 3;
+static const int WAVE_TOTAL_WIDTH =
+    WAVE_BAR_COUNT * WAVE_BAR_WIDTH + (WAVE_BAR_COUNT - 1) * WAVE_BAR_SPACING;
 
-static const QSize PROMINENT_SIZE = QSize(48, 48);
-static const QSize SUBTLE_SIZE = QSize(24, 24);
+static const QSize PROMINENT_SIZE = QSize(WAVE_TOTAL_WIDTH, 48);
+static const QSize SUBTLE_SIZE = QSize(WAVE_TOTAL_WIDTH, 48);
 
 static const qreal PROMINENT_OPACITY = 1.0;
 static const qreal SUBTLE_OPACITY = 0.0;
 
-static const QPoint PROMINENT_POS = QPoint(936, 72);
-static const QPoint SUBTLE_POS = QPoint(948, 12);
+static const QPoint PROMINENT_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 72);
+static const QPoint SUBTLE_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 12);
 
 UI::UI(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
@@ -40,6 +46,10 @@ UI::UI(QWidget *parent)
                  Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
   setAttribute(Qt::WA_ShowWithoutActivating);
+  setAttribute(Qt::WA_NoSystemBackground);
+  setAttribute(Qt::WA_OpaquePaintEvent, false);
+  setAutoFillBackground(false);
+  setStyleSheet("*{border:none;background:transparent;}");
   // Hint for some X11 window managers
   setProperty("_kde_no_shadows", true);
   setProperty("_KDE_NET_WM_SHADOW", false);
@@ -56,16 +66,26 @@ UI::UI(QWidget *parent)
           &UI::onTrayIconActivated);
   m_trayIcon->show();
 
-  m_positionAnimation->setDuration(500);
-  m_positionAnimation->setEasingCurve(QEasingCurve::InOutBack);
+  m_positionAnimation->setDuration(300);
+  m_positionAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-  m_opacityAnimation->setDuration(500);
-  m_opacityAnimation->setEasingCurve(QEasingCurve::InOutBack);
+  m_opacityAnimation->setDuration(300);
+  m_opacityAnimation->setEasingCurve(QEasingCurve::InOutQuad);
   connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
           &UI::handleOpacityAnimationFinished);
 
-  m_sizeAnimation->setDuration(500);
-  m_sizeAnimation->setEasingCurve(QEasingCurve::InOutBack);
+  m_scaleAnimation = new QVariantAnimation(this);
+  m_scaleAnimation->setDuration(300);
+  m_scaleAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+  connect(m_scaleAnimation, &QVariantAnimation::valueChanged, this,
+          [this](const QVariant &) { update(); });
+  connect(m_scaleAnimation, &QVariantAnimation::finished, this,
+          [this]() {
+            if (!m_isProminent) {
+              m_audioLevels.clear();
+            }
+            update();
+          });
 }
 
 UI::~UI() {
@@ -84,42 +104,44 @@ void UI::removeShadow() {
 void UI::toggleVisibility() {
   if (m_positionAnimation->state() == QPropertyAnimation::Running ||
       m_opacityAnimation->state() == QPropertyAnimation::Running ||
-      m_sizeAnimation->state() == QPropertyAnimation::Running) {
+      m_scaleAnimation->state() == QVariantAnimation::Running) {
     return;
   }
 
   QPoint startPos = pos();
   QPoint endPos;
-
-  QSize startSize = size();
-  QSize endSize;
-
   qreal startOpacity;
   qreal endOpacity;
+  double startScale;
+  double endScale;
 
   if (m_isProminent) {
+    // Collapsing
     endPos = SUBTLE_POS;
-    endSize = SUBTLE_SIZE;
     startOpacity = PROMINENT_OPACITY;
     endOpacity = SUBTLE_OPACITY;
+    startScale = 1.0;
+    endScale = 0.5;
   } else {
+    // Prominent
     endPos = PROMINENT_POS;
-    endSize = PROMINENT_SIZE;
     startOpacity = SUBTLE_OPACITY;
     endOpacity = PROMINENT_OPACITY;
+    startScale = 0.5;
+    endScale = 1.0;
   }
 
   m_positionAnimation->setStartValue(startPos);
   m_positionAnimation->setEndValue(endPos);
   m_positionAnimation->start();
 
-  m_sizeAnimation->setStartValue(startSize);
-  m_sizeAnimation->setEndValue(endSize);
-  m_sizeAnimation->start();
-
   m_opacityAnimation->setStartValue(startOpacity);
   m_opacityAnimation->setEndValue(endOpacity);
   m_opacityAnimation->start();
+
+  m_scaleAnimation->setStartValue(startScale);
+  m_scaleAnimation->setEndValue(endScale);
+  m_scaleAnimation->start();
 
   m_isProminent = !m_isProminent;
 }
@@ -129,8 +151,7 @@ void UI::handleOpacityAnimationFinished() {
   }
 }
 
-void UI::onTrayIconActivated(
-    QSystemTrayIcon::ActivationReason reason) {
+void UI::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
   if (reason == QSystemTrayIcon::Trigger) {
     toggleVisibility();
   }
@@ -146,24 +167,89 @@ void UI::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
-  p.setCompositionMode(QPainter::CompositionMode_Source);
+  // Fill entire widget with transparent to prevent borders showing
   p.fillRect(rect(), Qt::transparent);
-  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+  static const int MIC_SIZE_FULL = 36;
+  static const int CIRCLE_SIZE_FULL = 48;
+
+  double scale = m_scaleAnimation ? m_scaleAnimation->currentValue().toDouble() : 1.0;
+  int micSize = static_cast<int>(MIC_SIZE_FULL * scale);
+  int circleSize = static_cast<int>(CIRCLE_SIZE_FULL * scale);
+
+  // Draw wave bars during animation or when fully prominent
+  if (!m_audioLevels.isEmpty() && (m_scaleAnimation->state() == QVariantAnimation::Running || scale >= 1.0)) {
+    drawAudioWave(p, QSize(width(), height()), scale);
+  }
 
   p.setBrush(Qt::white);
   p.setPen(Qt::NoPen);
 
-  int currentCircleSize = width();
-  int offset = (width() - currentCircleSize) / 2;
-  p.drawEllipse(offset, offset, currentCircleSize, currentCircleSize);
+  int xCircle = (width() - circleSize) / 2;
+  int yCircle = (height() - circleSize) / 2;
+  p.drawEllipse(xCircle, yCircle, circleSize, circleSize);
 
   QImage image("icons/mic-light.png");
   if (!image.isNull()) {
     QPixmap pix = QPixmap::fromImage(
-        image.scaled(currentCircleSize * 32 / 48, currentCircleSize * 32 / 48,
-                     Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        image.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     int x = (width() - pix.width()) / 2;
     int y = (height() - pix.height()) / 2;
     p.drawPixmap(x, y, pix);
+  }
+
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+}
+
+void UI::updateAudioLevels(const QVector<double> &levels) {
+  m_audioLevels = levels;
+  update();
+}
+
+void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
+  if (m_audioLevels.isEmpty()) {
+    return;
+  }
+
+  int centerX = size.width() / 2;
+  int centerY = size.height() / 2;
+  int maxBarHeight = static_cast<int>(48 * scale);
+  int minBarHeight = static_cast<int>(5 * scale);
+  int edgeMinHeight = static_cast<int>(2 * scale);
+  int edgeMaxHeight = static_cast<int>(20 * scale);
+  int centerMinHeight = static_cast<int>(10 * scale);
+  int centerMaxHeight = static_cast<int>(48 * scale);
+
+  int startX = centerX - WAVE_TOTAL_WIDTH / 2;
+
+  p.setOpacity(scale);
+  p.setBrush(QColor(173, 216, 230)); // Light blue
+  p.setPen(Qt::NoPen);
+
+  for (int i = 0; i < WAVE_BAR_COUNT; ++i) {
+    // Map each bar to a fixed position in the buffer (waveform pattern)
+    int levelIndex = i * m_audioLevels.size() / WAVE_BAR_COUNT;
+    double level =
+        (levelIndex < m_audioLevels.size()) ? m_audioLevels[levelIndex] : 0.0;
+    double normalizedLevel = qBound(0.0, level, 1.0);
+
+    // Bell curve: 0.0 at edges, 1.0 at center
+    double position = static_cast<double>(i) / (WAVE_BAR_COUNT - 1);
+    double distanceFromCenter = std::abs(position - 0.5) * 2.0;
+    double bellCurve = 1.0 - std::pow(distanceFromCenter, 1.5);
+
+    // Base height: edge 2-20px, center 10-48px (bell curve with audio interpolation)
+    int baseMinHeight = static_cast<int>(edgeMinHeight + bellCurve * (centerMinHeight - edgeMinHeight));
+    int baseMaxHeight = static_cast<int>(edgeMaxHeight + bellCurve * (centerMaxHeight - edgeMaxHeight));
+
+    // Use individual level for each bar + bell curve modulation
+    double easedLevel = normalizedLevel * normalizedLevel; // easeIn quad
+    int barHeight = static_cast<int>(baseMinHeight + easedLevel * (baseMaxHeight - baseMinHeight));
+
+    int x = startX + i * (WAVE_BAR_WIDTH + WAVE_BAR_SPACING);
+    int yTop = centerY - barHeight / 2;
+
+    p.drawRoundedRect(x, yTop, WAVE_BAR_WIDTH, barHeight, WAVE_BAR_WIDTH / 2,
+                       WAVE_BAR_WIDTH / 2);
   }
 }

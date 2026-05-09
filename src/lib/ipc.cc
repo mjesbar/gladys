@@ -29,6 +29,15 @@ void IPCServer::onNewConnection() {
               emit toggleRequested();
             } else if (data == "quit") {
               emit quitRequested();
+            } else if (data.startsWith("levels:")) {
+              QStringList parts = QString::fromUtf8(data).split(':');
+              if (parts.size() == 2) {
+                QVector<double> levels;
+                for (const QString &s : parts[1].split(',')) {
+                  levels.append(s.toDouble());
+                }
+                emit audioLevelUpdated(levels);
+              }
             }
             clientConnection->disconnectFromServer();
           });
@@ -59,6 +68,23 @@ bool IPCClient::sendQuit() {
     return false;
   }
   socket.write("quit");
+  socket.waitForBytesWritten(1000);
+  socket.disconnectFromServer();
+  return true;
+}
+
+bool IPCClient::sendAudioLevels(const QVector<double> &levels) {
+  QLocalSocket socket;
+  socket.connectToServer(m_serverName);
+  if (!socket.waitForConnected(200)) {
+    return false;
+  }
+  QStringList levelStrings;
+  for (double level : levels) {
+    levelStrings.append(QString::number(level));
+  }
+  QString msg = "levels:" + levelStrings.join(",");
+  socket.write(msg.toUtf8());
   socket.waitForBytesWritten(1000);
   socket.disconnectFromServer();
   return true;

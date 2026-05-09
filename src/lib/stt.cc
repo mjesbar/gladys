@@ -1,5 +1,6 @@
 #include "stt.h"
 #include "keytype.h"
+#include <cmath>
 #include <cstring> // For memset
 #include <iostream>
 #include <vector>
@@ -17,12 +18,21 @@ std::string STT::m_decoder_path;
 std::string STT::m_joiner_path;
 std::string STT::m_tokens_path;
 bool STT::m_is_audio_context_initialized = false;
+QVector<double> STT::m_audio_levels;
+QVector<double> STT::m_audio_levels_prev;
+double STT::m_audio_levels_center = 0.0;
+
+STT::STT(QObject *parent) : QObject(parent) {}
 
 STT *STT::instance() {
   if (!m_instance) {
     m_instance = new STT();
   }
   return m_instance;
+}
+
+QVector<double> STT::getAudioLevels() {
+  return m_audio_levels;
 }
 
 STT::~STT() {
@@ -198,27 +208,48 @@ void STT::stop() {
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                        ma_uint32 frameCount) {
-  // Cast pUserData back to STT instance
+                         ma_uint32 frameCount) {
   STT *stt_instance = static_cast<STT *>(pDevice->pUserData);
 
   if (stt_instance == nullptr || stt_instance->m_recognizer == nullptr ||
       stt_instance->m_stream == nullptr) {
-    return; // Not initialized or started yet
+    return;
   }
 
-  // Feed audio to sherpa-onnx
-  // Assuming 16-bit signed integer samples, convert to float
   std::vector<float> float_samples(frameCount);
   const int16_t *pcm_samples = static_cast<const int16_t *>(pInput);
+
   for (ma_uint32 i = 0; i < frameCount; ++i) {
     float_samples[i] = static_cast<float>(pcm_samples[i]) / 32768.0f;
   }
+
+  // Compute audio level for visualization
+  int samplesPerBar = frameCount / 30;
+  if (samplesPerBar < 1) samplesPerBar = 1;
+
+  m_audio_levels.clear();
+  for (int i = 0; i < 30; ++i) {
+    int sampleIdx = i * samplesPerBar;
+    if (sampleIdx >= static_cast<int>(frameCount)) sampleIdx = frameCount - 1;
+    float sample = std::abs(pcm_samples[sampleIdx]) / 32768.0f;
+    double level = qMin(1.0, sample * 15.0);
+    m_audio_levels.append(level);
+  }
+
+  // Smooth the buffer for less jitter
+  if (m_audio_levels.size() == 30 && m_audio_levels_prev.size() == 30) {
+    for (int i = 0; i < 30; ++i) {
+      m_audio_levels[i] = m_audio_levels_prev[i] * 0.7 + m_audio_levels[i] * 0.3;
+    }
+  }
+  m_audio_levels_prev = m_audio_levels;
+
+  emit stt_instance->audioLevelUpdated(m_audio_levels);
+
   SherpaOnnxOnlineStreamAcceptWaveform(stt_instance->m_stream,
                                        stt_instance->m_audio_config.sampleRate,
                                        float_samples.data(), frameCount);
 
-  // Decode and get results
   if (SherpaOnnxIsOnlineStreamReady(stt_instance->m_recognizer,
                                     stt_instance->m_stream)) {
     SherpaOnnxDecodeOnlineStream(stt_instance->m_recognizer,
