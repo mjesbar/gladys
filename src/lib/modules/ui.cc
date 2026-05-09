@@ -17,9 +17,9 @@
 #include <QMenu>
 #include <X11/Xlib.h> // just to remove the shadow
 
-static const int WAVE_BAR_COUNT = 30;
-static const int WAVE_BAR_WIDTH = 2;
-static const int WAVE_BAR_SPACING = 3;
+static const int WAVE_BAR_COUNT = 20;
+static const int WAVE_BAR_WIDTH = 5;
+static const int WAVE_BAR_SPACING = 1;
 static const int WAVE_TOTAL_WIDTH =
     WAVE_BAR_COUNT * WAVE_BAR_WIDTH + (WAVE_BAR_COUNT - 1) * WAVE_BAR_SPACING;
 
@@ -79,18 +79,18 @@ UI::UI(QWidget *parent)
   m_scaleAnimation->setEasingCurve(QEasingCurve::InOutQuad);
   connect(m_scaleAnimation, &QVariantAnimation::valueChanged, this,
           [this](const QVariant &) { update(); });
-  connect(m_scaleAnimation, &QVariantAnimation::finished, this,
-          [this]() {
-            if (!m_isProminent) {
-              m_audioLevels.clear();
-            }
-            update();
-          });
+  connect(m_scaleAnimation, &QVariantAnimation::finished, this, [this]() {
+    if (!m_isProminent) {
+      m_audioLevels.clear();
+    }
+    update();
+  });
 
   // Pre-load and cache microphone icon to avoid disk I/O on every paint
   QImage image("icons/mic-light.png");
   if (!image.isNull()) {
-    m_micPixmap = QPixmap::fromImage(image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_micPixmap = QPixmap::fromImage(
+        image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
   }
 }
 
@@ -179,12 +179,15 @@ void UI::paintEvent(QPaintEvent *event) {
   static const int MIC_SIZE_FULL = 36;
   static const int CIRCLE_SIZE_FULL = 48;
 
-  double scale = m_scaleAnimation ? m_scaleAnimation->currentValue().toDouble() : 1.0;
+  double scale =
+      m_scaleAnimation ? m_scaleAnimation->currentValue().toDouble() : 1.0;
   int micSize = static_cast<int>(MIC_SIZE_FULL * scale);
   int circleSize = static_cast<int>(CIRCLE_SIZE_FULL * scale);
 
   // Draw wave bars during animation or when fully prominent
-  if (!m_audioLevels.isEmpty() && (m_scaleAnimation->state() == QVariantAnimation::Running || scale >= 1.0)) {
+  if (!m_audioLevels.isEmpty() &&
+      (m_scaleAnimation->state() == QVariantAnimation::Running ||
+       scale >= 1.0)) {
     drawAudioWave(p, QSize(width(), height()), scale);
   }
 
@@ -197,7 +200,8 @@ void UI::paintEvent(QPaintEvent *event) {
 
   // Use cached pixmap (scaled to current size)
   if (!m_micPixmap.isNull()) {
-    QPixmap scaledPix = m_micPixmap.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap scaledPix = m_micPixmap.scaled(
+        micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     int x = (width() - scaledPix.width()) / 2;
     int y = (height() - scaledPix.height()) / 2;
     p.drawPixmap(x, y, scaledPix);
@@ -243,19 +247,23 @@ void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
     double distanceFromCenter = std::abs(position - 0.5) * 2.0;
     double bellCurve = 1.0 - std::pow(distanceFromCenter, 1.5);
 
-    // Base height: edge 2-20px, center 10-48px (bell curve with audio interpolation)
-    int baseMinHeight = static_cast<int>(edgeMinHeight + bellCurve * (centerMinHeight - edgeMinHeight));
-    int baseMaxHeight = static_cast<int>(edgeMaxHeight + bellCurve * (centerMaxHeight - edgeMaxHeight));
+    // Base height: edge 2-20px, center 10-48px (bell curve with audio
+    // interpolation)
+    int baseMinHeight = static_cast<int>(
+        edgeMinHeight + bellCurve * (centerMinHeight - edgeMinHeight));
+    int baseMaxHeight = static_cast<int>(
+        edgeMaxHeight + bellCurve * (centerMaxHeight - edgeMaxHeight));
 
     // Use individual level for each bar + bell curve modulation
     double easedLevel = normalizedLevel * normalizedLevel; // easeIn quad
-    int barHeight = static_cast<int>(baseMinHeight + easedLevel * (baseMaxHeight - baseMinHeight));
+    int barHeight = static_cast<int>(
+        baseMinHeight + easedLevel * (baseMaxHeight - baseMinHeight));
 
     int x = startX + i * (WAVE_BAR_WIDTH + WAVE_BAR_SPACING);
     int yTop = centerY - barHeight / 2;
 
     p.drawRoundedRect(x, yTop, WAVE_BAR_WIDTH, barHeight,
-                   static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0,
-                   static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0);
+                      static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0,
+                      static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0);
   }
 }
