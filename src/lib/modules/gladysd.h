@@ -16,6 +16,7 @@
 class KeyGrab;
 class KeyType;
 class STT;
+class LLM;
 
 class Gladysd : public QObject {
   Q_OBJECT
@@ -32,6 +33,7 @@ public:
   KeyGrab *keyGrab() { return m_keyGrab; }
   KeyType *keyType() { return m_keyType; }
   STT *stt() { return m_stt; }
+  LLM *llm() { return m_llm; }
   IPCServer *ipcServer() { return m_ipcServer; }
 
 signals:
@@ -64,6 +66,8 @@ private:
   // STT Module
   QThread *m_sttThread;
   STT *m_stt;
+  // LLM Module
+  LLM *m_llm;
   // KeyType Module
   KeyType *m_keyType;
 };

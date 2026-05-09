@@ -45,6 +45,7 @@ set(GLADYS_SOURCES
   src/lib/modules/gladysd.cc
   src/lib/modules/ipc.cc
   src/lib/modules/stt.cc
+  src/lib/modules/llm.cc
   src/lib/modules/keygrab.cc
   src/lib/modules/keytype.cc
   src/lib/modules/ui.cc

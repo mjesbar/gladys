@@ -1,5 +1,6 @@
 #include "gladysd.h"
 #include "stt.h"
+#include "llm.h"
 #include "keytype.h"
 #include "keygrab.h"
 #include <X11/Xlib.h>
@@ -16,7 +17,7 @@ Gladysd *Gladysd::instance() {
   return s_instance;
 }
 
-Gladysd::Gladysd(QObject *parent) : QObject(parent), m_ydotoolPid(0), m_ydotoolProcess(nullptr), m_ydotoolTimer(new QTimer(this)), m_ipcServer(nullptr), m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr), m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr), m_stt(nullptr), m_keyType(nullptr) {
+Gladysd::Gladysd(QObject *parent) : QObject(parent), m_ydotoolPid(0), m_ydotoolProcess(nullptr), m_ydotoolTimer(new QTimer(this)), m_ipcServer(nullptr), m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr), m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr), m_stt(nullptr), m_llm(nullptr), m_keyType(nullptr) {
 
   connect(m_ydotoolTimer, &QTimer::timeout, this, [this]() {
     if (m_ydotoolPid > 0 && kill(m_ydotoolPid, 0) != 0) {
@@ -53,6 +54,12 @@ bool Gladysd::init() {
       "./bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
   if (!STT::load(model_path)) {
     fprintf(stderr, "Gladysd: Failed to load STT model.\n");
+    return false;
+  }
+
+  m_llm = LLM::instance();
+  if (!LLM::start()) {
+    fprintf(stderr, "Gladysd: Failed to start LLM server.\n");
     return false;
   }
 
@@ -139,6 +146,8 @@ void Gladysd::setupConnections() {
 
 void Gladysd::shutdown() {
   fprintf(stderr, "Gladysd: Shutting down...\n");
+
+  LLM::stop();
 
   if (m_sttThread) {
     m_sttThread->quit();
