@@ -20,5 +20,5 @@ color: success
 
 Focus on:
 
-- Code Quality, Scalabity & Usability over Quantity
-- Code quality and best practices
+- The strong use of RULES.md.
+- Code Quality, Scalabity & Usability over Quantity.
