@@ -259,7 +259,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                                         stt_instance->m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Transcription: " << result->text << std::endl;
-      KeyType::instance()->push(QString::fromUtf8(result->text));
+      emit m_instance->textReceived(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
   }

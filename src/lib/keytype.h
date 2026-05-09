@@ -12,7 +12,6 @@ class KeyType : public QObject {
 public:
   static KeyType *instance();
   void reset();
-
   void push(const QString &chunk);
 
 private:
@@ -22,6 +21,8 @@ private:
   void processQueue();
   QString extractNewChunk(const QString &newText);
   QString normalizeText(const QString &text);
+  void runTyping(const QString &chunk);
+  void checkTypingDone();
 
   static KeyType *s_instance;
 

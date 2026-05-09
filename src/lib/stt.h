@@ -47,6 +47,7 @@ private:
 
 signals:
   void audioLevelUpdated(const QVector<double> &levels);
+  void textReceived(const QString &text);
 };
 
 #endif // STT_H

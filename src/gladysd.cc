@@ -1,11 +1,13 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QSocketNotifier>
+#include <QThread>
 #include <QTimer>
 #include <X11/Xlib.h>
 
 #include "lib/ipc.h"
 #include "lib/keygrab.h"
+#include "lib/keytype.h"
 #include "lib/pm.h"
 #include "lib/stt.h"
 
@@ -26,21 +28,34 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  KeyGrab keyGrab;
   Display *display = XOpenDisplay(NULL);
   if (!display) {
     fprintf(stderr, "Daemon: Unable to open X display\n");
     return 1;
   }
 
+  // KeyGrab stays in main thread (X11 is not thread-safe)
+  KeyGrab keyGrab;
   if (!keyGrab.init(display)) {
     return 1;
   }
 
   fprintf(stderr, "Daemon: Listening for Ctrl+Alt+P...\n");
 
+  // Poll X11 events in main thread using QSocketNotifier
+  int x11_fd = ConnectionNumber(display);
+  QSocketNotifier *notifier = new QSocketNotifier(x11_fd, QSocketNotifier::Read, &app);
+  QObject::connect(notifier, &QSocketNotifier::activated, [&keyGrab]() {
+    keyGrab.processEvents();
+  });
+
   pm->launchWindowApp();
   pm->launchYdotool();
+
+  // === STT runs in its own thread ===
+  QThread *sttThread = new QThread();
+  STT::instance()->moveToThread(sttThread);
+  sttThread->start();
 
   // If window app exits, close daemon
   QObject::connect(pm, &ProcessManager::windowAppExited, [&]() {
@@ -54,17 +69,10 @@ int main(int argc, char *argv[]) {
     app.quit();
   });
 
-  int x11_fd = ConnectionNumber(display);
-  QSocketNotifier *notifier =
-      new QSocketNotifier(x11_fd, QSocketNotifier::Read, &app);
-
-  QObject::connect(notifier, &QSocketNotifier::activated,
-                   [&keyGrab]() { keyGrab.processEvents(); });
-
+  // Handle key press - runs in main thread but calls thread-safe STT methods
+  static bool stt_running = false;
   QObject::connect(&keyGrab, &KeyGrab::keyPressed, [&]() {
     fprintf(stderr, "Daemon: Ctrl+Alt+P detected!\n");
-
-    static bool stt_running = false;
 
     if (stt_running) {
       STT::stop();
@@ -83,9 +91,23 @@ int main(int argc, char *argv[]) {
     }
   });
 
+  // Forward STT audio levels to IPC
   QObject::connect(STT::instance(), &STT::audioLevelUpdated, [&]() {
     IPCClient client("gladys-ipc-server");
     client.sendAudioLevels(STT::getAudioLevels());
+  });
+
+  // Handle transcription in main thread via queued connection
+  QObject::connect(STT::instance(), &STT::textReceived, [](const QString &text) {
+    KeyType::instance()->push(text);
+  });
+
+  // Cleanup threads on quit
+  QObject::connect(&app, &QCoreApplication::aboutToQuit, [&]() {
+    fprintf(stderr, "Daemon: Cleaning up threads...\n");
+    sttThread->quit();
+    sttThread->wait();
+    XCloseDisplay(display);
   });
 
   return app.exec();

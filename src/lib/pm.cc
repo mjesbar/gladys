@@ -87,12 +87,14 @@ qint64 ProcessManager::otherPid() const {
   return (m_role == RoleDaemon) ? m_windowAppPid : m_daemonPid;
 }
 
-void ProcessManager::launchProcess(const QString &program, qint64 &pid, qint64 otherPid) {
+void ProcessManager::launchProcess(const QString &program, qint64 &pid,
+                                    qint64 otherPid) {
   QProcess *proc = new QProcess();
+
+  // Setup process environment
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("QT_QPA_PLATFORM", "xcb");
 
-  // Pass other process PID via environment
   if (otherPid > 0) {
     if (program.contains("gladys") && !program.contains("d")) {
       env.insert("GLADYSD_PID", QString::number(otherPid));
@@ -145,6 +147,7 @@ void ProcessManager::close() {
   killProcess(m_windowAppPid);
   killProcess(m_daemonPid);
   killProcess(m_ydotoolPid);
+
   m_windowAppTimer->stop();
   m_daemonTimer->stop();
   m_ydotoolTimer->stop();

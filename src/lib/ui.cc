@@ -249,7 +249,8 @@ void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
     int x = startX + i * (WAVE_BAR_WIDTH + WAVE_BAR_SPACING);
     int yTop = centerY - barHeight / 2;
 
-    p.drawRoundedRect(x, yTop, WAVE_BAR_WIDTH, barHeight, WAVE_BAR_WIDTH / 2,
-                       WAVE_BAR_WIDTH / 2);
+    p.drawRoundedRect(x, yTop, WAVE_BAR_WIDTH, barHeight,
+                   static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0,
+                   static_cast<qreal>(WAVE_BAR_WIDTH) / 2.0);
   }
 }

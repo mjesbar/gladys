@@ -1,9 +1,11 @@
 #include "keytype.h"
 
+#include <QCoreApplication>
+#include <QEventLoop>
+
 KeyType *KeyType::s_instance = nullptr;
 
-KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false) {
-  m_process = new QProcess(this);
+KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false), m_process(nullptr) {
 }
 
 void KeyType::reset() {
@@ -93,6 +95,28 @@ void KeyType::push(const QString &chunk) {
   processQueue();
 }
 
+void KeyType::runTyping(const QString &chunk) {
+  // Store the process to check later
+  if (m_process) {
+    delete m_process;
+  }
+  m_process = new QProcess();
+  m_process->setProgram("./bin/ydotool/ydotool");
+  m_process->setArguments({"type", chunk});
+
+  fprintf(stderr, "KeyType: Running typing: '%s'\n", qPrintable(chunk));
+  m_process->start();
+
+  // Process events while waiting (non-blocking)
+  while (m_process->state() == QProcess::Running) {
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  }
+
+  fprintf(stderr, "KeyType: Process finished\n");
+  m_processing = false;
+  processQueue();
+}
+
 void KeyType::processQueue() {
   if (m_processing || m_queue.isEmpty()) {
     return;
@@ -101,19 +125,5 @@ void KeyType::processQueue() {
   m_processing = true;
 
   QString chunk = m_queue.dequeue();
-  QString program = "./bin/ydotool/ydotool";
-  QStringList args = {"type", chunk};
-
-  m_process->setProgram(program);
-  m_process->setArguments(args);
-
-  QObject::connect(
-      m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-      this, [this](int, QProcess::ExitStatus) {
-        m_processing = false;
-        processQueue();
-      });
-
-  m_process->start();
-  m_process->waitForFinished(-1);
+  runTyping(chunk);
 }
