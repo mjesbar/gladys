@@ -47,13 +47,6 @@ int main(int argc, char *argv[]) {
     app.quit();
   });
 
-  // Connect gladysd ydotoold exit signal
-  QObject::connect(gladysd, &Gladysd::ydotoolExited, [&]() {
-    fprintf(stderr, "Gladys: ydotoold exited, closing.\n");
-    gladysd->shutdown();
-    app.quit();
-  });
-
   // Position window
   QScreen *screen = QApplication::primaryScreen();
   if (screen) {

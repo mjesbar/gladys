@@ -1,11 +1,116 @@
+// KeyType Module - Keyboard typing via clipboard paste.
+
 #include "keytype.h"
 
 #include <QCoreApplication>
 #include <QEventLoop>
+#include <QProcess>
 
 KeyType *KeyType::s_instance = nullptr;
 
-KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false), m_process(nullptr) {
+KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false), m_fd(-1) {
+  initUinput();
+}
+
+KeyType::~KeyType() {
+  closeUinput();
+}
+
+bool KeyType::initUinput() {
+  m_fd = open("/dev/uinput", O_WRONLY);
+  if (m_fd < 0) {
+    m_fd = open("/dev/input/uinput", O_WRONLY);
+    if (m_fd < 0) {
+      fprintf(stderr, "KeyType: Failed to open uinput: %s\n", strerror(errno));
+      return false;
+    }
+  }
+
+  ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
+  ioctl(m_fd, UI_SET_EVBIT, EV_SYN);
+
+  for (int i = 0; i < KEY_CNT; ++i) {
+    ioctl(m_fd, UI_SET_KEYBIT, i);
+  }
+
+  struct uinput_setup usetup = {};
+  usetup.id.bustype = BUS_USB;
+  usetup.id.vendor = 0x1234;
+  usetup.id.product = 0x5678;
+  strncpy(usetup.name, "Gladys Virtual Keyboard", UINPUT_MAX_NAME_SIZE - 1);
+  ioctl(m_fd, UI_DEV_SETUP, &usetup);
+
+  if (ioctl(m_fd, UI_DEV_CREATE) < 0) {
+    fprintf(stderr, "KeyType: Failed to create uinput: %s\n", strerror(errno));
+    close(m_fd);
+    m_fd = -1;
+    return false;
+  }
+
+  fprintf(stderr, "KeyType: uinput initialized\n");
+  return true;
+}
+
+void KeyType::closeUinput() {
+  if (m_fd >= 0) {
+    ioctl(m_fd, UI_DEV_DESTROY);
+    close(m_fd);
+    m_fd = -1;
+  }
+}
+
+void KeyType::sendKey(unsigned int code, bool press) {
+  if (m_fd < 0) return;
+
+  struct input_event ev = {};
+  ev.type = EV_KEY;
+  ev.code = code;
+  ev.value = press ? 1 : 0;
+  write(m_fd, &ev, sizeof(ev));
+
+  ev.type = EV_SYN;
+  ev.code = SYN_REPORT;
+  ev.value = 0;
+  write(m_fd, &ev, sizeof(ev));
+}
+
+void KeyType::copyToClipboard(const QString &text) {
+  QProcess *proc = new QProcess();
+  proc->setProgram("wl-copy");
+  proc->setArguments({text});
+  proc->start();
+  proc->waitForFinished(1000);
+  proc->deleteLater();
+}
+
+void KeyType::paste() {
+  // Ctrl+Shift+V (paste without formatting)
+  sendKey(KEY_LEFTSHIFT, true);
+  sendKey(KEY_LEFTCTRL, true);
+  usleep(10000);
+  sendKey(KEY_V, true);
+  usleep(10000);
+  sendKey(KEY_V, false);
+  usleep(10000);
+  sendKey(KEY_LEFTCTRL, false);
+  sendKey(KEY_LEFTSHIFT, false);
+
+  // Sync
+  struct input_event ev = {};
+  ev.type = EV_SYN;
+  ev.code = SYN_REPORT;
+  ev.value = 0;
+  write(m_fd, &ev, sizeof(ev));
+}
+
+void KeyType::sendText(const QString &text) {
+  if (m_fd < 0) return;
+
+  copyToClipboard(text);
+  usleep(50000); // 50ms for clipboard
+
+  paste();
+  usleep(100000); // 100ms after paste
 }
 
 void KeyType::reset() {
@@ -44,64 +149,27 @@ QString KeyType::extractNewChunk(const QString &newText) {
   return diff;
 }
 
-QString KeyType::normalizeText(const QString &text) {
-  QString result = text;
-
-  // Spanish accented characters
-  result.replace("á", "a");
-  result.replace("é", "e");
-  result.replace("í", "i");
-  result.replace("ó", "o");
-  result.replace("ú", "u");
-  result.replace("Á", "A");
-  result.replace("É", "E");
-  result.replace("Í", "I");
-  result.replace("Ó", "O");
-  result.replace("Ú", "U");
-  // Spanish special chars
-  result.replace("ñ", "n");
-  result.replace("Ñ", "N");
-  result.replace("¿", "");
-  result.replace("¡", "");
-  result.replace("?", "_");
-
-  // Other common
-  result.replace("ü", "u");
-  result.replace("Ü", "U");
-  result.replace("ö", "o");
-  result.replace("Ö", "O");
-  result.replace("ä", "a");
-  result.replace("Ä", "A");
-
-  return result;
-}
-
 void KeyType::push(const QString &chunk) {
   QString newChunk = extractNewChunk(chunk);
   if (newChunk.isEmpty()) {
     return;
   }
-  QString normalized = normalizeText(newChunk);
-  m_queue.enqueue(normalized);
+  m_queue.enqueue(newChunk);
   processQueue();
 }
 
 void KeyType::runTyping(const QString &chunk) {
-  if (m_process) {
-    delete m_process;
-  }
-  m_process = new QProcess();
-  m_process->setProgram("./bin/ydotool/ydotool");
-  m_process->setArguments({"type", chunk});
-
-  fprintf(stderr, "KeyType: Running typing: '%s'\n", qPrintable(chunk));
-  m_process->start();
-
-  while (m_process->state() == QProcess::Running) {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+  if (m_fd < 0) {
+    fprintf(stderr, "KeyType: uinput not initialized\n");
+    m_processing = false;
+    processQueue();
+    return;
   }
 
-  fprintf(stderr, "KeyType: Process finished\n");
+  fprintf(stderr, "KeyType: Typing: '%s'\n", qPrintable(chunk));
+  sendText(chunk);
+  fprintf(stderr, "KeyType: Typing complete\n");
+
   m_processing = false;
   processQueue();
 }

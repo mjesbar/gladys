@@ -1,4 +1,4 @@
-// KeyType Module - Simulated keyboard typing using ydotool.
+// KeyType Module - Keyboard typing via clipboard paste.
 
 #ifndef KEYTYPE_H
 #define KEYTYPE_H
@@ -6,7 +6,10 @@
 #include <QObject>
 #include <QString>
 #include <QQueue>
-#include <QProcess>
+#include <linux/uinput.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 class KeyType : public QObject {
   Q_OBJECT
@@ -18,17 +21,23 @@ public:
 
 private:
   explicit KeyType(QObject *parent = nullptr);
-  ~KeyType() = default;
+  ~KeyType();
+
+  bool initUinput();
+  void closeUinput();
+  void sendKey(unsigned int code, bool press);
+  void copyToClipboard(const QString &text);
+  void paste();
+  void sendText(const QString &text);
 
   void processQueue();
   QString extractNewChunk(const QString &newText);
-  QString normalizeText(const QString &text);
   void runTyping(const QString &chunk);
 
   static KeyType *s_instance;
 
+  int m_fd;
   QQueue<QString> m_queue;
-  QProcess *m_process;
   bool m_processing;
   QString m_lastTyped;
 };

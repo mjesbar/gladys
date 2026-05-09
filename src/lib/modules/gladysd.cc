@@ -17,15 +17,7 @@ Gladysd *Gladysd::instance() {
   return s_instance;
 }
 
-Gladysd::Gladysd(QObject *parent) : QObject(parent), m_ydotoolPid(0), m_ydotoolProcess(nullptr), m_ydotoolTimer(new QTimer(this)), m_ipcServer(nullptr), m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr), m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr), m_stt(nullptr), m_llm(nullptr), m_keyType(nullptr) {
-
-  connect(m_ydotoolTimer, &QTimer::timeout, this, [this]() {
-    if (m_ydotoolPid > 0 && kill(m_ydotoolPid, 0) != 0) {
-      m_ydotoolTimer->stop();
-      fprintf(stderr, "Gladysd: ydotoold exited.\n");
-      emit ydotoolExited();
-    }
-  });
+Gladysd::Gladysd(QObject *parent) : QObject(parent), m_ipcServer(nullptr), m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr), m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr), m_stt(nullptr), m_llm(nullptr), m_keyType(nullptr) {
 
   std::signal(SIGTERM, signalHandler);
   std::signal(SIGINT, signalHandler);
@@ -85,41 +77,13 @@ bool Gladysd::init() {
   m_stt->moveToThread(m_sttThread);
   m_sttThread->start();
 
-  launchYdotool();
   setupConnections();
 
   fprintf(stderr, "Gladysd: Initialized successfully.\n");
   return true;
 }
 
-void Gladysd::launchProcess(const QString &program, qint64 &pid) {
-  QProcess *proc = new QProcess();
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("QT_QPA_PLATFORM", "xcb");
 
-  if (program.contains("ydotoold")) {
-    m_ydotoolProcess = proc;
-  }
-
-  proc->setProcessEnvironment(env);
-  proc->setProgram(program);
-  proc->start();
-  pid = proc->processId();
-  fprintf(stderr, "Gladysd: launched %s (PID %lld).\n",
-          qPrintable(program), (long long)pid);
-}
-
-void Gladysd::killProcess(qint64 pid) {
-  if (pid > 0 && (kill(pid, 0) == 0 || errno == EPERM)) {
-    kill(pid, SIGTERM);
-    fprintf(stderr, "Gladysd: killed PID %lld.\n", (long long)pid);
-  }
-}
-
-void Gladysd::launchYdotool() {
-  launchProcess("bin/ydotool/ydotoold", m_ydotoolPid);
-  m_ydotoolTimer->start(1000);
-}
 
 void Gladysd::setupConnections() {
   connect(m_keyGrab, &KeyGrab::keyPressed, this, [this]() {
@@ -157,11 +121,6 @@ void Gladysd::shutdown() {
   if (m_ipcServer) {
     m_ipcServer->deleteLater();
     m_ipcServer = nullptr;
-  }
-
-  if (m_ydotoolPid > 0) {
-    killProcess(m_ydotoolPid);
-    m_ydotoolTimer->stop();
   }
 
   if (m_display) {

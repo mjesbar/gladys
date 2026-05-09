@@ -4,8 +4,6 @@
 #define GLADYSD_H
 
 #include <QObject>
-#include <QProcess>
-#include <QTimer>
 #include <QThread>
 #include <QString>
 #include <QVector>
@@ -27,9 +25,6 @@ public:
   bool init();
   void shutdown();
 
-  void launchYdotool();
-  qint64 ydotoolPid() const { return m_ydotoolPid; }
-
   KeyGrab *keyGrab() { return m_keyGrab; }
   KeyType *keyType() { return m_keyType; }
   STT *stt() { return m_stt; }
@@ -37,7 +32,6 @@ public:
   IPCServer *ipcServer() { return m_ipcServer; }
 
 signals:
-  void ydotoolExited();
   void toggleRequested();
   void audioLevelUpdated(const QVector<double> &levels);
 
@@ -49,13 +43,7 @@ private:
 
   void setupConnections();
   static void signalHandler(int signum);
-  void launchProcess(const QString &program, qint64 &pid);
-  void killProcess(qint64 pid);
 
-  // Process Management
-  qint64 m_ydotoolPid;
-  QProcess *m_ydotoolProcess;
-  QTimer *m_ydotoolTimer;
   // IPC Module
   IPCServer *m_ipcServer;
   QString m_ipcServerName;
