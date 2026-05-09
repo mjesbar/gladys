@@ -1,7 +1,7 @@
 #include "stt.h"
 #include "keytype.h"
 #include <cmath>
-#include <cstring> // For memset
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -20,7 +20,6 @@ std::string STT::m_tokens_path;
 bool STT::m_is_audio_context_initialized = false;
 QVector<double> STT::m_audio_levels;
 QVector<double> STT::m_audio_levels_prev;
-double STT::m_audio_levels_center = 0.0;
 
 STT::STT(QObject *parent) : QObject(parent) {}
 
@@ -36,7 +35,6 @@ QVector<double> STT::getAudioLevels() {
 }
 
 STT::~STT() {
-  // Cleanup resources if they were initialized
   if (m_recognizer) {
     SherpaOnnxDestroyOnlineRecognizer(m_recognizer);
     m_recognizer = nullptr;
@@ -51,143 +49,116 @@ STT::~STT() {
 }
 
 bool STT::load(const std::string &model_path) {
-  // Use instance() to ensure singleton is created
   instance();
 
-  std::cout << "SST: Loading STT model from: " << model_path << std::endl;
+  std::cout << "STT: Loading model from: " << model_path << std::endl;
 
-  // Sherpa-ONNX model loading
   SherpaOnnxOnlineRecognizerConfig config;
   memset(&config, 0, sizeof(config));
 
-  // Assuming a streaming zipformer model
   m_encoder_path = model_path + "/encoder.onnx";
   m_decoder_path = model_path + "/decoder.onnx";
   m_joiner_path = model_path + "/joiner.onnx";
   m_tokens_path = model_path + "/tokens.txt";
 
-  std::cout << "SST: Verifying model files:" << std::endl;
   if (!SherpaOnnxFileExists(m_encoder_path.c_str())) {
-    std::cerr << "SST: Encoder model not found: " << m_encoder_path
-              << std::endl;
+    std::cerr << "STT: Encoder model not found: " << m_encoder_path << std::endl;
     return false;
   }
-  std::cout << "SST: Encoder: " << m_encoder_path << std::endl;
-
   if (!SherpaOnnxFileExists(m_decoder_path.c_str())) {
-    std::cerr << "SST: Decoder model not found: " << m_decoder_path
-              << std::endl;
+    std::cerr << "STT: Decoder model not found: " << m_decoder_path << std::endl;
     return false;
   }
-  std::cout << "SST: Decoder: " << m_decoder_path << std::endl;
-
   if (!SherpaOnnxFileExists(m_joiner_path.c_str())) {
-    std::cerr << "SST: Joiner model not found: " << m_joiner_path << std::endl;
+    std::cerr << "STT: Joiner model not found: " << m_joiner_path << std::endl;
     return false;
   }
-  std::cout << "SST: Joiner: " << m_joiner_path << std::endl;
-
   if (!SherpaOnnxFileExists(m_tokens_path.c_str())) {
-    std::cerr << "SST: Tokens file not found: " << m_tokens_path << std::endl;
+    std::cerr << "STT: Tokens file not found: " << m_tokens_path << std::endl;
     return false;
   }
-  std::cout << "SST: Tokens: " << m_tokens_path << std::endl;
 
   config.model_config.transducer.encoder = m_encoder_path.c_str();
   config.model_config.transducer.decoder = m_decoder_path.c_str();
   config.model_config.transducer.joiner = m_joiner_path.c_str();
   config.model_config.tokens = m_tokens_path.c_str();
-
-  config.model_config.num_threads = 1; // Explicitly set number of threads
-
+  config.model_config.num_threads = 1;
   config.model_config.provider = "cpu";
-
   config.decoding_method = "greedy_search";
-  config.feat_config.sample_rate = 16000; // Assuming 16kHz
-  config.feat_config.feature_dim = 80;    // Common value for ASR models
+  config.feat_config.sample_rate = 16000;
+  config.feat_config.feature_dim = 80;
 
-  std::cout << "SST: Calling SherpaOnnxCreateOnlineRecognizer..." << std::endl;
   m_recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
-  std::cout << "SST: SherpaOnnxCreateOnlineRecognizer returned." << std::endl;
-
   if (!m_recognizer) {
-    std::cerr << "SST: Failed to create SherpaOnnxOnlineRecognizer."
-              << std::endl;
+    std::cerr << "STT: Failed to create recognizer." << std::endl;
     return false;
   }
 
-  // MiniAudio initialization
-  ma_result result;
-
-  result = ma_context_init(NULL, 0, NULL, &m_audio_context);
+  ma_result result = ma_context_init(NULL, 0, NULL, &m_audio_context);
   if (result != MA_SUCCESS) {
-    std::cerr << "SST: Failed to initialize miniaudio context." << std::endl;
+    std::cerr << "STT: Failed to initialize miniaudio context." << std::endl;
     return false;
   }
   m_is_audio_context_initialized = true;
 
   m_audio_config = ma_device_config_init(ma_device_type_capture);
-  m_audio_config.capture.format = ma_format_s16; // 16-bit signed integer
-  m_audio_config.capture.channels = 1;           // Mono
-  m_audio_config.sampleRate = 16000;             // 16kHz sample rate
+  m_audio_config.capture.format = ma_format_s16;
+  m_audio_config.capture.channels = 1;
+  m_audio_config.sampleRate = 16000;
   m_audio_config.dataCallback = data_callback;
-  m_audio_config.pUserData =
-      m_instance; // Pass the STT instance to the callback
+  m_audio_config.pUserData = m_instance;
 
   result = ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
   if (result != MA_SUCCESS) {
-    std::cerr << "SST: Failed to initialize miniaudio device." << std::endl;
+    std::cerr << "STT: Failed to initialize miniaudio device." << std::endl;
     ma_context_uninit(&m_audio_context);
     return false;
   }
 
-  std::cout << "SST: Model loaded and audio device initialized." << std::endl;
+  std::cout << "STT: Model loaded and audio device initialized." << std::endl;
   return true;
 }
 
 void STT::start() {
   if (m_instance == nullptr || !m_recognizer) {
-    std::cerr << "SST: Module not loaded. Call load() first." << std::endl;
+    std::cerr << "STT: Module not loaded. Call load() first." << std::endl;
     return;
   }
 
   if (ma_device_is_started(&m_audio_device)) {
-    std::cout << "SST: Audio device already started." << std::endl;
+    std::cout << "STT: Audio device already started." << std::endl;
     return;
   }
 
   ma_result result = ma_device_start(&m_audio_device);
   if (result != MA_SUCCESS) {
-    std::cerr << "SST: Failed to start audio device." << std::endl;
+    std::cerr << "STT: Failed to start audio device." << std::endl;
     return;
   }
 
   m_stream = SherpaOnnxCreateOnlineStream(m_recognizer);
   if (!m_stream) {
-    std::cerr << "SST: Failed to create SherpaOnnxOnlineStream." << std::endl;
+    std::cerr << "STT: Failed to create stream." << std::endl;
     return;
   }
 
-  std::cout << "SST: Audio recording started." << std::endl;
+  std::cout << "STT: Audio recording started." << std::endl;
 }
 
 void STT::stop() {
   if (m_instance == nullptr || !m_recognizer) {
-    std::cerr << "SST: Module not loaded. Call load() first." << std::endl;
     return;
   }
 
   if (!ma_device_is_started(&m_audio_device)) {
-    std::cout << "SST: Audio device already stopped." << std::endl;
     return;
   }
 
   ma_device_stop(&m_audio_device);
-  std::cout << "SST: Audio recording stopped." << std::endl;
+  std::cout << "STT: Audio recording stopped." << std::endl;
 
   if (m_stream) {
-    // Finalize the stream and get any remaining transcription
-    SherpaOnnxOnlineStreamInputFinished(m_stream); // Signal end of input
+    SherpaOnnxOnlineStreamInputFinished(m_stream);
     while (SherpaOnnxIsOnlineStreamReady(m_recognizer, m_stream)) {
       SherpaOnnxDecodeOnlineStream(m_recognizer, m_stream);
     }
@@ -203,12 +174,11 @@ void STT::stop() {
     m_stream = nullptr;
   }
 
-  // Reset KeyType state for fresh session
   KeyType::instance()->reset();
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                         ma_uint32 frameCount) {
+                        ma_uint32 frameCount) {
   STT *stt_instance = static_cast<STT *>(pDevice->pUserData);
 
   if (stt_instance == nullptr || stt_instance->m_recognizer == nullptr ||
@@ -223,7 +193,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
     float_samples[i] = static_cast<float>(pcm_samples[i]) / 32768.0f;
   }
 
-  // Compute audio level for visualization
+  // Audio levels for visualization
   int samplesPerBar = frameCount / 30;
   if (samplesPerBar < 1) samplesPerBar = 1;
 
@@ -236,7 +206,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
     m_audio_levels.append(level);
   }
 
-  // Smooth the buffer for less jitter
+  // Smooth the buffer
   if (m_audio_levels.size() == 30 && m_audio_levels_prev.size() == 30) {
     for (int i = 0; i < 30; ++i) {
       m_audio_levels[i] = m_audio_levels_prev[i] * 0.7 + m_audio_levels[i] * 0.3;

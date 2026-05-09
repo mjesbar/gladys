@@ -22,6 +22,7 @@ add_compile_definitions(MA_DEBUG_OUTPUT)
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/lib
+  ${CMAKE_SOURCE_DIR}/src/lib/modules
   ${CMAKE_SOURCE_DIR}/include/miniaudio
   ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/shared/include
 )
@@ -38,25 +39,18 @@ set(SHERPA_ONNX_LIB_DIR ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/shared/lib)
 # CUDA (optional)
 set(CUDA_LIB_DIR ${CMAKE_SOURCE_DIR}/bin/cuda/cuda-12.4.0/targets/x86_64-linux/lib)
 
-# Source files
+# Source files - all modules in one executable
 set(GLADYS_SOURCES
   src/gladys.cc
-  src/lib/ipc.cc
-  src/lib/pm.cc
-  src/lib/ui.cc
-  src/lib/keytype.cc
+  src/lib/modules/gladysd.cc
+  src/lib/modules/ipc.cc
+  src/lib/modules/stt.cc
+  src/lib/modules/keygrab.cc
+  src/lib/modules/keytype.cc
+  src/lib/modules/ui.cc
 )
 
-set(GLADYSD_SOURCES
-  src/gladysd.cc
-  src/lib/ipc.cc
-  src/lib/pm.cc
-  src/lib/keygrab.cc
-  src/lib/stt.cc
-  src/lib/keytype.cc
-)
-
-# Executable: gladys (GUI)
+# Executable: gladys (single entry point)
 add_executable(gladys ${GLADYS_SOURCES})
 target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(gladys PRIVATE
@@ -67,24 +61,14 @@ target_link_libraries(gladys PRIVATE
   ${X11_LIBRARIES}
 )
 
-# Executable: gladysd (Daemon)
-add_executable(gladysd ${GLADYSD_SOURCES})
-target_include_directories(gladysd PRIVATE ${INCLUDE_DIRS})
-
 # Add stt.cc specific compile definition for MINIAUDIO_IMPLEMENTATION
-set_source_files_properties(src/lib/stt.cc PROPERTIES
+set_source_files_properties(src/lib/modules/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
-)
-
-target_link_libraries(gladysd PRIVATE
-  Qt6::Core
-  Qt6::Network
-  ${X11_LIBRARIES}
 )
 
 # Link sherpa-onnx libraries (custom path)
 if(EXISTS ${SHERPA_ONNX_LIB_DIR})
-  target_link_libraries(gladysd PRIVATE
+  target_link_libraries(gladys PRIVATE
     -L${SHERPA_ONNX_LIB_DIR}
     -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
     -lsherpa-onnx-c-api
@@ -98,7 +82,7 @@ endif()
 
 # Link CUDA if available
 if(EXISTS ${CUDA_LIB_DIR})
-  target_link_libraries(gladysd PRIVATE
+  target_link_libraries(gladys PRIVATE
     -L${CUDA_LIB_DIR}
     -Wl,-rpath,${CUDA_LIB_DIR}
   )
@@ -113,4 +97,4 @@ add_custom_target(copy_models ALL
 )
 
 # Install targets
-install(TARGETS gladys gladysd RUNTIME DESTINATION bin)
+install(TARGETS gladys RUNTIME DESTINATION bin)

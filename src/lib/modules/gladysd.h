@@ -1,0 +1,71 @@
+// Gladysd Hub - Main controller managing all system components.
+
+#ifndef GLADYSD_H
+#define GLADYSD_H
+
+#include <QObject>
+#include <QProcess>
+#include <QTimer>
+#include <QThread>
+#include <QString>
+#include <QVector>
+#include <QSocketNotifier>
+
+#include "ipc.h"
+
+class KeyGrab;
+class KeyType;
+class STT;
+
+class Gladysd : public QObject {
+  Q_OBJECT
+
+public:
+  static Gladysd *instance();
+
+  bool init();
+  void shutdown();
+
+  void launchYdotool();
+  qint64 ydotoolPid() const { return m_ydotoolPid; }
+
+  KeyGrab *keyGrab() { return m_keyGrab; }
+  KeyType *keyType() { return m_keyType; }
+  STT *stt() { return m_stt; }
+  IPCServer *ipcServer() { return m_ipcServer; }
+
+signals:
+  void ydotoolExited();
+  void toggleRequested();
+  void audioLevelUpdated(const QVector<double> &levels);
+
+private:
+  static Gladysd *s_instance;
+
+  explicit Gladysd(QObject *parent = nullptr);
+  ~Gladysd() override;
+
+  void setupConnections();
+  static void signalHandler(int signum);
+  void launchProcess(const QString &program, qint64 &pid);
+  void killProcess(qint64 pid);
+
+  // Process Management
+  qint64 m_ydotoolPid;
+  QProcess *m_ydotoolProcess;
+  QTimer *m_ydotoolTimer;
+  // IPC Module
+  IPCServer *m_ipcServer;
+  QString m_ipcServerName;
+  // KeyGrab Module
+  KeyGrab *m_keyGrab;
+  void *m_display;
+  QSocketNotifier *m_x11Notifier;
+  // STT Module
+  QThread *m_sttThread;
+  STT *m_stt;
+  // KeyType Module
+  KeyType *m_keyType;
+};
+
+#endif // GLADYSD_H

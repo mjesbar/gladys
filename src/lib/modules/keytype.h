@@ -1,3 +1,5 @@
+// KeyType Module - Simulated keyboard typing using ydotool.
+
 #ifndef KEYTYPE_H
 #define KEYTYPE_H
 
@@ -22,7 +24,6 @@ private:
   QString extractNewChunk(const QString &newText);
   QString normalizeText(const QString &text);
   void runTyping(const QString &chunk);
-  void checkTypingDone();
 
   static KeyType *s_instance;
 

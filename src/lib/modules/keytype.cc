@@ -22,32 +22,24 @@ KeyType *KeyType::instance() {
 }
 
 QString KeyType::extractNewChunk(const QString &newText) {
-  // If this is the first text, push it entirely (trimmed)
   if (m_lastTyped.isEmpty()) {
     QString trimmed = newText.trimmed();
     m_lastTyped = newText;
     return trimmed;
   }
 
-  // Find where the new text starts (search from end of last typed)
   int lastLen = m_lastTyped.length();
   if (newText.length() <= lastLen) {
-    // Text got shorter or same - ignore (final result or duplicate)
     return QString();
   }
 
-  // Extract only the new portion
   QString diff = newText.mid(lastLen);
-
-  // Clean leading/trailing whitespace
   diff = diff.trimmed();
   if (diff.isEmpty()) {
     return QString();
   }
 
-  // Always prepend a single space
   diff = " " + diff;
-
   m_lastTyped = newText;
   return diff;
 }
@@ -89,14 +81,12 @@ void KeyType::push(const QString &chunk) {
   if (newChunk.isEmpty()) {
     return;
   }
-  // Normalize to ASCII before typing
   QString normalized = normalizeText(newChunk);
   m_queue.enqueue(normalized);
   processQueue();
 }
 
 void KeyType::runTyping(const QString &chunk) {
-  // Store the process to check later
   if (m_process) {
     delete m_process;
   }
@@ -107,7 +97,6 @@ void KeyType::runTyping(const QString &chunk) {
   fprintf(stderr, "KeyType: Running typing: '%s'\n", qPrintable(chunk));
   m_process->start();
 
-  // Process events while waiting (non-blocking)
   while (m_process->state() == QProcess::Running) {
     QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
   }
@@ -123,7 +112,6 @@ void KeyType::processQueue() {
   }
 
   m_processing = true;
-
   QString chunk = m_queue.dequeue();
   runTyping(chunk);
 }

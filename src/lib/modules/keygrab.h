@@ -1,9 +1,11 @@
+// KeyGrab Module - Global hotkey detection using X11.
+
 #ifndef KEYGRAB_HPP
 #define KEYGRAB_HPP
 
 #include <QObject>
 #include <QDebug>
-#include <X11/Xlib.h>
+#include <QTimer>
 
 class KeyGrab : public QObject {
   Q_OBJECT
@@ -12,21 +14,21 @@ public:
   explicit KeyGrab(QObject *parent = nullptr);
   ~KeyGrab() override;
 
-  bool init(Display *display);
-  KeyCode keycode() const { return m_keycode; }
+  bool init(void *display);
+  unsigned int keycode() const { return m_keycode; }
   unsigned int modifiers() const { return m_modifiers; }
-  Display *display() const { return m_display; }
-
-signals:
-  void keyPressed();
+  void *display() const { return m_display; }
 
 public slots:
   void processEvents();
 
+signals:
+  void keyPressed();
+
 private:
-  Display *m_display;
-  Window m_root;
-  KeyCode m_keycode;
+  void *m_display;
+  unsigned long m_root;
+  unsigned int m_keycode;
   unsigned int m_modifiers;
 };
 

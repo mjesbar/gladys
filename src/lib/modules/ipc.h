@@ -1,13 +1,12 @@
-// IPC Server - Local socket-based inter-process communication for gladys.
+// IPC Module - Local socket-based inter-process communication.
 
-#ifndef IPC_HPP
-#define IPC_HPP
+#ifndef IPC_H
+#define IPC_H
 
+#include <QObject>
 #include <QLocalServer>
 #include <QLocalSocket>
-#include <QObject>
 #include <QString>
-#include <QDebug>
 #include <QVector>
 
 class IPCServer : public QObject {
@@ -45,4 +44,4 @@ private:
   QString m_serverName;
 };
 
-#endif // IPC_HPP
+#endif // IPC_H

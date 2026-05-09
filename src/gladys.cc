@@ -1,3 +1,7 @@
+// Gladys - Main entry point for the voice assistant application.
+// This single executable manages both the UI and the daemon functionality
+// through the gladysd hub module.
+
 #include <QApplication>
 #include <QDebug>
 #include <QRect>
@@ -5,9 +9,8 @@
 #include <QThread>
 #include <QWidget>
 
-#include "lib/ipc.h"
-#include "lib/pm.h"
-#include "lib/ui.h"
+#include "lib/modules/gladysd.h"
+#include "lib/modules/ui.h"
 
 int main(int argc, char *argv[]) {
   // Force X11 (xcb) platform - not Wayland
@@ -17,59 +20,41 @@ int main(int argc, char *argv[]) {
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
 
-  // Initialize ProcessManager as window app role
-  ProcessManager *pm = ProcessManager::instance();
-  pm->init(ProcessManager::RoleWindowApp);
+  // Initialize Gladysd Hub (daemon functionality)
+  Gladysd *gladysd = Gladysd::instance();
+  if (!gladysd->init()) {
+    fprintf(stderr, "Gladys: Failed to initialize gladysd hub.\n");
+    return 1;
+  }
 
-  // IPC Server runs in its own thread (declared early for lambda capture)
-  QThread *ipcThread = new QThread();
-  IPCServer *server = new IPCServer("gladys-ipc-server");
-  server->moveToThread(ipcThread);
-
-  QObject::connect(ipcThread, &QThread::started, server, [server]() {
-    if (!server->start()) {
-      fprintf(stderr, "Gladys: IPC server failed to start.\n");
-    }
-  });
-
-  ipcThread->start();
-
-  // Monitor: if daemon exits, close window app
-  QObject::connect(pm, &ProcessManager::daemonExited, [&]() {
-    fprintf(stderr, "Gladys: daemon exited, closing.\n");
-    ipcThread->quit();
-    ipcThread->wait();
-    app.quit();
-  });
-
-  // If ydotoold exits, close window app
-  QObject::connect(pm, &ProcessManager::ydotoolExited, [&]() {
-    fprintf(stderr, "Gladys: ydotoold exited, closing.\n");
-    ipcThread->quit();
-    ipcThread->wait();
-    app.quit();
-  });
-
+  // Create UI window
   QWidget dummy;
   UI window(&dummy);
 
-  QObject::connect(server, &IPCServer::toggleRequested, [&]() {
+  // Connect Gladysd hub signals to UI (direct signals, no IPC needed)
+  QObject::connect(gladysd, &Gladysd::toggleRequested, [&]() {
     qDebug() << "Gladys: Toggling visibility";
     window.toggleVisibility();
   });
 
-  QObject::connect(server, &IPCServer::audioLevelUpdated, &window,
+  QObject::connect(gladysd, &Gladysd::audioLevelUpdated, &window,
                    &UI::updateAudioLevels);
 
-  // When quit requested, use ProcessManager to close both
+  // Connect window quit request to gladysd shutdown
   QObject::connect(&window, &UI::quitRequested, [&]() {
-    fprintf(stderr, "Gladys: Quit requested, closing.\n");
-    pm->close();
-    ipcThread->quit();
-    ipcThread->wait();
+    fprintf(stderr, "Gladys: Quit requested, shutting down.\n");
+    gladysd->shutdown();
     app.quit();
   });
 
+  // Connect gladysd ydotoold exit signal
+  QObject::connect(gladysd, &Gladysd::ydotoolExited, [&]() {
+    fprintf(stderr, "Gladys: ydotoold exited, closing.\n");
+    gladysd->shutdown();
+    app.quit();
+  });
+
+  // Position window
   QScreen *screen = QApplication::primaryScreen();
   if (screen) {
     window.move(960 - window.width() / 2, 10);
@@ -78,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   window.show();
   window.removeShadow();
-  qDebug() << "Gladys: Window shown (daemon PID: " << pm->daemonPid() << ")";
+  qDebug() << "Gladys: Window shown";
 
   return app.exec();
 }
