@@ -99,3 +99,10 @@ add_custom_target(copy_models ALL
 
 # Install targets
 install(TARGETS gladys RUNTIME DESTINATION bin)
+
+# Run the application
+add_custom_target(run
+  COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{LD_LIBRARY_PATH}
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
+  COMMENT "Running gladys"
+)

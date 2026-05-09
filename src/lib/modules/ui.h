@@ -45,6 +45,7 @@ private:
   QVector<double> m_audioLevels;
   QVariantAnimation *m_scaleAnimation;
   QPixmap m_micPixmap;
+  QPixmap m_scaledMicPixmap;
 
 private:
   void drawAudioWave(QPainter &p, const QSize &size, double scale);

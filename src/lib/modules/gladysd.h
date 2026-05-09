@@ -7,7 +7,8 @@
 #include <QThread>
 #include <QString>
 #include <QVector>
-#include <QSocketNotifier>
+#include <QTimer>
+#include <QElapsedTimer>
 
 #include "ipc.h"
 
@@ -50,7 +51,6 @@ private:
   // KeyGrab Module
   KeyGrab *m_keyGrab;
   void *m_display;
-  QSocketNotifier *m_x11Notifier;
   // STT Module
   QThread *m_sttThread;
   STT *m_stt;
@@ -59,6 +59,7 @@ private:
   // KeyType Module
   KeyType *m_keyType;
   QThread *m_keyTypeThread;
+  QElapsedTimer m_audioThrottle;
 };
 
 #endif // GLADYSD_H

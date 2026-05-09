@@ -7,6 +7,7 @@
 #include "sherpa-onnx/c-api/c-api.h"
 #include <QObject>
 #include <QVector>
+#include <QElapsedTimer>
 #include <string>
 
 class STT : public QObject {
@@ -41,6 +42,7 @@ private:
   static std::string m_tokens_path;
   static QVector<double> m_audio_levels;
   static QVector<double> m_audio_levels_prev;
+  static QElapsedTimer m_audio_timer;
 
   static void data_callback(ma_device *pDevice, void *pOutput,
                             const void *pInput, ma_uint32 frameCount);

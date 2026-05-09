@@ -91,6 +91,7 @@ UI::UI(QWidget *parent)
   if (!image.isNull()) {
     m_micPixmap = QPixmap::fromImage(
         image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_scaledMicPixmap = m_micPixmap; // Cache for full size
   }
 }
 
@@ -200,11 +201,17 @@ void UI::paintEvent(QPaintEvent *event) {
 
   // Use cached pixmap (scaled to current size)
   if (!m_micPixmap.isNull()) {
-    QPixmap scaledPix = m_micPixmap.scaled(
-        micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    int x = (width() - scaledPix.width()) / 2;
-    int y = (height() - scaledPix.height()) / 2;
-    p.drawPixmap(x, y, scaledPix);
+    if (!m_scaledMicPixmap.isNull() && m_scaledMicPixmap.size() == QSize(micSize, micSize)) {
+      int x = (width() - micSize) / 2;
+      int y = (height() - micSize) / 2;
+      p.drawPixmap(x, y, m_scaledMicPixmap);
+    } else {
+      QPixmap scaledPix = m_micPixmap.scaled(
+          micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      int x = (width() - scaledPix.width()) / 2;
+      int y = (height() - scaledPix.height()) / 2;
+      p.drawPixmap(x, y, scaledPix);
+    }
   }
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);

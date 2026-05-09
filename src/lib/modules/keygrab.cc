@@ -45,8 +45,15 @@ bool KeyGrab::init(void *display) {
 
 void KeyGrab::processEvents() {
   if (!m_display) return;
+  if (!m_timer.isValid() || m_timer.hasExpired(10)) { // 100fps max
+    m_timer.restart();
+  } else {
+    return;
+  }
 
   Display *d = static_cast<Display*>(m_display);
+  if (!XPending(d)) return;
+
   XEvent event;
   while (XPending(d)) {
     XNextEvent(d, &event);

@@ -20,6 +20,7 @@ std::string STT::m_tokens_path;
 bool STT::m_is_audio_context_initialized = false;
 QVector<double> STT::m_audio_levels;
 QVector<double> STT::m_audio_levels_prev;
+QElapsedTimer STT::m_audio_timer;
 
 STT::STT(QObject *parent) : QObject(parent) {}
 
@@ -214,7 +215,12 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   }
   m_audio_levels_prev = m_audio_levels;
 
-  emit stt_instance->audioLevelUpdated(m_audio_levels);
+  // Throttle audio level updates to ~30fps directly in the callback
+  if (!m_audio_timer.isValid()) m_audio_timer.start();
+  if (m_audio_timer.hasExpired(33)) {
+    m_audio_timer.restart();
+    emit stt_instance->audioLevelUpdated(m_audio_levels);
+  }
 
   SherpaOnnxOnlineStreamAcceptWaveform(stt_instance->m_stream,
                                        stt_instance->m_audio_config.sampleRate,

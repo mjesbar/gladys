@@ -3,6 +3,7 @@
 #include "keytype.h"
 #include "llm.h"
 #include "stt.h"
+#include <QElapsedTimer>
 #include <X11/Xlib.h>
 #include <csignal>
 #include <cstdio>
@@ -20,9 +21,8 @@ Gladysd *Gladysd::instance() {
 Gladysd::Gladysd(QObject *parent)
     : QObject(parent), m_ipcServer(nullptr),
       m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr),
-      m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr),
-      m_stt(nullptr), m_keyTypeThread(nullptr), m_llm(nullptr),
-      m_keyType(nullptr) {
+      m_display(nullptr), m_sttThread(nullptr), m_stt(nullptr),
+      m_keyTypeThread(nullptr), m_llm(nullptr), m_keyType(nullptr) {
 
   std::signal(SIGTERM, signalHandler);
   std::signal(SIGINT, signalHandler);
@@ -69,10 +69,13 @@ bool Gladysd::init() {
     return false;
   }
 
-  int x11_fd = ConnectionNumber(static_cast<Display *>(m_display));
-  m_x11Notifier = new QSocketNotifier(x11_fd, QSocketNotifier::Read, this);
-  connect(m_x11Notifier, &QSocketNotifier::activated,
-          [this]() { m_keyGrab->processEvents(); });
+  // Use QTimer instead of QSocketNotifier for more predictable CPU usage
+  // X11 socket polling at 30fps max - hotkey detection doesn't need high
+  // frequency
+  QTimer *x11PollTimer = new QTimer(this);
+  x11PollTimer->setInterval(33); // ~30fps
+  connect(x11PollTimer, &QTimer::timeout, m_keyGrab, &KeyGrab::processEvents);
+  x11PollTimer->start();
 
   m_stt = STT::instance();
   m_sttThread = new QThread();
@@ -105,11 +108,7 @@ void Gladysd::setupConnections() {
     emit toggleRequested();
   });
 
-  // Throttle audio levels to ~30fps to reduce UI load
-  static QElapsedTimer throttleTimer;
-  static bool initialized = false;
-  connect(m_stt, &STT::audioLevelUpdated, this,
-          [this]() { emit audioLevelUpdated(STT::getAudioLevels()); });
+  connect(m_stt, &STT::audioLevelUpdated, this, &Gladysd::audioLevelUpdated);
 
   connect(m_stt, &STT::textReceived, m_keyType, &KeyType::push);
 }

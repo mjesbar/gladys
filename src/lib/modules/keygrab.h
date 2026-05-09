@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QDebug>
 #include <QTimer>
+#include <QElapsedTimer>
 
 class KeyGrab : public QObject {
   Q_OBJECT
@@ -30,6 +31,7 @@ private:
   unsigned long m_root;
   unsigned int m_keycode;
   unsigned int m_modifiers;
+  QElapsedTimer m_timer;
 };
 
 #endif // KEYGRAB_HPP
