@@ -9,6 +9,7 @@
 #include <QSystemTrayIcon>
 #include <QVector>
 #include <QWidget>
+#include <QPixmap>
 
 class UI : public QWidget {
   Q_OBJECT
@@ -43,6 +44,7 @@ private:
   QMenu *m_trayMenu;
   QVector<double> m_audioLevels;
   QVariantAnimation *m_scaleAnimation;
+  QPixmap m_micPixmap;
 
 private:
   void drawAudioWave(QPainter &p, const QSize &size, double scale);

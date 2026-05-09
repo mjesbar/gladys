@@ -1,8 +1,8 @@
 #include "gladysd.h"
-#include "stt.h"
-#include "llm.h"
-#include "keytype.h"
 #include "keygrab.h"
+#include "keytype.h"
+#include "llm.h"
+#include "stt.h"
 #include <X11/Xlib.h>
 #include <csignal>
 #include <cstdio>
@@ -17,15 +17,18 @@ Gladysd *Gladysd::instance() {
   return s_instance;
 }
 
-Gladysd::Gladysd(QObject *parent) : QObject(parent), m_ipcServer(nullptr), m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr), m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr), m_stt(nullptr), m_llm(nullptr), m_keyType(nullptr) {
+Gladysd::Gladysd(QObject *parent)
+    : QObject(parent), m_ipcServer(nullptr),
+      m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr),
+      m_display(nullptr), m_x11Notifier(nullptr), m_sttThread(nullptr),
+      m_stt(nullptr), m_keyTypeThread(nullptr), m_llm(nullptr),
+      m_keyType(nullptr) {
 
   std::signal(SIGTERM, signalHandler);
   std::signal(SIGINT, signalHandler);
 }
 
-Gladysd::~Gladysd() {
-  shutdown();
-}
+Gladysd::~Gladysd() { shutdown(); }
 
 void Gladysd::signalHandler(int signum) {
   if (signum == SIGTERM || signum == SIGINT) {
@@ -55,7 +58,7 @@ bool Gladysd::init() {
     return false;
   }
 
-  m_display = static_cast<void*>(XOpenDisplay(NULL));
+  m_display = static_cast<void *>(XOpenDisplay(NULL));
   if (!m_display) {
     fprintf(stderr, "Gladysd: Unable to open X display\n");
     return false;
@@ -66,24 +69,27 @@ bool Gladysd::init() {
     return false;
   }
 
-  int x11_fd = ConnectionNumber(static_cast<Display*>(m_display));
+  int x11_fd = ConnectionNumber(static_cast<Display *>(m_display));
   m_x11Notifier = new QSocketNotifier(x11_fd, QSocketNotifier::Read, this);
-  connect(m_x11Notifier, &QSocketNotifier::activated, [this]() {
-    m_keyGrab->processEvents();
-  });
+  connect(m_x11Notifier, &QSocketNotifier::activated,
+          [this]() { m_keyGrab->processEvents(); });
 
   m_stt = STT::instance();
   m_sttThread = new QThread();
   m_stt->moveToThread(m_sttThread);
   m_sttThread->start();
 
+  // KeyType runs on its own thread to avoid blocking main thread
+  m_keyType = KeyType::instance();
+  m_keyTypeThread = new QThread();
+  m_keyType->moveToThread(m_keyTypeThread);
+  m_keyTypeThread->start();
+
   setupConnections();
 
   fprintf(stderr, "Gladysd: Initialized successfully.\n");
   return true;
 }
-
-
 
 void Gladysd::setupConnections() {
   connect(m_keyGrab, &KeyGrab::keyPressed, this, [this]() {
@@ -99,13 +105,13 @@ void Gladysd::setupConnections() {
     emit toggleRequested();
   });
 
-  connect(m_stt, &STT::audioLevelUpdated, this, [this]() {
-    emit audioLevelUpdated(STT::getAudioLevels());
-  });
+  // Throttle audio levels to ~30fps to reduce UI load
+  static QElapsedTimer throttleTimer;
+  static bool initialized = false;
+  connect(m_stt, &STT::audioLevelUpdated, this,
+          [this]() { emit audioLevelUpdated(STT::getAudioLevels()); });
 
-  connect(m_stt, &STT::textReceived, this, [](const QString &text) {
-    KeyType::instance()->push(text);
-  });
+  connect(m_stt, &STT::textReceived, m_keyType, &KeyType::push);
 }
 
 void Gladysd::shutdown() {
@@ -118,13 +124,18 @@ void Gladysd::shutdown() {
     m_sttThread->wait();
   }
 
+  if (m_keyTypeThread) {
+    m_keyTypeThread->quit();
+    m_keyTypeThread->wait();
+  }
+
   if (m_ipcServer) {
     m_ipcServer->deleteLater();
     m_ipcServer = nullptr;
   }
 
   if (m_display) {
-    XCloseDisplay(static_cast<Display*>(m_display));
+    XCloseDisplay(static_cast<Display *>(m_display));
     m_display = nullptr;
   }
 

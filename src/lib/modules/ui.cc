@@ -86,6 +86,12 @@ UI::UI(QWidget *parent)
             }
             update();
           });
+
+  // Pre-load and cache microphone icon to avoid disk I/O on every paint
+  QImage image("icons/mic-light.png");
+  if (!image.isNull()) {
+    m_micPixmap = QPixmap::fromImage(image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  }
 }
 
 UI::~UI() {
@@ -189,13 +195,12 @@ void UI::paintEvent(QPaintEvent *event) {
   int yCircle = (height() - circleSize) / 2;
   p.drawEllipse(xCircle, yCircle, circleSize, circleSize);
 
-  QImage image("icons/mic-light.png");
-  if (!image.isNull()) {
-    QPixmap pix = QPixmap::fromImage(
-        image.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    int x = (width() - pix.width()) / 2;
-    int y = (height() - pix.height()) / 2;
-    p.drawPixmap(x, y, pix);
+  // Use cached pixmap (scaled to current size)
+  if (!m_micPixmap.isNull()) {
+    QPixmap scaledPix = m_micPixmap.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    int x = (width() - scaledPix.width()) / 2;
+    int y = (height() - scaledPix.height()) / 2;
+    p.drawPixmap(x, y, scaledPix);
   }
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);

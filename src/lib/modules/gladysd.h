@@ -58,6 +58,7 @@ private:
   LLM *m_llm;
   // KeyType Module
   KeyType *m_keyType;
+  QThread *m_keyTypeThread;
 };
 
 #endif // GLADYSD_H
