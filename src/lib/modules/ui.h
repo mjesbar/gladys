@@ -21,7 +21,6 @@ public:
 public slots:
   void toggleVisibility();
   void handleOpacityAnimationFinished();
-  void onTrayIconActivated(QSystemTrayIcon::ActivationReason reason);
   void removeShadow();
   void quitApp();
   void updateAudioLevels(const QVector<double> &levels);

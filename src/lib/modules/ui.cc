@@ -69,8 +69,7 @@ UI::UI(QWidget *parent)
   connect(quitAction, &QAction::triggered, this, &UI::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
   m_trayIcon->setIcon(QIcon(iconsPath() + "/icon-app.svg"));
-  connect(m_trayIcon, &QSystemTrayIcon::activated, this,
-          &UI::onTrayIconActivated);
+  // Click disabled - only keyboard shortcut (Ctrl+Alt+P) toggles the app
   m_trayIcon->show();
 
   m_positionAnimation->setDuration(300);
@@ -166,12 +165,6 @@ void UI::toggleVisibility() {
 
 void UI::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
-  }
-}
-
-void UI::onTrayIconActivated(QSystemTrayIcon::ActivationReason reason) {
-  if (reason == QSystemTrayIcon::Trigger) {
-    toggleVisibility();
   }
 }
 
