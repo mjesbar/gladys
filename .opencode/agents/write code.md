@@ -13,9 +13,10 @@ permission:
   bash: ask
 thinking:
   type: disabled
-speed: fast
 color: "#CCCCCC"
 ---
+
+- Be brief
 
 Focus on:
 
