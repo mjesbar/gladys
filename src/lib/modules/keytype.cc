@@ -144,7 +144,6 @@ QString KeyType::extractNewChunk(const QString &newText) {
     return QString();
   }
 
-  diff = " " + diff;
   m_lastTyped = newText;
   return diff;
 }
