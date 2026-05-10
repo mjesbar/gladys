@@ -21,8 +21,6 @@ public:
   static LLM *instance();
   static bool start();
   static void stop();
-  static QString transcript(const QString &audioPath);
-  static QString transcriptFromMemory(const QByteArray &audioData);
   static QString beautifyText(const QString &text);
 
 private:

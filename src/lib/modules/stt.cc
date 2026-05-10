@@ -21,8 +21,6 @@ bool STT::m_is_audio_context_initialized = false;
 QVector<double> STT::m_audio_levels;
 QVector<double> STT::m_audio_levels_prev;
 QElapsedTimer STT::m_audio_timer;
-QByteArray STT::m_audio_buffer;
-bool STT::m_is_buffering = false;
 QString STT::m_lastTyped;
 
 STT::STT(QObject *parent) : QObject(parent) {}
@@ -38,23 +36,12 @@ QVector<double> STT::getAudioLevels() {
   return m_audio_levels;
 }
 
-QByteArray STT::getAudioBuffer() {
-  return m_audio_buffer;
-}
-
-void STT::clearAudioBuffer() {
-  m_audio_buffer.clear();
-  m_lastTyped.clear();
-}
-
 QString STT::getFinalText() {
   return m_lastTyped;
 }
 
-void STT::setBuffering(bool enable) {
-  std::cout << "STT::setBuffering(" << enable << ") called, current buffer size: " << m_audio_buffer.size() << std::endl;
-  m_is_buffering = enable;
-  // Don't clear buffer here - we need it for LLM processing!
+void STT::clearLastTyped() {
+  m_lastTyped.clear();
 }
 
 STT::~STT() {
@@ -237,11 +224,6 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
     }
   }
   m_audio_levels_prev = m_audio_levels;
-
-  // Buffer raw PCM audio for LLM processing
-  if (m_is_buffering) {
-    m_audio_buffer.append(reinterpret_cast<const char *>(pcm_samples), frameCount * sizeof(int16_t));
-  }
 
   // Throttle audio level updates to ~30fps directly in the callback
   if (!m_audio_timer.isValid()) m_audio_timer.start();

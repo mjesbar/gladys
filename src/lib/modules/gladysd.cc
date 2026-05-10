@@ -101,9 +101,8 @@ void Gladysd::setupConnections() {
     fprintf(stderr, "Gladysd: Ctrl+Alt+P detected!\n");
     static bool stt_running = false;
     if (stt_running) {
-      // Toggle OFF: stop STT, flush, process with LLM
+      // Toggle OFF: stop STT, get text and beautify with LLM
       STT::stop();
-      STT::setBuffering(false);
       stt_running = false;
 
       // Get final STT text and beautify with LLM
@@ -127,17 +126,16 @@ void Gladysd::setupConnections() {
         fprintf(stderr, "Gladysd: No STT text to beautify\n");
       }
 
-      STT::clearAudioBuffer();
+      STT::clearLastTyped();
 
       // Reset keytype queue for clean state
       m_keyType->reset();
     } else {
-      // Toggle ON: start STT and enable buffering
-      STT::clearAudioBuffer();
-      STT::setBuffering(true);
+      // Toggle ON: start STT
+      STT::clearLastTyped();
       STT::start();
       stt_running = true;
-      fprintf(stderr, "Gladysd: STT started with audio buffering enabled\n");
+      fprintf(stderr, "Gladysd: STT started\n");
     }
     emit toggleRequested();
   });

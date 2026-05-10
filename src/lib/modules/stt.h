@@ -7,7 +7,6 @@
 #include "sherpa-onnx/c-api/c-api.h"
 #include <QObject>
 #include <QVector>
-#include <QByteArray>
 #include <QElapsedTimer>
 #include <string>
 
@@ -44,15 +43,11 @@ private:
   static QVector<double> m_audio_levels;
   static QVector<double> m_audio_levels_prev;
   static QElapsedTimer m_audio_timer;
-  static QByteArray m_audio_buffer;
-  static bool m_is_buffering;
   static QString m_lastTyped;
 
 public:
-  static QByteArray getAudioBuffer();
-  static void clearAudioBuffer();
-  static void setBuffering(bool enable);
   static QString getFinalText();
+  static void clearLastTyped();
 
   static void data_callback(ma_device *pDevice, void *pOutput,
                             const void *pInput, ma_uint32 frameCount);
