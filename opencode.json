@@ -11,5 +11,9 @@
     ".opencode/RULES.md",
     ".opencode/OPENCODE.md"
   ],
-  "default_agent": "write code"
+  "default_agent": "write code",
+  "agent": {
+    "build": { "hidden": true },
+    "plan": { "hidden": true }
+  }
 }

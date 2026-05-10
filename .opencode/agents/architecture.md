@@ -8,14 +8,13 @@ textVerbosity: low
 permission:
   read: allow
   edit: deny
+  write: deny
+  apply_patch: deny
   bash: ask
 thinking:
   type: disabled
-reasoningEffort: none
-reasoningSummary: none
-textVerbosity: low
 speed: fast
-color: warning
+color: "#d70a53"
 ---
 
 - The strong use of RULES.md.

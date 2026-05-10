@@ -8,14 +8,13 @@ textVerbosity: low
 permission:
   read: allow
   edit: allow
+  write: allow
+  apply_patch: allow
   bash: ask
 thinking:
   type: disabled
-reasoningEffort: none
-reasoningSummary: none
-textVerbosity: low
 speed: fast
-color: success
+color: "#CCCCCC"
 ---
 
 Focus on:
