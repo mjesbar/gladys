@@ -106,14 +106,13 @@ void Gladysd::setupConnections() {
       STT::setBuffering(false);
       stt_running = false;
 
-      // Get buffered audio and process with LLM
-      QByteArray audioData = STT::getAudioBuffer();
-      fprintf(stderr, "Gladysd: Audio buffer size: %d bytes\n",
-              audioData.size());
-      if (!audioData.isEmpty()) {
-        fprintf(stderr, "Gladysd: Sending request to LLM...\n");
-        QString result = LLM::transcriptFromMemory(audioData);
-        STT::clearAudioBuffer();
+      // Get final STT text and beautify with LLM
+      QString sttText = STT::getFinalText();
+      fprintf(stderr, "Gladysd: STT text: %s\n", qPrintable(sttText));
+
+      if (!sttText.isEmpty()) {
+        fprintf(stderr, "Gladysd: Sending to LLM for beautification...\n");
+        QString result = LLM::beautifyText(sttText);
 
         if (!result.isEmpty()) {
           fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
@@ -125,8 +124,10 @@ void Gladysd::setupConnections() {
           fprintf(stderr, "Gladysd: LLM returned empty result\n");
         }
       } else {
-        fprintf(stderr, "Gladysd: No audio data to transcribe\n");
+        fprintf(stderr, "Gladysd: No STT text to beautify\n");
       }
+
+      STT::clearAudioBuffer();
 
       // Reset keytype queue for clean state
       m_keyType->reset();

@@ -23,6 +23,7 @@ QVector<double> STT::m_audio_levels_prev;
 QElapsedTimer STT::m_audio_timer;
 QByteArray STT::m_audio_buffer;
 bool STT::m_is_buffering = false;
+QString STT::m_lastTyped;
 
 STT::STT(QObject *parent) : QObject(parent) {}
 
@@ -43,6 +44,11 @@ QByteArray STT::getAudioBuffer() {
 
 void STT::clearAudioBuffer() {
   m_audio_buffer.clear();
+  m_lastTyped.clear();
+}
+
+QString STT::getFinalText() {
+  return m_lastTyped;
 }
 
 void STT::setBuffering(bool enable) {
@@ -183,7 +189,8 @@ void STT::stop() {
         SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Final Transcription: " << result->text << std::endl;
-      KeyType::instance()->push(QString::fromUtf8(result->text));
+      m_lastTyped = QString::fromUtf8(result->text);
+      KeyType::instance()->push(m_lastTyped);
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
 

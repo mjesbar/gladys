@@ -238,3 +238,41 @@ QString LLM::transcriptFromMemory(const QByteArray &pcmData) {
   std::cerr << "LLM: Failed to parse response." << std::endl;
   return QString();
 }
+
+QString LLM::beautifyText(const QString &text) {
+  if (!m_isRunning) {
+    std::cerr << "LLM: Server not running." << std::endl;
+    return text;
+  }
+
+  if (text.isEmpty()) {
+    std::cerr << "LLM: No text to beautify." << std::endl;
+    return text;
+  }
+
+  QJsonObject message;
+  message["role"] = "user";
+  message["content"] = "Transforma el siguiente texto en formato Markdown nicely estructurado. Usa negritas, listas, y formato apropiado. Solo devuelve el resultado formateado, sin explicaciones:\n\n" + text;
+
+  QJsonObject json;
+  json["messages"] = QJsonArray({message});
+  json["temperature"] = 0.0;
+
+  std::cout << "LLM: Beautifying text: " << text.left(50).toStdString() << "..." << std::endl;
+  QString response = postJson(json);
+  std::cout << "LLM: Beautified response: " << response.left(200).toStdString() << "..." << std::endl;
+
+  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+  if (!doc.isNull() && doc.isObject()) {
+    QJsonObject obj = doc.object();
+    QJsonArray choices = obj["choices"].toArray();
+    if (!choices.isEmpty()) {
+      QString result = choices[0].toObject()["message"].toObject()["content"].toString();
+      std::cout << "LLM: Beautified: " << qPrintable(result) << std::endl;
+      return result;
+    }
+  }
+
+  std::cerr << "LLM: Failed to parse beautify response." << std::endl;
+  return text;
+}

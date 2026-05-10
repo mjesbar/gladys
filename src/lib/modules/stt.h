@@ -46,11 +46,13 @@ private:
   static QElapsedTimer m_audio_timer;
   static QByteArray m_audio_buffer;
   static bool m_is_buffering;
+  static QString m_lastTyped;
 
 public:
   static QByteArray getAudioBuffer();
   static void clearAudioBuffer();
   static void setBuffering(bool enable);
+  static QString getFinalText();
 
   static void data_callback(ma_device *pDevice, void *pOutput,
                             const void *pInput, ma_uint32 frameCount);
