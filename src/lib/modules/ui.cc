@@ -10,12 +10,16 @@
 #include <QPoint>
 #include <QRegion>
 #include <QScreen>
+#include <QSvgRenderer>
 #include <QTimer>
 #include <cmath>
 
 #include <QAction>
 #include <QIcon>
 #include <QMenu>
+#include <QGraphicsBlurEffect>
+#include <QGraphicsOpacityEffect>
+#include <QLabel>
 #include <X11/Xlib.h> // just to remove the shadow
 
 static const int WAVE_BAR_COUNT = 20;
@@ -24,14 +28,14 @@ static const int WAVE_BAR_SPACING = 1;
 static const int WAVE_TOTAL_WIDTH =
     WAVE_BAR_COUNT * WAVE_BAR_WIDTH + (WAVE_BAR_COUNT - 1) * WAVE_BAR_SPACING;
 
-static const QSize PROMINENT_SIZE = QSize(WAVE_TOTAL_WIDTH, 48);
-static const QSize SUBTLE_SIZE = QSize(WAVE_TOTAL_WIDTH, 48);
+static const QSize PROMINENT_SIZE = QSize(WAVE_TOTAL_WIDTH, 60);
+static const QSize SUBTLE_SIZE = QSize(WAVE_TOTAL_WIDTH, 60);
 
 static const qreal PROMINENT_OPACITY = 1.0;
 static const qreal SUBTLE_OPACITY = 0.0;
 
-static const QPoint PROMINENT_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 72);
-static const QPoint SUBTLE_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 12);
+static const QPoint PROMINENT_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 66);
+static const QPoint SUBTLE_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 6);
 
 UI::UI(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
@@ -64,7 +68,7 @@ UI::UI(QWidget *parent)
   QAction *quitAction = m_trayMenu->addAction("Quit");
   connect(quitAction, &QAction::triggered, this, &UI::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
-  m_trayIcon->setIcon(QIcon(iconsPath() + "/mic-light.png"));
+  m_trayIcon->setIcon(QIcon(iconsPath() + "/icon-app.svg"));
   connect(m_trayIcon, &QSystemTrayIcon::activated, this,
           &UI::onTrayIconActivated);
   m_trayIcon->show();
@@ -89,11 +93,15 @@ UI::UI(QWidget *parent)
     update();
   });
 
-  // Pre-load and cache microphone icon to avoid disk I/O on every paint
-  QImage image(iconsPath() + "/mic-light.png");
-  if (!image.isNull()) {
+  // Pre-load and cache SVG microphone icon to avoid disk I/O on every paint
+  QSvgRenderer renderer(iconsPath() + "/icon-app.svg");
+  if (renderer.isValid()) {
+    QImage image(512, 512, QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    renderer.render(&painter);
     m_micPixmap = QPixmap::fromImage(
-        image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        image.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     m_scaledMicPixmap = m_micPixmap; // Cache for full size
   }
 }
@@ -180,13 +188,11 @@ void UI::paintEvent(QPaintEvent *event) {
   // Fill entire widget with transparent to prevent borders showing
   p.fillRect(rect(), Qt::transparent);
 
-  static const int MIC_SIZE_FULL = 36;
-  static const int CIRCLE_SIZE_FULL = 48;
+  static const int MIC_SIZE_FULL = 48;
 
   double scale =
       m_scaleAnimation ? m_scaleAnimation->currentValue().toDouble() : 1.0;
   int micSize = static_cast<int>(MIC_SIZE_FULL * scale);
-  int circleSize = static_cast<int>(CIRCLE_SIZE_FULL * scale);
 
   // Draw wave bars during animation or when fully prominent
   if (!m_audioLevels.isEmpty() &&
@@ -195,26 +201,58 @@ void UI::paintEvent(QPaintEvent *event) {
     drawAudioWave(p, QSize(width(), height()), scale);
   }
 
-  p.setBrush(Qt::white);
-  p.setPen(Qt::NoPen);
-
-  int xCircle = (width() - circleSize) / 2;
-  int yCircle = (height() - circleSize) / 2;
-  p.drawEllipse(xCircle, yCircle, circleSize, circleSize);
-
   // Use cached pixmap (scaled to current size)
   if (!m_micPixmap.isNull()) {
+    QPixmap *sourcePix;
     if (!m_scaledMicPixmap.isNull() && m_scaledMicPixmap.size() == QSize(micSize, micSize)) {
-      int x = (width() - micSize) / 2;
-      int y = (height() - micSize) / 2;
-      p.drawPixmap(x, y, m_scaledMicPixmap);
+      sourcePix = &m_scaledMicPixmap;
     } else {
-      QPixmap scaledPix = m_micPixmap.scaled(
-          micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      int x = (width() - scaledPix.width()) / 2;
-      int y = (height() - scaledPix.height()) / 2;
-      p.drawPixmap(x, y, scaledPix);
+      sourcePix = new QPixmap(m_micPixmap.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
+
+    int x = (width() - sourcePix->width()) / 2;
+    int y = (height() - sourcePix->height()) / 2;
+
+    // Create blurred yellow shadow
+    static QPixmap cachedShadow;
+    static int cachedSize = 0;
+    if (cachedShadow.isNull() || cachedSize != micSize) {
+      int shadowPad = 12;
+      int labelW = sourcePix->width() + shadowPad * 2;
+      int labelH = sourcePix->height() + shadowPad * 2;
+
+      // Create a transparent bg label to hold the blurred pixmap
+      QLabel shadowLabel(nullptr);
+      shadowLabel.setFixedSize(labelW, labelH);
+      shadowLabel.setPixmap(*sourcePix);
+      shadowLabel.setAlignment(Qt::AlignCenter);
+      shadowLabel.setStyleSheet("background: transparent; border: none; padding: 0;");
+
+      QGraphicsBlurEffect blur;
+      blur.setBlurRadius(6);
+      shadowLabel.setGraphicsEffect(&blur);
+
+      // Grab the blurred shadow with extra margin
+      QPixmap shadow = shadowLabel.grab();
+      // Tint to yellow
+      QImage shadowImg = shadow.toImage();
+      for (int i = 0; i < shadowImg.width(); ++i) {
+        for (int j = 0; j < shadowImg.height(); ++j) {
+          QColor px = shadowImg.pixelColor(i, j);
+          if (px.alpha() > 0) {
+            shadowImg.setPixelColor(i, j, QColor(255, 217, 74, qMin(px.alpha(), 80)));
+          }
+        }
+      }
+      cachedShadow = QPixmap::fromImage(shadowImg);
+      cachedSize = micSize;
+    }
+
+    // Draw shadow centered behind icon (x-12, y-12 offsets to center the 24px wider shadow)
+    p.drawPixmap(x - 12, y - 12, cachedShadow);
+    p.drawPixmap(x, y, *sourcePix);
+
+    if (sourcePix != &m_scaledMicPixmap) delete sourcePix;
   }
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
@@ -242,7 +280,7 @@ void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
   int startX = centerX - WAVE_TOTAL_WIDTH / 2;
 
   p.setOpacity(scale);
-  p.setBrush(QColor(173, 216, 230)); // Light blue
+  p.setBrush(QColor(255, 217, 74)); // Yellow #FFD94A
   p.setPen(Qt::NoPen);
 
   for (int i = 0; i < WAVE_BAR_COUNT; ++i) {

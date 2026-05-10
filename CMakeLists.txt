@@ -28,7 +28,7 @@ set(INCLUDE_DIRS
 )
 
 # Find Qt6
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
 
 # Find X11
 find_package(X11 REQUIRED)
@@ -59,6 +59,7 @@ target_link_libraries(gladys PRIVATE
   Qt6::Gui
   Qt6::Widgets
   Qt6::Network
+  Qt6::Svg
   ${X11_LIBRARIES}
 )
 
