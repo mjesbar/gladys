@@ -2,6 +2,7 @@
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
+#include <QDir>
 #include <QImage>
 #include <QKeySequence>
 #include <QPainter>
@@ -54,6 +55,8 @@ UI::UI(QWidget *parent)
   setProperty("_kde_no_shadows", true);
   setProperty("_KDE_NET_WM_SHADOW", false);
 
+  auto iconsPath = []() { return QCoreApplication::applicationDirPath() + "/icons"; };
+
   QPalette palette = this->palette();
   palette.setColor(QPalette::Window, Qt::transparent);
   setPalette(palette);
@@ -61,7 +64,7 @@ UI::UI(QWidget *parent)
   QAction *quitAction = m_trayMenu->addAction("Quit");
   connect(quitAction, &QAction::triggered, this, &UI::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
-  m_trayIcon->setIcon(QIcon("icons/mic-light.png"));
+  m_trayIcon->setIcon(QIcon(iconsPath() + "/mic-light.png"));
   connect(m_trayIcon, &QSystemTrayIcon::activated, this,
           &UI::onTrayIconActivated);
   m_trayIcon->show();
@@ -87,7 +90,7 @@ UI::UI(QWidget *parent)
   });
 
   // Pre-load and cache microphone icon to avoid disk I/O on every paint
-  QImage image("icons/mic-light.png");
+  QImage image(iconsPath() + "/mic-light.png");
   if (!image.isNull()) {
     m_micPixmap = QPixmap::fromImage(
         image.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));

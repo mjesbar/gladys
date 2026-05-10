@@ -89,14 +89,6 @@ if(EXISTS ${CUDA_LIB_DIR})
   )
 endif()
 
-# Copy model directory to bin/models
-add_custom_target(copy_models ALL
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/bin/models
-    ${CMAKE_SOURCE_DIR}/bin/models
-  COMMENT "Copying models to bin directory"
-)
-
 # Install targets
 install(TARGETS gladys RUNTIME DESTINATION bin)
 

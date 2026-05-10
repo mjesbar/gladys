@@ -3,6 +3,7 @@ bin/cuda/**/*
 !bin/
 !bin/cuda/
 !bin/cuda/install.sh
+!bin/icons
 
 .cache/
 moc/

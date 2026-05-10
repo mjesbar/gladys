@@ -20,8 +20,6 @@ LLM *LLM::m_instance = nullptr;
 QProcess *LLM::m_serverProcess = nullptr;
 QString LLM::m_serverUrl = "http://127.0.0.1:8080";
 bool LLM::m_isRunning = false;
-QString LLM::m_modelPath = "bin/llama.cpp/llama-b9049-vulkan/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf";
-QString LLM::m_mmprojPath = "bin/llama.cpp/llama-b9049-vulkan/models/mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf";
 
 LLM::LLM(QObject *parent) : QObject(parent) {}
 
@@ -42,26 +40,28 @@ bool LLM::start() {
     return true;
   }
 
-  QString program = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9049-vulkan/llama-server";
+QString exe_path = QCoreApplication::applicationDirPath();
+QString llama_path = exe_path + "/llama.cpp/llama-b9049-vulkan";
+QString program = llama_path + "/llama-server";
 
-  QFile file(program);
-  if (!file.exists()) {
-    std::cerr << "LLM: llama-server not found at: " << qPrintable(program) << std::endl;
-    return false;
-  }
+QFile file(program);
+if (!file.exists()) {
+  std::cerr << "LLM: llama-server not found at: " << qPrintable(program) << std::endl;
+  return false;
+}
 
-  m_serverProcess = new QProcess();
-  m_serverProcess->setProgram(program);
-  m_serverProcess->setArguments(QStringList()
-    << "-m" << m_modelPath
-    << "--mmproj" << m_mmprojPath
-    << "--ctx-size" << "8192"
-    << "--n-gpu-layers" << "99"
-    << "-ngl" << "99"
-    << "--port" << "8080");
+m_serverProcess = new QProcess();
+m_serverProcess->setProgram(program);
+m_serverProcess->setArguments(QStringList()
+  << "-m" << exe_path + "/llama.cpp/llama-b9049-vulkan/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+  << "--mmproj" << exe_path + "/llama.cpp/llama-b9049-vulkan/models/mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf"
+  << "--ctx-size" << "8192"
+  << "--n-gpu-layers" << "99"
+  << "-ngl" << "99"
+  << "--port" << "8080");
 
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("LD_LIBRARY_PATH", QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9049-vulkan:" + env.value("LD_LIBRARY_PATH"));
+QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+env.insert("LD_LIBRARY_PATH", llama_path + ":" + env.value("LD_LIBRARY_PATH"));
   m_serverProcess->setProcessEnvironment(env);
 
   QObject::connect(m_serverProcess, &QProcess::readyReadStandardError, []() {

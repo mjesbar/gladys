@@ -3,6 +3,7 @@
 #include "keytype.h"
 #include "llm.h"
 #include "stt.h"
+#include <QCoreApplication>
 #include <QElapsedTimer>
 #include <X11/Xlib.h>
 #include <csignal>
@@ -45,8 +46,8 @@ bool Gladysd::init() {
     return false;
   }
 
-  std::string model_path =
-      "./bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
+  std::string exe_path = QCoreApplication::applicationDirPath().toStdString();
+  std::string model_path = exe_path + "/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
   if (!STT::load(model_path)) {
     fprintf(stderr, "Gladysd: Failed to load STT model.\n");
     return false;

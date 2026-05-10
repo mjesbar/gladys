@@ -30,8 +30,6 @@ private:
   static QProcess *m_serverProcess;
   static QString m_serverUrl;
   static bool m_isRunning;
-  static QString m_modelPath;
-  static QString m_mmprojPath;
 
   static QString postJson(const QJsonObject &json);
 };
