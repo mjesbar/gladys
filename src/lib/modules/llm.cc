@@ -140,16 +140,78 @@ QString LLM::transcript(const QString &audioPath) {
   QByteArray audioData = file.readAll().toBase64();
   file.close();
 
+  return transcriptFromMemory(QByteArray::fromBase64(audioData));
+}
+
+static QByteArray createWavHeader(int sampleRate, int channels, int bitsPerSample, int dataSize) {
+  QByteArray header;
+  header.reserve(44);
+
+  // RIFF header
+  header.append("RIFF");
+  int fileSize = 36 + dataSize;
+  header.append(reinterpret_cast<const char *>(&fileSize), 4);
+  header.append("WAVE");
+
+  // fmt chunk
+  header.append("fmt ");
+  int fmtSize = 16;
+  header.append(reinterpret_cast<const char *>(&fmtSize), 4);
+  short audioFormat = 1; // PCM
+  header.append(reinterpret_cast<const char *>(&audioFormat), 2);
+  short numChannels = channels;
+  header.append(reinterpret_cast<const char *>(&numChannels), 2);
+  int sr = sampleRate;
+  header.append(reinterpret_cast<const char *>(&sr), 4);
+  int byteRate = sampleRate * channels * bitsPerSample / 8;
+  header.append(reinterpret_cast<const char *>(&byteRate), 4);
+  short blockAlign = channels * bitsPerSample / 8;
+  header.append(reinterpret_cast<const char *>(&blockAlign), 2);
+  short bps = bitsPerSample;
+  header.append(reinterpret_cast<const char *>(&bps), 2);
+
+  // data chunk
+  header.append("data");
+  header.append(reinterpret_cast<const char *>(&dataSize), 4);
+
+  return header;
+}
+
+QString LLM::transcriptFromMemory(const QByteArray &pcmData) {
+  if (!m_isRunning) {
+    std::cerr << "LLM: Server not running." << std::endl;
+    return QString();
+  }
+
+  if (pcmData.isEmpty()) {
+    std::cerr << "LLM: No audio data to transcribe." << std::endl;
+    return QString();
+  }
+
+  // Create WAV header: 16kHz, mono, 16-bit
+  const int sampleRate = 16000;
+  const int channels = 1;
+  const int bitsPerSample = 16;
+  QByteArray wavHeader = createWavHeader(sampleRate, channels, bitsPerSample, pcmData.size());
+
+  // Combine header + PCM data
+  QByteArray wavData = wavHeader + pcmData;
+  QByteArray audioBase64 = wavData.toBase64();
+
   QJsonObject message;
   message["role"] = "user";
 
+  // Llama Ultravox format: content as array with type fields
   QJsonArray content;
+
   QJsonObject audioObj;
-  audioObj["input_audio"] = QJsonObject({{"data", QString::fromUtf8(audioData)}, {"format", "wav"}});
+  audioObj["type"] = "input_audio";
+  audioObj["input_audio"] = QJsonObject({{"data", QString::fromUtf8(audioBase64)}, {"format", "wav"}});
   content.append(audioObj);
 
   QJsonObject textObj;
-  textObj["text"] = "Transcribe the audio into a Markdown list. Output ONLY the list.";
+  textObj["type"] = "text";
+  textObj["text"] = "Transcribe the audio. Output ONLY the transcribed text.";
   content.append(textObj);
 
   message["content"] = content;
@@ -158,7 +220,9 @@ QString LLM::transcript(const QString &audioPath) {
   json["messages"] = QJsonArray({message});
   json["temperature"] = 0.0;
 
+  std::cout << "LLM: Sending audio to server... (" << audioBase64.size() << " base64 bytes)" << std::endl;
   QString response = postJson(json);
+  std::cout << "LLM: Received response: " << response.left(200).toStdString() << "..." << std::endl;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (!doc.isNull() && doc.isObject()) {

@@ -47,7 +47,8 @@ bool Gladysd::init() {
   }
 
   std::string exe_path = QCoreApplication::applicationDirPath().toStdString();
-  std::string model_path = exe_path + "/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
+  std::string model_path =
+      exe_path + "/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
   if (!STT::load(model_path)) {
     fprintf(stderr, "Gladysd: Failed to load STT model.\n");
     return false;
@@ -100,11 +101,42 @@ void Gladysd::setupConnections() {
     fprintf(stderr, "Gladysd: Ctrl+Alt+P detected!\n");
     static bool stt_running = false;
     if (stt_running) {
+      // Toggle OFF: stop STT, flush, process with LLM
       STT::stop();
+      STT::setBuffering(false);
       stt_running = false;
+
+      // Get buffered audio and process with LLM
+      QByteArray audioData = STT::getAudioBuffer();
+      fprintf(stderr, "Gladysd: Audio buffer size: %d bytes\n",
+              audioData.size());
+      if (!audioData.isEmpty()) {
+        fprintf(stderr, "Gladysd: Sending request to LLM...\n");
+        QString result = LLM::transcriptFromMemory(audioData);
+        STT::clearAudioBuffer();
+
+        if (!result.isEmpty()) {
+          fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
+          // Copy to clipboard, select all, and paste
+          m_keyType->copyToClipboard(result);
+          usleep(100000); // 100ms for clipboard to be ready
+          m_keyType->selectAllAndPaste();
+        } else {
+          fprintf(stderr, "Gladysd: LLM returned empty result\n");
+        }
+      } else {
+        fprintf(stderr, "Gladysd: No audio data to transcribe\n");
+      }
+
+      // Reset keytype queue for clean state
+      m_keyType->reset();
     } else {
+      // Toggle ON: start STT and enable buffering
+      STT::clearAudioBuffer();
+      STT::setBuffering(true);
       STT::start();
       stt_running = true;
+      fprintf(stderr, "Gladysd: STT started with audio buffering enabled\n");
     }
     emit toggleRequested();
   });

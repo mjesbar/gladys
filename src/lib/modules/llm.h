@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QProcess>
 #include <QString>
+#include <QByteArray>
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -21,6 +22,7 @@ public:
   static bool start();
   static void stop();
   static QString transcript(const QString &audioPath);
+  static QString transcriptFromMemory(const QByteArray &audioData);
 
 private:
   explicit LLM(QObject *parent = nullptr);

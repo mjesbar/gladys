@@ -83,6 +83,49 @@ void KeyType::copyToClipboard(const QString &text) {
   proc->deleteLater();
 }
 
+void KeyType::selectAllAndPaste() {
+  if (m_fd < 0) {
+    fprintf(stderr, "KeyType: uinput not initialized\n");
+    return;
+  }
+
+  fprintf(stderr, "KeyType: Select All (Ctrl+A)...\n");
+
+  // Ctrl+A (Select All)
+  sendKey(KEY_LEFTCTRL, true);
+  usleep(10000);
+  sendKey(KEY_A, true);
+  usleep(10000);
+  sendKey(KEY_A, false);
+  usleep(10000);
+  sendKey(KEY_LEFTCTRL, false);
+
+  // Sync
+  struct input_event ev = {};
+  ev.type = EV_SYN;
+  ev.code = SYN_REPORT;
+  ev.value = 0;
+  write(m_fd, &ev, sizeof(ev));
+
+  usleep(50000); // 50ms delay
+
+  fprintf(stderr, "KeyType: Paste (Ctrl+V)...\n");
+
+  // Ctrl+V (Paste)
+  sendKey(KEY_LEFTCTRL, true);
+  usleep(10000);
+  sendKey(KEY_V, true);
+  usleep(10000);
+  sendKey(KEY_V, false);
+  usleep(10000);
+  sendKey(KEY_LEFTCTRL, false);
+
+  // Sync
+  write(m_fd, &ev, sizeof(ev));
+
+  fprintf(stderr, "KeyType: Select All + Paste complete\n");
+}
+
 void KeyType::paste() {
   // Ctrl+Shift+V (paste without formatting)
   sendKey(KEY_LEFTSHIFT, true);

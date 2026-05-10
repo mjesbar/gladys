@@ -18,6 +18,9 @@ public:
   static KeyType *instance();
   void reset();
   void push(const QString &chunk);
+  void copyToClipboard(const QString &text);
+  void paste();
+  void selectAllAndPaste();
 
 private:
   explicit KeyType(QObject *parent = nullptr);
@@ -26,8 +29,6 @@ private:
   bool initUinput();
   void closeUinput();
   void sendKey(unsigned int code, bool press);
-  void copyToClipboard(const QString &text);
-  void paste();
   void sendText(const QString &text);
 
   void processQueue();
