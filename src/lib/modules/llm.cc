@@ -4,12 +4,12 @@
 #include "gladysd.h"
 #include <QCoreApplication>
 #include <QFile>
-#include <QProcess>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
-#include <QNetworkRequest>
 #include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QProcess>
 #include <QTimer>
 #include <iostream>
 
@@ -20,9 +20,7 @@ bool LLM::m_isRunning = false;
 
 LLM::LLM(QObject *parent) : QObject(parent) {}
 
-LLM::~LLM() {
-  stop();
-}
+LLM::~LLM() { stop(); }
 
 LLM *LLM::instance() {
   if (!m_instance) {
@@ -37,28 +35,31 @@ bool LLM::start() {
     return true;
   }
 
-QString exe_path = QCoreApplication::applicationDirPath();
-QString llama_path = exe_path + "/llama.cpp/llama-b9049-vulkan";
-QString program = llama_path + "/llama-server";
+  QString exe_path = QCoreApplication::applicationDirPath();
+  QString llama_path = exe_path + "/llama.cpp/llama-b9049-vulkan";
+  QString program = llama_path + "/llama-server";
 
-QFile file(program);
-if (!file.exists()) {
-  std::cerr << "LLM: llama-server not found at: " << qPrintable(program) << std::endl;
-  return false;
-}
+  QFile file(program);
+  if (!file.exists()) {
+    std::cerr << "LLM: llama-server not found at: " << qPrintable(program)
+              << std::endl;
+    return false;
+  }
 
-m_serverProcess = new QProcess();
-m_serverProcess->setProgram(program);
-m_serverProcess->setArguments(QStringList()
-  << "-m" << exe_path + "/llama.cpp/llama-b9049-vulkan/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
-  << "--mmproj" << exe_path + "/llama.cpp/llama-b9049-vulkan/models/mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf"
-  << "--ctx-size" << "8192"
-  << "--n-gpu-layers" << "99"
-  << "-ngl" << "99"
-  << "--port" << "8080");
+  m_serverProcess = new QProcess();
+  m_serverProcess->setProgram(program);
+  m_serverProcess->setArguments(
+      QStringList() << "-m"
+                    << exe_path + "/llama.cpp/llama-b9049-vulkan/models/"
+                                  "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+                    << "--ctx-size" << "8192"
+                    << "--n-gpu-layers" << "99"
+                    << "-ngl" << "99"
+                    << "--port" << "8080");
 
-QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-env.insert("LD_LIBRARY_PATH", llama_path + ":" + env.value("LD_LIBRARY_PATH"));
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  env.insert("LD_LIBRARY_PATH",
+             llama_path + ":" + env.value("LD_LIBRARY_PATH"));
   m_serverProcess->setProcessEnvironment(env);
 
   QObject::connect(m_serverProcess, &QProcess::readyReadStandardError, []() {
@@ -84,7 +85,8 @@ env.insert("LD_LIBRARY_PATH", llama_path + ":" + env.value("LD_LIBRARY_PATH"));
   loop.exec();
 
   m_isRunning = true;
-  std::cout << "LLM: Server started on " << qPrintable(m_serverUrl) << std::endl;
+  std::cout << "LLM: Server started on " << qPrintable(m_serverUrl)
+            << std::endl;
   return true;
 }
 
@@ -136,22 +138,29 @@ QString LLM::beautifyText(const QString &text) {
 
   QJsonObject message;
   message["role"] = "user";
-  message["content"] = "Transforma el siguiente texto en formato Markdown nicely estructurado. Usa negritas, listas, y formato apropiado. Solo devuelve el resultado formateado, sin explicaciones:\n\n" + text;
+  message["content"] =
+      "Transforma el siguiente texto en formato Markdown nicely estructurado. "
+      "Usa negritas, listas, y formato apropiado. Solo devuelve el resultado "
+      "formateado, sin explicaciones:\n\n" +
+      text;
 
   QJsonObject json;
   json["messages"] = QJsonArray({message});
   json["temperature"] = 0.0;
 
-  std::cout << "LLM: Beautifying text: " << text.left(50).toStdString() << "..." << std::endl;
+  std::cout << "LLM: Beautifying text: " << text.left(50).toStdString() << "..."
+            << std::endl;
   QString response = postJson(json);
-  std::cout << "LLM: Beautified response: " << response.left(200).toStdString() << "..." << std::endl;
+  std::cout << "LLM: Beautified response: " << response.left(200).toStdString()
+            << "..." << std::endl;
 
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (!doc.isNull() && doc.isObject()) {
     QJsonObject obj = doc.object();
     QJsonArray choices = obj["choices"].toArray();
     if (!choices.isEmpty()) {
-      QString result = choices[0].toObject()["message"].toObject()["content"].toString();
+      QString result =
+          choices[0].toObject()["message"].toObject()["content"].toString();
       std::cout << "LLM: Beautified: " << qPrintable(result) << std::endl;
       return result;
     }
