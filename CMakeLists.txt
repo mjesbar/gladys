@@ -5,6 +5,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Architecture detection
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64|arm64")
+  set(GLADYS_ARCH "arm")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  set(GLADYS_ARCH "x64")
+else()
+  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
 # Optimization
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
@@ -35,8 +44,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(X11 REQUIRED)
 endif()
 
-# sherpa-onnx library path
-set(SHERPA_ONNX_LIB_DIR ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/linux/x64/lib)
+# Map OS name to sherpa-onnx directory
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(SHERPA_ONNX_OS_DIR "linux")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(SHERPA_ONNX_OS_DIR "macos")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(SHERPA_ONNX_OS_DIR "win")
+endif()
+
+# sherpa-onnx library path (dynamic per OS and architecture)
+set(SHERPA_ONNX_LIB_DIR
+  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/${SHERPA_ONNX_OS_DIR}/${GLADYS_ARCH}/lib
+)
 
 # Source files - all modules in one executable
 set(GLADYS_SOURCES
