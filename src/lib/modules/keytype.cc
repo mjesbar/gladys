@@ -14,6 +14,30 @@
 #include <cerrno>
 #endif
 
+// Cross-platform sleep (milliseconds)
+#ifdef _WIN32
+#include <windows.h>
+#define SleepMs(ms) Sleep(ms)
+#else
+#include <unistd.h>
+#define SleepMs(ms) usleep((ms) * 1000)
+#endif
+
+// Linux KEY_* constants needed on all platforms for shared typing logic.
+// On Linux these come from <linux/uinput.h>; define fallbacks elsewhere.
+#ifndef KEY_LEFTCTRL
+#define KEY_LEFTCTRL 29
+#endif
+#ifndef KEY_LEFTSHIFT
+#define KEY_LEFTSHIFT 42
+#endif
+#ifndef KEY_A
+#define KEY_A 30
+#endif
+#ifndef KEY_V
+#define KEY_V 47
+#endif
+
 KeyType *KeyType::s_instance = nullptr;
 
 KeyType::KeyType(QObject *parent)
@@ -199,23 +223,13 @@ void KeyType::selectAllAndPaste() {
   fprintf(stderr, "KeyType: Select All (Ctrl+A)...\n");
 
   // Ctrl+A (Select All) — Cmd+A on macOS
-#ifdef __APPLE__
   sendKey(KEY_LEFTCTRL, true);  // mapped to Cmd in macKeyCode
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_A, true);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_A, false);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_LEFTCTRL, false);
-#else
-  sendKey(KEY_LEFTCTRL, true);
-  usleep(10000);
-  sendKey(KEY_A, true);
-  usleep(10000);
-  sendKey(KEY_A, false);
-  usleep(10000);
-  sendKey(KEY_LEFTCTRL, false);
-#endif
 
 #ifdef __linux__
   // Sync
@@ -226,17 +240,17 @@ void KeyType::selectAllAndPaste() {
   write(m_fd, &ev, sizeof(ev));
 #endif
 
-  usleep(50000); // 50ms delay
+  SleepMs(50); // 50ms delay
 
   fprintf(stderr, "KeyType: Paste (Ctrl+V)...\n");
 
   // Ctrl+V (Paste) — Cmd+V on macOS
   sendKey(KEY_LEFTCTRL, true);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_V, true);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_V, false);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_LEFTCTRL, false);
 
 #ifdef __linux__
@@ -251,11 +265,11 @@ void KeyType::paste() {
   // Ctrl+Shift+V (paste without formatting) — Cmd+Shift+V on macOS
   sendKey(KEY_LEFTSHIFT, true);
   sendKey(KEY_LEFTCTRL, true);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_V, true);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_V, false);
-  usleep(10000);
+  SleepMs(10);
   sendKey(KEY_LEFTCTRL, false);
   sendKey(KEY_LEFTSHIFT, false);
 
@@ -275,10 +289,10 @@ void KeyType::sendText(const QString &text) {
 #endif
 
   copyToClipboard(text);
-  usleep(50000); // 50ms for clipboard
+  SleepMs(50); // 50ms for clipboard
 
   paste();
-  usleep(100000); // 100ms after paste
+  SleepMs(100); // 100ms after paste
 }
 
 void KeyType::reset() {
