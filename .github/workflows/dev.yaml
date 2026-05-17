@@ -21,13 +21,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
-        with:
-          version: "6.7.*"
-          host: "linux"
-          target: "desktop"
-          arch: "linux_gcc_64"
-          cache: true
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -45,13 +39,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
-        with:
-          version: "6.7.*"
-          host: "linux"
-          target: "desktop"
-          arch: "linux_gcc_64"
-          cache: true
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
