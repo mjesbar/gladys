@@ -1,0 +1,37 @@
+Gladys - Windows Setup
+=======================
+
+Prerequisites:
+- Windows 10 or 11
+- Visual Studio 2022 (or Build Tools) with C++ workload
+- Qt 6.x (install via online installer from qt.io)
+- CMake (install from cmake.org or via Visual Studio Installer)
+
+Build (x64 Native Tools Command Prompt):
+  mkdir build
+  cd build
+  cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=C:\Qt\6.x.x\msvc2022_64
+  cmake --build .
+
+Run:
+  .\bin\gladys.exe
+
+Administrator Privileges:
+Gladys uses SetWindowsHookEx to detect the global hotkey (Ctrl+Alt+P).
+This requires the application to run as Administrator.
+
+1. Right-click gladys.exe > Properties > Compatibility
+2. Check "Run this program as an administrator"
+3. Click OK
+
+Or run from an Administrator Command Prompt.
+
+If the hotkey does not work, check the console output for:
+  "KeyGrab: SetWindowsHookEx failed. Run as Administrator."
+
+Models:
+Place sherpa-onnx STT models in:
+  bin\models\sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06\
+
+Place llama.cpp + LLM model in:
+  bin\llama.cpp\llama-b9049-vulkan\

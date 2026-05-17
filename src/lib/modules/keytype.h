@@ -1,4 +1,5 @@
 // KeyType Module - Keyboard typing via clipboard paste.
+// Cross-platform: uinput (Linux), CGEvent (macOS), SendInput (Windows).
 
 #ifndef KEYTYPE_H
 #define KEYTYPE_H
@@ -6,10 +7,21 @@
 #include <QObject>
 #include <QString>
 #include <QQueue>
+
+#ifdef __linux__
 #include <linux/uinput.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
+
+#ifdef __APPLE__
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 class KeyType : public QObject {
   Q_OBJECT
@@ -26,8 +38,8 @@ private:
   explicit KeyType(QObject *parent = nullptr);
   ~KeyType();
 
-  bool initUinput();
-  void closeUinput();
+  bool initKeyboard();
+  void closeKeyboard();
   void sendKey(unsigned int code, bool press);
   void sendText(const QString &text);
 
@@ -37,7 +49,11 @@ private:
 
   static KeyType *s_instance;
 
+#ifdef __linux__
   int m_fd;
+#else
+  int m_dummy;
+#endif
   QQueue<QString> m_queue;
   bool m_processing;
   QString m_lastTyped;

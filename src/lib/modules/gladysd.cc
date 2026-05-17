@@ -1,3 +1,5 @@
+// Gladysd Hub - Main controller managing all system components.
+
 #include "gladysd.h"
 #include "keygrab.h"
 #include "keytype.h"
@@ -5,10 +7,13 @@
 #include "stt.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
-#include <X11/Xlib.h>
 #include <csignal>
 #include <cstdio>
 #include <unistd.h>
+
+#ifdef __linux__
+#include <X11/Xlib.h>
+#endif
 
 Gladysd *Gladysd::s_instance = nullptr;
 
@@ -60,17 +65,22 @@ bool Gladysd::init() {
     return false;
   }
 
+#ifdef __linux__
   m_display = static_cast<void *>(XOpenDisplay(NULL));
   if (!m_display) {
     fprintf(stderr, "Gladysd: Unable to open X display\n");
     return false;
   }
+#else
+  m_display = nullptr;
+#endif
 
   m_keyGrab = new KeyGrab(this);
   if (!m_keyGrab->init(m_display)) {
     return false;
   }
 
+#ifdef __linux__
   // Use QTimer instead of QSocketNotifier for more predictable CPU usage
   // X11 socket polling at 30fps max - hotkey detection doesn't need high
   // frequency
@@ -78,6 +88,7 @@ bool Gladysd::init() {
   x11PollTimer->setInterval(33); // ~30fps
   connect(x11PollTimer, &QTimer::timeout, m_keyGrab, &KeyGrab::processEvents);
   x11PollTimer->start();
+#endif
 
   m_stt = STT::instance();
   m_sttThread = new QThread();
@@ -165,10 +176,12 @@ void Gladysd::shutdown() {
     m_ipcServer = nullptr;
   }
 
+#ifdef __linux__
   if (m_display) {
     XCloseDisplay(static_cast<Display *>(m_display));
     m_display = nullptr;
   }
+#endif
 
   fprintf(stderr, "Gladysd: Shutdown complete.\n");
 }

@@ -1,22 +1,42 @@
 // KeyType Module - Keyboard typing via clipboard paste.
+// Cross-platform: uinput (Linux), CGEvent (macOS), SendInput (Windows).
 
 #include "keytype.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QProcess>
 
+#ifdef __linux__
+#include <cstring>
+#include <cerrno>
+#endif
+
 KeyType *KeyType::s_instance = nullptr;
 
-KeyType::KeyType(QObject *parent) : QObject(parent), m_processing(false), m_fd(-1) {
-  initUinput();
+KeyType::KeyType(QObject *parent)
+    : QObject(parent), m_processing(false)
+#ifdef __linux__
+      , m_fd(-1)
+#else
+      , m_dummy(0)
+#endif
+{
+  initKeyboard();
 }
 
 KeyType::~KeyType() {
-  closeUinput();
+  closeKeyboard();
 }
 
-bool KeyType::initUinput() {
+// ---------------------------------------------------------------------------
+// Platform-specific keyboard initialization
+// ---------------------------------------------------------------------------
+
+#ifdef __linux__
+bool KeyType::initKeyboard() {
   m_fd = open("/dev/uinput", O_WRONLY);
   if (m_fd < 0) {
     m_fd = open("/dev/input/uinput", O_WRONLY);
@@ -51,7 +71,7 @@ bool KeyType::initUinput() {
   return true;
 }
 
-void KeyType::closeUinput() {
+void KeyType::closeKeyboard() {
   if (m_fd >= 0) {
     ioctl(m_fd, UI_DEV_DESTROY);
     close(m_fd);
@@ -73,25 +93,121 @@ void KeyType::sendKey(unsigned int code, bool press) {
   ev.value = 0;
   write(m_fd, &ev, sizeof(ev));
 }
+#endif // __linux__
+
+#ifdef __APPLE__
+// macOS key code mapping from Linux KEY_* constants to CGKeyCode
+static CGKeyCode macKeyCode(unsigned int linuxCode) {
+  // Map only the keys used by Gladys
+  switch (linuxCode) {
+    case KEY_LEFTCTRL:  return 0x3B; // kVK_Control
+    case KEY_LEFTSHIFT: return 0x38; // kVK_Shift
+    case KEY_A:         return 0x00; // kVK_ANSI_A
+    case KEY_V:         return 0x09; // kVK_ANSI_V
+    default:            return 0x00;
+  }
+}
+
+static CGEventFlags macModifiers(unsigned int linuxCode) {
+  switch (linuxCode) {
+    case KEY_LEFTCTRL:  return kCGEventFlagMaskCommand; // Cmd on macOS
+    case KEY_LEFTSHIFT: return kCGEventFlagMaskShift;
+    default:            return 0;
+  }
+}
+
+bool KeyType::initKeyboard() {
+  fprintf(stderr, "KeyType: Using CGEvent keyboard backend\n");
+  return true;
+}
+
+void KeyType::closeKeyboard() {
+  // Nothing to clean up for CGEvent
+}
+
+void KeyType::sendKey(unsigned int code, bool press) {
+  CGKeyCode keyCode = macKeyCode(code);
+  CGEventRef event = CGEventCreateKeyboardEvent(NULL, keyCode, press);
+  if (!event) return;
+  CGEventPost(kCGHIDEventTap, event);
+  CFRelease(event);
+}
+#endif // __APPLE__
+
+#ifdef _WIN32
+// Windows key code mapping from Linux KEY_* constants to Windows VK codes
+static WORD winKeyCode(unsigned int linuxCode) {
+  switch (linuxCode) {
+    case KEY_LEFTCTRL:  return VK_CONTROL;
+    case KEY_LEFTSHIFT: return VK_SHIFT;
+    case KEY_A:         return 'A';
+    case KEY_V:         return 'V';
+    default:            return 0;
+  }
+}
+
+bool KeyType::initKeyboard() {
+  fprintf(stderr, "KeyType: Using SendInput keyboard backend\n");
+  return true;
+}
+
+void KeyType::closeKeyboard() {
+  // Nothing to clean up for SendInput
+}
+
+void KeyType::sendKey(unsigned int code, bool press) {
+  WORD vk = winKeyCode(code);
+  if (!vk) return;
+
+  INPUT ip = {};
+  ip.type = INPUT_KEYBOARD;
+  ip.ki.wVk = vk;
+  if (!press) ip.ki.dwFlags = KEYEVENTF_KEYUP;
+  SendInput(1, &ip, sizeof(ip));
+}
+#endif // _WIN32
+
+// ---------------------------------------------------------------------------
+// Cross-platform clipboard and typing logic
+// ---------------------------------------------------------------------------
 
 void KeyType::copyToClipboard(const QString &text) {
+#ifdef __linux__
   QProcess *proc = new QProcess();
   proc->setProgram("wl-copy");
   proc->setArguments({text});
   proc->start();
   proc->waitForFinished(1000);
   proc->deleteLater();
+#else
+  // macOS and Windows: use Qt clipboard (no external tool needed)
+  QClipboard *clipboard = QApplication::clipboard();
+  if (clipboard) {
+    clipboard->setText(text);
+  }
+#endif
 }
 
 void KeyType::selectAllAndPaste() {
+#ifdef __linux__
   if (m_fd < 0) {
     fprintf(stderr, "KeyType: uinput not initialized\n");
     return;
   }
+#endif
 
   fprintf(stderr, "KeyType: Select All (Ctrl+A)...\n");
 
-  // Ctrl+A (Select All)
+  // Ctrl+A (Select All) — Cmd+A on macOS
+#ifdef __APPLE__
+  sendKey(KEY_LEFTCTRL, true);  // mapped to Cmd in macKeyCode
+  usleep(10000);
+  sendKey(KEY_A, true);
+  usleep(10000);
+  sendKey(KEY_A, false);
+  usleep(10000);
+  sendKey(KEY_LEFTCTRL, false);
+#else
   sendKey(KEY_LEFTCTRL, true);
   usleep(10000);
   sendKey(KEY_A, true);
@@ -99,19 +215,22 @@ void KeyType::selectAllAndPaste() {
   sendKey(KEY_A, false);
   usleep(10000);
   sendKey(KEY_LEFTCTRL, false);
+#endif
 
+#ifdef __linux__
   // Sync
   struct input_event ev = {};
   ev.type = EV_SYN;
   ev.code = SYN_REPORT;
   ev.value = 0;
   write(m_fd, &ev, sizeof(ev));
+#endif
 
   usleep(50000); // 50ms delay
 
   fprintf(stderr, "KeyType: Paste (Ctrl+V)...\n");
 
-  // Ctrl+V (Paste)
+  // Ctrl+V (Paste) — Cmd+V on macOS
   sendKey(KEY_LEFTCTRL, true);
   usleep(10000);
   sendKey(KEY_V, true);
@@ -120,14 +239,16 @@ void KeyType::selectAllAndPaste() {
   usleep(10000);
   sendKey(KEY_LEFTCTRL, false);
 
+#ifdef __linux__
   // Sync
   write(m_fd, &ev, sizeof(ev));
+#endif
 
   fprintf(stderr, "KeyType: Select All + Paste complete\n");
 }
 
 void KeyType::paste() {
-  // Ctrl+Shift+V (paste without formatting)
+  // Ctrl+Shift+V (paste without formatting) — Cmd+Shift+V on macOS
   sendKey(KEY_LEFTSHIFT, true);
   sendKey(KEY_LEFTCTRL, true);
   usleep(10000);
@@ -138,16 +259,20 @@ void KeyType::paste() {
   sendKey(KEY_LEFTCTRL, false);
   sendKey(KEY_LEFTSHIFT, false);
 
+#ifdef __linux__
   // Sync
   struct input_event ev = {};
   ev.type = EV_SYN;
   ev.code = SYN_REPORT;
   ev.value = 0;
   write(m_fd, &ev, sizeof(ev));
+#endif
 }
 
 void KeyType::sendText(const QString &text) {
+#ifdef __linux__
   if (m_fd < 0) return;
+#endif
 
   copyToClipboard(text);
   usleep(50000); // 50ms for clipboard
@@ -201,12 +326,14 @@ void KeyType::push(const QString &chunk) {
 }
 
 void KeyType::runTyping(const QString &chunk) {
+#ifdef __linux__
   if (m_fd < 0) {
     fprintf(stderr, "KeyType: uinput not initialized\n");
     m_processing = false;
     processQueue();
     return;
   }
+#endif
 
   fprintf(stderr, "KeyType: Typing: '%s'\n", qPrintable(chunk));
   sendText(chunk);

@@ -20,7 +20,10 @@
 #include <QGraphicsBlurEffect>
 #include <QGraphicsOpacityEffect>
 #include <QLabel>
+
+#ifdef __linux__
 #include <X11/Xlib.h> // just to remove the shadow
+#endif
 
 static const int WAVE_BAR_COUNT = 20;
 static const int WAVE_BAR_WIDTH = 5;
@@ -56,8 +59,10 @@ UI::UI(QWidget *parent)
   setAutoFillBackground(false);
   setStyleSheet("*{border:none;background:transparent;}");
   // Hint for some X11 window managers
+#ifdef __linux__
   setProperty("_kde_no_shadows", true);
   setProperty("_KDE_NET_WM_SHADOW", false);
+#endif
 
   auto iconsPath = []() { return QCoreApplication::applicationDirPath() + "/icons"; };
 
@@ -112,10 +117,12 @@ UI::~UI() {
 }
 
 void UI::removeShadow() {
+#ifdef __linux__
   Display *d = XOpenDisplay(NULL);
   XDeleteProperty(d, (Window)winId(),
                   XInternAtom(d, "_KDE_NET_WM_SHADOW", False));
   XCloseDisplay(d);
+#endif
 }
 
 void UI::toggleVisibility() {

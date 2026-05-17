@@ -30,14 +30,13 @@ set(INCLUDE_DIRS
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
 
-# Find X11
-find_package(X11 REQUIRED)
+# X11 is Linux-only
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  find_package(X11 REQUIRED)
+endif()
 
 # sherpa-onnx library path
 set(SHERPA_ONNX_LIB_DIR ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/shared/lib)
-
-# CUDA (optional)
-set(CUDA_LIB_DIR ${CMAKE_SOURCE_DIR}/bin/cuda/cuda-12.4.0/targets/x86_64-linux/lib)
 
 # Source files - all modules in one executable
 set(GLADYS_SOURCES
@@ -51,17 +50,39 @@ set(GLADYS_SOURCES
   src/lib/modules/ui.cc
 )
 
+# Executable name depends on target OS
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(GLADYS_EXE_NAME "gladys.exe")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(GLADYS_EXE_NAME "gladys.app")
+else()
+  set(GLADYS_EXE_NAME "gladys")
+endif()
+
 # Executable: gladys (single entry point)
 add_executable(gladys ${GLADYS_SOURCES})
+set_target_properties(gladys PROPERTIES OUTPUT_NAME "${GLADYS_EXE_NAME}")
 target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
+
 target_link_libraries(gladys PRIVATE
   Qt6::Core
   Qt6::Gui
   Qt6::Widgets
   Qt6::Network
   Qt6::Svg
-  ${X11_LIBRARIES}
 )
+
+# Platform-specific libraries
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(gladys PRIVATE ${X11_LIBRARIES})
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_link_libraries(gladys PRIVATE
+    "-framework CoreGraphics"
+    "-framework CoreFoundation"
+  )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_link_libraries(gladys PRIVATE user32)
+endif()
 
 # Add stt.cc specific compile definition for MINIAUDIO_IMPLEMENTATION
 set_source_files_properties(src/lib/modules/stt.cc PROPERTIES
@@ -70,32 +91,55 @@ set_source_files_properties(src/lib/modules/stt.cc PROPERTIES
 
 # Link sherpa-onnx libraries (custom path)
 if(EXISTS ${SHERPA_ONNX_LIB_DIR})
-  target_link_libraries(gladys PRIVATE
-    -L${SHERPA_ONNX_LIB_DIR}
-    -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
-    -lsherpa-onnx-c-api
-    -lsherpa-onnx-cxx-api
-    -lcargs
-    -lonnxruntime
-  )
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(gladys PRIVATE
+      -L${SHERPA_ONNX_LIB_DIR}
+      -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
+      -lsherpa-onnx-c-api
+      -lsherpa-onnx-cxx-api
+      -lcargs
+      -lonnxruntime
+    )
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_libraries(gladys PRIVATE
+      -L${SHERPA_ONNX_LIB_DIR}
+      -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
+      -lsherpa-onnx-c-api
+      -lsherpa-onnx-cxx-api
+      -lcargs
+      -lonnxruntime
+    )
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(gladys PRIVATE
+      ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-c-api.lib
+      ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
+      ${SHERPA_ONNX_LIB_DIR}/cargs.lib
+      ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
+    )
+  endif()
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
-endif()
-
-# Link CUDA if available
-if(EXISTS ${CUDA_LIB_DIR})
-  target_link_libraries(gladys PRIVATE
-    -L${CUDA_LIB_DIR}
-    -Wl,-rpath,${CUDA_LIB_DIR}
-  )
 endif()
 
 # Install targets
 install(TARGETS gladys RUNTIME DESTINATION bin)
 
 # Run the application
-add_custom_target(run
-  COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{LD_LIBRARY_PATH}
-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
-  COMMENT "Running gladys"
-)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_custom_target(run
+    COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{LD_LIBRARY_PATH}
+      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
+    COMMENT "Running gladys"
+  )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  add_custom_target(run
+    COMMAND ${CMAKE_COMMAND} -E env DYLD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{DYLD_LIBRARY_PATH}
+      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.app
+    COMMENT "Running gladys"
+  )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  add_custom_target(run
+    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.exe
+    COMMENT "Running gladys"
+  )
+endif()

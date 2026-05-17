@@ -1,4 +1,5 @@
-// KeyGrab Module - Global hotkey detection using X11.
+// KeyGrab Module - Global hotkey detection.
+// Cross-platform: X11 (Linux), CGEventTap (macOS), SetWindowsHookEx (Windows).
 
 #ifndef KEYGRAB_HPP
 #define KEYGRAB_HPP
@@ -7,6 +8,8 @@
 #include <QDebug>
 #include <QTimer>
 #include <QElapsedTimer>
+
+// Platform-specific includes are in keygrab.cc to avoid namespace pollution.
 
 class KeyGrab : public QObject {
   Q_OBJECT
@@ -32,6 +35,20 @@ private:
   unsigned int m_keycode;
   unsigned int m_modifiers;
   QElapsedTimer m_timer;
+
+#ifdef __APPLE__
+  void *m_eventTap;       // CFMachPortRef (opaque)
+  void *m_runLoopSource;  // CFRunLoopSourceRef (opaque)
+  static void *eventTapCallback(void *proxy, int type,
+                                 void *event, void *userInfo);
+#endif
+
+#ifdef _WIN32
+  void *m_keyboardHook;   // HHOOK (opaque)
+  static long __stdcall lowLevelKeyboardProc(int nCode,
+                                              unsigned long wParam,
+                                              long lParam);
+#endif
 };
 
 #endif // KEYGRAB_HPP

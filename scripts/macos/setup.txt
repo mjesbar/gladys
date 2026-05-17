@@ -1,0 +1,35 @@
+Gladys - macOS Setup
+=====================
+
+Prerequisites:
+- macOS 12 (Monterey) or later
+- Xcode Command Line Tools: xcode-select --install
+- Qt 6.x (via Homebrew): brew install qt
+- CMake: brew install cmake
+
+Build:
+  mkdir -p build && cd build
+  cmake .. -DCMAKE_BUILD_TYPE=Release
+  cmake --build .
+
+Run:
+  ./bin/gladys
+
+Accessibility Permission:
+Gladys uses CGEventTap to detect the global hotkey (Cmd+Option+P).
+macOS requires Accessibility permission for this.
+
+1. Open System Preferences > Privacy & Security > Accessibility
+2. Click the lock to make changes
+3. Add Gladys (or Terminal if running from terminal)
+4. Restart Gladys
+
+If the hotkey does not work, check Console.app for:
+  "KeyGrab: CGEventTapCreate failed. Grant Accessibility permission."
+
+Models:
+Place sherpa-onnx STT models in:
+  bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06/
+
+Place llama.cpp + LLM model in:
+  bin/llama.cpp/llama-b9049-vulkan/

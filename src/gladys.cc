@@ -13,8 +13,10 @@
 #include "lib/modules/ui.h"
 
 int main(int argc, char *argv[]) {
-  // Force X11 (xcb) platform - not Wayland
+  // Force X11 (xcb) platform - not Wayland (Linux only)
+#ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
+#endif
 
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
