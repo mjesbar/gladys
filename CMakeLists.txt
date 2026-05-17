@@ -72,7 +72,7 @@ set(GLADYS_SOURCES
 
 # Executable name depends on target OS
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(GLADYS_EXE_NAME "gladys.exe")
+  set(GLADYS_EXE_NAME "gladys")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(GLADYS_EXE_NAME "gladys.app")
 else()

@@ -149,15 +149,16 @@ void KeyGrab::processEvents() {
   // macOS uses callback-driven CGEventTap; no polling needed.
 }
 
-void *KeyGrab::eventTapCallback(void *proxy, int type,
-                                 void *event, void *userInfo) {
+CGEventRef KeyGrab::eventTapCallback(CGEventTapProxy proxy,
+                                     CGEventType type,
+                                     CGEventRef event,
+                                     void *userInfo) {
   (void)proxy;
   if (type == kCGEventKeyDown) {
     KeyGrab *self = static_cast<KeyGrab*>(userInfo);
-    CGEventRef ev = static_cast<CGEventRef>(event);
     CGKeyCode keyCode = static_cast<CGKeyCode>(
-        CGEventGetIntegerValueField(ev, kCGKeyboardEventKeycode));
-    CGEventFlags flags = CGEventGetFlags(ev);
+        CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
+    CGEventFlags flags = CGEventGetFlags(event);
 
     // Check for Cmd+Option+P
     CGEventFlags required = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate;
