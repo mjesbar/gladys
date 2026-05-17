@@ -11,8 +11,8 @@ jobs:
   # ----------------------------------------------------------------
   # Linux
   # ----------------------------------------------------------------
-  build-linux-arm64:
-    name: Build Linux ARM64
+  build-linux-arm:
+    name: Build Linux ARM
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +74,8 @@ jobs:
   # ----------------------------------------------------------------
   # macOS
   # ----------------------------------------------------------------
-  build-macos-arm64:
-    name: Build macOS x64
+  build-macos-arm:
+    name: Build macOS ARM
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -83,14 +83,14 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4.3.1
         with:
-          version: "6.7.*"
+          version: "6.8.3"
           host: "mac"
           target: "desktop"
-          arch: "clang_64"
+          arch: "arm64"
           cache: true
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build
         run: cmake --build build --parallel
