@@ -1,4 +1,4 @@
-.PHONY: build clean link run linux macos windows all
+.PHONY: build clean link run linux macos windows
 
 # Detect host OS
 UNAME_S := $(shell uname -s)
@@ -40,9 +40,6 @@ windows:
 		-DCMAKE_SYSTEM_NAME=Windows \
 		$(WINDOWS_TOOLCHAIN)
 	@cmake --build build/win
-
-# Build all three targets
-all: linux macos windows
 
 link: build
 	@cmake --build build/linux --target link
