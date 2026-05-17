@@ -233,9 +233,9 @@ void KeyGrab::processEvents() {
   }
 }
 
-long __stdcall KeyGrab::lowLevelKeyboardProc(int nCode,
-                                              unsigned long wParam,
-                                              long lParam) {
+LRESULT CALLBACK KeyGrab::lowLevelKeyboardProc(int nCode,
+                                               WPARAM wParam,
+                                               LPARAM lParam) {
   if (nCode == HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
     KBDLLHOOKSTRUCT *p = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
     // Check for Ctrl+Alt+P

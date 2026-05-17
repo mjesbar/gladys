@@ -11,6 +11,10 @@
 
 // Platform-specific includes are in keygrab.cc to avoid namespace pollution.
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 class KeyGrab : public QObject {
   Q_OBJECT
 
@@ -45,9 +49,9 @@ private:
 
 #ifdef _WIN32
   void *m_keyboardHook;   // HHOOK (opaque)
-  static long __stdcall lowLevelKeyboardProc(int nCode,
-                                              unsigned long wParam,
-                                              long lParam);
+  static LRESULT CALLBACK lowLevelKeyboardProc(int nCode,
+                                               WPARAM wParam,
+                                               LPARAM lParam);
 #endif
 };
 
