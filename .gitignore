@@ -41,3 +41,5 @@ include/sherpa-onnx/macos/*
 !include/sherpa-onnx/macos/x64
 !include/sherpa-onnx/macos/arm/lib
 !include/sherpa-onnx/macos/x64/lib
+
+compile_commands.json
