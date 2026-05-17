@@ -7,15 +7,10 @@ bin/cuda/**/*
 
 .cache/
 moc/
+build/
 
 include/*
-!include/miniaudio/
 include/sherpa-onnx/*
-!include/sherpa-onnx/
-!include/sherpa-onnx/shared/
-include/sherpa-onnx/shared/bin/
 !include/sherpa-onnx/build.sh
 !include/sherpa-onnx/env.sh
-
-.opencode/fragments
-build/
+!include/miniaudio/
