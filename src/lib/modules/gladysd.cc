@@ -9,7 +9,14 @@
 #include <QElapsedTimer>
 #include <csignal>
 #include <cstdio>
+
+// Cross-platform sleep (milliseconds)
+#ifdef _WIN32
+#define SleepMs(ms) Sleep(ms)
+#else
 #include <unistd.h>
+#define SleepMs(ms) usleep((ms) * 1000)
+#endif
 
 #ifdef __linux__
 #include <X11/Xlib.h>
@@ -128,7 +135,7 @@ void Gladysd::setupConnections() {
           fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
           // Copy to clipboard, select all, and paste
           m_keyType->copyToClipboard(result);
-          usleep(100000); // 100ms for clipboard to be ready
+          SleepMs(100); // 100ms for clipboard to be ready
           m_keyType->selectAllAndPaste();
         } else {
           fprintf(stderr, "Gladysd: LLM returned empty result\n");

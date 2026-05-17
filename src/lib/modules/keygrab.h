@@ -11,6 +11,13 @@
 
 // Platform-specific includes are in keygrab.cc to avoid namespace pollution.
 
+#ifdef __APPLE__
+#include <CoreGraphics/CoreGraphics.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 class KeyGrab : public QObject {
   Q_OBJECT
 
@@ -39,15 +46,17 @@ private:
 #ifdef __APPLE__
   void *m_eventTap;       // CFMachPortRef (opaque)
   void *m_runLoopSource;  // CFRunLoopSourceRef (opaque)
-  static void *eventTapCallback(void *proxy, int type,
-                                 void *event, void *userInfo);
+  static CGEventRef eventTapCallback(CGEventTapProxy proxy,
+                                     CGEventType type,
+                                     CGEventRef event,
+                                     void *userInfo);
 #endif
 
 #ifdef _WIN32
   void *m_keyboardHook;   // HHOOK (opaque)
-  static long __stdcall lowLevelKeyboardProc(int nCode,
-                                              unsigned long wParam,
-                                              long lParam);
+  static LRESULT CALLBACK lowLevelKeyboardProc(int nCode,
+                                               WPARAM wParam,
+                                               LPARAM lParam);
 #endif
 };
 

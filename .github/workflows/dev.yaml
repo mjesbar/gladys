@@ -1,0 +1,96 @@
+name: Dev Build
+
+on:
+  pull_request:
+    branches: ["*"]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # ----------------------------------------------------------------
+  # Linux
+  # ----------------------------------------------------------------
+  build-linux-arm64:
+    name: Build Linux ARM64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install X11 dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+
+      - name: Install Qt6
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+  build-linux-x64:
+    name: Build Linux x64
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install X11 dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+
+      - name: Install Qt6
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+  # ----------------------------------------------------------------
+  # Windows
+  # ----------------------------------------------------------------
+  build-win-x64:
+    name: Build Windows x64
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: "6.8.3"
+          host: "windows"
+          target: "desktop"
+          arch: "win64_msvc2022_64"
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+  # ----------------------------------------------------------------
+  # macOS
+  # ----------------------------------------------------------------
+  build-macos-arm64:
+    name: Build macOS x64
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: "6.7.*"
+          host: "mac"
+          target: "desktop"
+          arch: "clang_64"
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
