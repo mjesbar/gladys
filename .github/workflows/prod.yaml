@@ -1,0 +1,366 @@
+name: Prod Release
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  # Extract version from the merge commit message:
+  #   "Merge branch '1.7.8' into main"  -> 1.7.8
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from merged branch name
+        id: extract
+        run: |
+          # Get the merge commit message: "Merge branch 'X.Y.Z' into main"
+          MSG="${{ github.event.head_commit.message }}"
+          # Extract the branch name between single quotes after "Merge branch '"
+          VERSION=$(echo "$MSG" | sed -n "s/^Merge branch '\([0-9]*\.[0-9]*\.[0-9]*\)' into main/\1/p")
+          if [ -z "$VERSION" ]; then
+            # Fallback: use the second parent branch name
+            VERSION=$(git log -1 --merges --format="%P" | awk '{print $2}' | xargs git name-rev --name-only --tags --no-undefined 2>/dev/null || echo "0.0.0")
+          fi
+          echo "version=${VERSION:-0.0.0}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${VERSION:-0.0.0}"
+
+  # ----------------------------------------------------------------
+  # Linux
+  # ----------------------------------------------------------------
+  release-linux-arm64:
+    name: Release Linux ARM64
+    needs: [ version ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross-compilation toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libx11-dev:arm64
+
+      - name: Install Qt6 (host)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          cache: true
+
+      - name: Configure CMake (ARM64 cross)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_SYSTEM_NAME=Linux
+          -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc
+          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          mkdir -p release
+          cp build/bin/gladys release/
+          cd release
+          tar czf gladys-linux-arm64-${VERSION}.tar.gz gladys
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-linux-arm64-*.tar.gz
+
+  release-linux-x64:
+    name: Release Linux x64
+    needs: [ version ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install X11 dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          mkdir -p release
+          cp build/bin/gladys release/
+          cd release
+          tar czf gladys-linux-x64-${VERSION}.tar.gz gladys
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-linux-x64-*.tar.gz
+
+  release-linux-x86:
+    name: Release Linux x86
+    needs: [ version ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross-compilation toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-i686-linux-gnu g++-i686-linux-gnu libx11-dev:i386
+
+      - name: Install Qt6 (host)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          cache: true
+
+      - name: Configure CMake (x86 cross)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_SYSTEM_NAME=Linux
+          -DCMAKE_C_COMPILER=i686-linux-gnu-gcc
+          -DCMAKE_CXX_COMPILER=i686-linux-gnu-g++
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          mkdir -p release
+          cp build/bin/gladys release/
+          cd release
+          tar czf gladys-linux-x86-${VERSION}.tar.gz gladys
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-linux-x86-*.tar.gz
+
+  # ----------------------------------------------------------------
+  # Windows
+  # ----------------------------------------------------------------
+  release-win-arm64:
+    name: Release Windows ARM64
+    needs: [ version ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          cache: true
+
+      - name: Configure CMake (ARM64 cross)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_SYSTEM_NAME=Windows
+          -DCMAKE_GENERATOR_PLATFORM=ARM64
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $version = "${{ needs.version.outputs.version }}"
+          New-Item -ItemType Directory -Path release -Force
+          Copy-Item build/bin/Release/gladys.exe release/
+          Compress-Archive -Path release/gladys.exe -DestinationPath release/gladys-win-arm64-$version.zip
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-win-arm64-*.zip
+
+  release-win-x64:
+    name: Release Windows x64
+    needs: [ version ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          cache: true
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $version = "${{ needs.version.outputs.version }}"
+          New-Item -ItemType Directory -Path release -Force
+          Copy-Item build/bin/Release/gladys.exe release/
+          Compress-Archive -Path release/gladys.exe -DestinationPath release/gladys-win-x64-$version.zip
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-win-x64-*.zip
+
+  release-win-x86:
+    name: Release Windows x86
+    needs: [ version ]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          cache: true
+
+      - name: Configure CMake (x86 cross)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_GENERATOR_PLATFORM=Win32
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $version = "${{ needs.version.outputs.version }}"
+          New-Item -ItemType Directory -Path release -Force
+          Copy-Item build/bin/Release/gladys.exe release/
+          Compress-Archive -Path release/gladys.exe -DestinationPath release/gladys-win-x86-$version.zip
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-win-x86-*.zip
+
+  # ----------------------------------------------------------------
+  # macOS
+  # ----------------------------------------------------------------
+  release-macos-arm64:
+    name: Release macOS ARM64
+    needs: [ version ]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          cache: true
+
+      - name: Configure CMake (ARM64)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          mkdir -p release
+          cp -R build/bin/gladys.app release/
+          cd release
+          zip -r gladys-macos-arm64-${VERSION}.zip gladys.app
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-macos-arm64-*.zip
+
+  release-macos-x64:
+    name: Release macOS x64
+    needs: [ version ]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.*'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          cache: true
+
+      - name: Configure CMake (x64)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_OSX_ARCHITECTURES=x86_64
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Package release
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          mkdir -p release
+          cp -R build/bin/gladys.app release/
+          cd release
+          zip -r gladys-macos-x64-${VERSION}.zip gladys.app
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Gladys v${{ needs.version.outputs.version }}
+          files: release/gladys-macos-x64-*.zip
