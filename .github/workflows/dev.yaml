@@ -68,30 +68,6 @@ jobs:
   # ----------------------------------------------------------------
   # Windows
   # ----------------------------------------------------------------
-  build-win-arm64:
-    name: Build Windows ARM64
-    runs-on: windows-11-arm
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build sherpa-onnx
-        run: (cd include/sherpa-onnx && bash build.sh)
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
-        with:
-          version: "6.7.*"
-          host: "windows"
-          target: "desktop"
-          arch: "win64_msvc2022_64"
-          cache: true
-
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
-      - name: Build
-        run: cmake --build build --parallel
-
   build-win-x64:
     name: Build Windows x64
     runs-on: windows-2025
@@ -120,30 +96,6 @@ jobs:
   # macOS
   # ----------------------------------------------------------------
   build-macos-arm64:
-    name: Build macOS ARM64
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build sherpa-onnx
-        run: (cd include/sherpa-onnx && bash build.sh)
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
-        with:
-          version: "6.7.*"
-          host: "mac"
-          target: "desktop"
-          arch: "clang_64"
-          cache: true
-
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
-      - name: Build
-        run: cmake --build build --parallel
-
-  build-macos-x64:
     name: Build macOS x64
     runs-on: macos-13
     steps:
