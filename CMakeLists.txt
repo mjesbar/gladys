@@ -24,7 +24,7 @@ set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src/lib
   ${CMAKE_SOURCE_DIR}/src/lib/modules
   ${CMAKE_SOURCE_DIR}/include/miniaudio
-  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/shared/include
+  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/include
 )
 
 # Find Qt6
@@ -36,7 +36,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # sherpa-onnx library path
-set(SHERPA_ONNX_LIB_DIR ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/shared/lib)
+set(SHERPA_ONNX_LIB_DIR ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/linux/x64/lib)
 
 # Source files - all modules in one executable
 set(GLADYS_SOURCES
@@ -97,7 +97,6 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
       -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
-      -lcargs
       -lonnxruntime
     )
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -106,14 +105,12 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
       -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
-      -lcargs
       -lonnxruntime
     )
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(gladys PRIVATE
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-c-api.lib
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
-      ${SHERPA_ONNX_LIB_DIR}/cargs.lib
       ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
     )
   endif()
