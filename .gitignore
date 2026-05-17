@@ -11,6 +11,7 @@ build/
 
 include/*
 include/sherpa-onnx/*
+!include/sherpa-onnx/
 !include/sherpa-onnx/build.sh
 !include/sherpa-onnx/env.sh
 !include/miniaudio/

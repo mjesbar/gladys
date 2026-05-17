@@ -41,6 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
+
       - name: Install X11 dev
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
 
@@ -80,6 +83,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
 
       - name: Install X11 dev
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
@@ -124,6 +130,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
+
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4.3.1
         with:
@@ -160,6 +169,9 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4.3.1
@@ -201,6 +213,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
+
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4.3.1
         with:
@@ -237,6 +252,9 @@ jobs:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
+
+      - name: Build sherpa-onnx
+        run: (cd include/sherpa-onnx && bash build.sh)
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4.3.1
