@@ -6,3 +6,4 @@ bin/llama.cpp/llama-b9265-bin-macos-arm64.tar.gz filter=lfs diff=lfs merge=lfs -
 bin/llama.cpp/llama-b9265-bin-ubuntu-vulkan-arm64.tar.gz filter=lfs diff=lfs merge=lfs -text
 bin/llama.cpp/llama-b9265-bin-ubuntu-vulkan-x64.tar.gz filter=lfs diff=lfs merge=lfs -text
 bin/llama.cpp/llama-b9265-bin-win-vulkan-x64.zip filter=lfs diff=lfs merge=lfs -text
+bin/models.tar.gz filter=lfs diff=lfs merge=lfs -text
