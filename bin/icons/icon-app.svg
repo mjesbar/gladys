@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- Radial Gradient for Background -->
+    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF; stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFFFFF; stop-opacity:1" />
+    </radialGradient>
+
+    <mask id="grid-mask">
+      <rect x="0" y="0" width="1024" height="1024" fill="white" />
+      <g fill="#404040">
+        <!-- Vertical Gaps -->
+        <rect x="340.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="376.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="412.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="448.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="484.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="520.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="556.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="592.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="628.5" y="190" width="19" height="470" rx="10" ry="10" />
+        <rect x="664.5" y="190" width="19" height="470" rx="10" ry="10" />
+
+        <!-- Horizontal Gaps -->
+        <rect x="370" y="145" width="290" height="10" rx="5" ry="5" />
+        <rect x="335" y="167" width="360" height="12" rx="6" ry="6" />
+        <rect x="310" y="186" width="400" height="14" rx="7" ry="7" />
+        <rect x="300" y="216" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="256" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="297" width="424" height="22" rx="10" ry="10" />
+        <rect x="300" y="336" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="376" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="416" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="457" width="424" height="22" rx="10" ry="10" />
+        <rect x="300" y="496" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="536" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="576" width="424" height="24" rx="10" ry="10" />
+        <rect x="300" y="617" width="424" height="22" rx="10" ry="10" />
+        <rect x="310" y="650" width="400" height="14" rx="7" ry="7" />
+        <rect x="335" y="680" width="360" height="12" rx="6" ry="6" />
+        <rect x="370" y="705" width="290" height="10" rx="5" ry="5" />
+      </g>
+    </mask>
+  </defs>
+
+  <!-- Background with Radial Gradient -->
+  <circle cx="512" cy="512" r="512" fill="url(#bg-gradient)" />
+
+  <!-- Trapezoid Support -->
+  <path fill="#000000" d="M387 776H637L612 896Q612 906 582 926H442Q412 906 412 896Z" />
+
+  <!-- Microphone Head -->
+  <path
+    fill="#000000"
+    mask="url(#grid-mask)"
+    d="     M592 808H432a160 160 0 0 1-160-160V264A160 160 0 0 1 432 104h160a160 160 0 0 1 160 160v384a160 160 0 0 1-160 160z   "
+  />
+</svg>
