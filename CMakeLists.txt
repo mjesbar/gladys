@@ -30,10 +30,8 @@ add_compile_definitions(MA_DEBUG_OUTPUT)
 # Include directories
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/lib
-  ${CMAKE_SOURCE_DIR}/src/lib/modules
-  ${CMAKE_SOURCE_DIR}/include/miniaudio
-  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/include
+  ${CMAKE_SOURCE_DIR}/src/modules
+  ${CMAKE_SOURCE_DIR}/include
 )
 
 # Find Qt6
@@ -55,19 +53,19 @@ endif()
 
 # sherpa-onnx library path (dynamic per OS and architecture)
 set(SHERPA_ONNX_LIB_DIR
-  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/${SHERPA_ONNX_OS_DIR}/${GLADYS_ARCH}/lib
+  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/lib/${SHERPA_ONNX_OS_DIR}/${GLADYS_ARCH}
 )
 
 # Source files - all modules in one executable
 set(GLADYS_SOURCES
   src/gladys.cc
-  src/lib/modules/gladysd.cc
-  src/lib/modules/ipc.cc
-  src/lib/modules/stt.cc
-  src/lib/modules/llm.cc
-  src/lib/modules/keygrab.cc
-  src/lib/modules/keytype.cc
-  src/lib/modules/ui.cc
+  src/modules/gladysd.cc
+  src/modules/ipc.cc
+  src/modules/stt.cc
+  src/modules/llm.cc
+  src/modules/keygrab.cc
+  src/modules/keytype.cc
+  src/modules/ui.cc
 )
 
 # Executable name depends on target OS
@@ -105,7 +103,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 # Add stt.cc specific compile definition for MINIAUDIO_IMPLEMENTATION
-set_source_files_properties(src/lib/modules/stt.cc PROPERTIES
+set_source_files_properties(src/modules/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
 
