@@ -19,12 +19,19 @@ run: build
 
 # Package targets for CI release (exclude cuda/, LFS tarballs, headers, scripts)
 package:
+	@# Remove empty c-api directory
+	@rm -rf bin/c-api 2>/dev/null || true
+	@# Extract LFS archives into place
+	@cd bin/llama.cpp && \
+		tar xzf llama-b9265-bin-ubuntu-vulkan-x64.tar.gz 2>/dev/null && \
+		tar xzf models.tar.gz -C llama-b9265 2>/dev/null || true
+	@cd bin/sherpaonnx && \
+		tar xjf sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06.tar.bz2 2>/dev/null || true
+	@# Remove tarballs
+	@find bin/ -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' | xargs rm -f 2>/dev/null || true
 	@mkdir -p release
 	rsync -a \
 		--exclude=cuda \
-		--exclude='*.tar.gz' \
-		--exclude='*.tar.bz2' \
-		--exclude='*.tar.xz' \
 		--exclude='*.h' \
 		--exclude='*.hpp' \
 		--exclude='*.sh' \
