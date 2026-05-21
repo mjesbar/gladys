@@ -19,6 +19,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # Output directory for executables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -31,7 +32,7 @@ add_compile_definitions(MA_DEBUG_OUTPUT)
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/modules
-  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/bin/include
 )
 
 # Find Qt6
@@ -53,7 +54,7 @@ endif()
 
 # sherpa-onnx library path (dynamic per OS and architecture)
 set(SHERPA_ONNX_LIB_DIR
-  ${CMAKE_SOURCE_DIR}/include/sherpa-onnx/lib/${SHERPA_ONNX_OS_DIR}/${GLADYS_ARCH}
+  ${CMAKE_SOURCE_DIR}/bin/include/sherpa-onnx/lib/${SHERPA_ONNX_OS_DIR}/${GLADYS_ARCH}
 )
 
 # Source files - all modules in one executable
@@ -108,11 +109,12 @@ set_source_files_properties(src/modules/stt.cc PROPERTIES
 )
 
 # Link sherpa-onnx libraries (custom path)
+# Use $ORIGIN-relative rpath so the executable finds libs when deployed
 if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(gladys PRIVATE
       -L${SHERPA_ONNX_LIB_DIR}
-      -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
+      -Wl,-rpath,$ORIGIN/include/sherpa-onnx/lib/linux/${GLADYS_ARCH}
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
       -lonnxruntime
@@ -120,7 +122,7 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(gladys PRIVATE
       -L${SHERPA_ONNX_LIB_DIR}
-      -Wl,-rpath,${SHERPA_ONNX_LIB_DIR}
+      -Wl,-rpath,@loader_path/include/sherpa-onnx/lib/macos/${GLADYS_ARCH}
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
       -lonnxruntime
@@ -142,14 +144,12 @@ install(TARGETS gladys RUNTIME DESTINATION bin)
 # Run the application
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_custom_target(run
-    COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{LD_LIBRARY_PATH}
-      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
+    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
     COMMENT "Running gladys"
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   add_custom_target(run
-    COMMAND ${CMAKE_COMMAND} -E env DYLD_LIBRARY_PATH=${SHERPA_ONNX_LIB_DIR}:$ENV{DYLD_LIBRARY_PATH}
-      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.app
+    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.app
     COMMENT "Running gladys"
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")

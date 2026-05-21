@@ -1,4 +1,4 @@
-.PHONY: build clean link run linux macos windows
+.PHONY: build clean run package package-linux package-macos package-win
 
 # Detect host OS
 UNAME_S := $(shell uname -s)
@@ -6,46 +6,38 @@ UNAME_S := $(shell uname -s)
 # Default target: build for host OS only
 build:
 	@echo "Building for $(UNAME_S)..."
-	@mkdir -p build/linux
-	@cmake -B build/linux -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	@cmake --build build/linux
-	@ln -sf build/linux/compile_commands.json .
-
-# Cross-compile for Linux (native or cross)
-linux:
-	@echo "Building for Linux..."
-	@mkdir -p build/linux
-	@cmake -B build/linux -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-		-DCMAKE_SYSTEM_NAME=Linux \
-		$(LINUX_TOOLCHAIN)
-	@cmake --build build/linux
-
-# Cross-compile for macOS
-macos:
-	@echo "Building for macOS..."
-	@mkdir -p build/macos
-	@cmake -B build/macos -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-		-DCMAKE_SYSTEM_NAME=Darwin \
-		$(MACOS_TOOLCHAIN)
-	@cmake --build build/macos
-
-# Cross-compile for Windows
-windows:
-	@echo "Building for Windows..."
-	@mkdir -p build/win
-	@cmake -B build/win -DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-		-DCMAKE_SYSTEM_NAME=Windows \
-		$(WINDOWS_TOOLCHAIN)
-	@cmake --build build/win
-
-link: build
-	@cmake --build build/linux --target link
+	@mkdir -p build
+	@cmake -B build \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	@cmake --build build --parallel
+	@ln -sf build/compile_commands.json . 2>/dev/null || true
 
 run: build
-	@cmake --build build/linux --target run
+	@cmake --build build --target run
+
+# Package targets for CI release (exclude cuda/, LFS tarballs, headers, scripts)
+package:
+	@mkdir -p release
+	rsync -a \
+		--exclude=cuda \
+		--exclude='*.tar.gz' \
+		--exclude='*.tar.bz2' \
+		--exclude='*.tar.xz' \
+		--exclude='*.h' \
+		--exclude='*.hpp' \
+		--exclude='*.sh' \
+		--exclude=miniaudio \
+		bin/ release/bin/
+
+package-linux: package
+	cd release && tar czf gladys-linux-$(ARCH)-$(VERSION).tar.gz bin/
+
+package-macos: package
+	cd release && zip -r gladys-macos-$(ARCH)-$(VERSION).zip bin/
+
+package-win: package
+	cd release && zip -r gladys-win-$(ARCH)-$(VERSION).zip bin/
 
 clean:
-	@rm -rf build compile_commands.json
+	@rm -rf build release compile_commands.json

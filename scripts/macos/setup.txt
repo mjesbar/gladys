@@ -29,7 +29,7 @@ If the hotkey does not work, check Console.app for:
 
 Models:
 Place sherpa-onnx STT models in:
-  bin/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06/
+  bin/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06/
 
 Place llama.cpp + LLM model in:
-  bin/llama.cpp/llama-b9049-vulkan/
+  bin/llama.cpp/llama-b9049/
