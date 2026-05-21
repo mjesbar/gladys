@@ -3,7 +3,7 @@
 #ifndef STT_H
 #define STT_H
 
-#include "miniaudio.h"
+#include "miniaudio/miniaudio.h"
 #include "sherpa-onnx/c-api/c-api.h"
 #include <QObject>
 #include <QVector>
