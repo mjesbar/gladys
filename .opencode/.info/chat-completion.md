@@ -3,7 +3,7 @@ This is the approach to pipe audio files to the llama-server.
 # Gemma
 
 ```bash
-NERV🍁 ~/Github/mjesbar/gladys/bin/llama.cpp/llama-b9049-vulkan > time cat <<EOF | curl -s http://127.0.0.1:8080/v1/chat/completions   -H "Content-Type: application/json"   -d @- | jq '.choices[0].message.content'
+NERV🍁 ~/Github/mjesbar/gladys/bin/llama.cpp/llama-b9049 > time cat <<EOF | curl -s http://127.0.0.1:8080/v1/chat/completions   -H "Content-Type: application/json"   -d @- | jq '.choices[0].message.content'
 {
   "messages": [
     {
@@ -62,11 +62,11 @@ EOF
 # llama-server CPU mode
 
 ```bash
-./llama-server   -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf   --mmproj models/mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf --ctx-size 8192 --n-gpu-layers 0 --threads 4
+./llama-server   -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf --ctx-size 8192 --n-gpu-layers 0 --threads 4
 ```
 
 # llama-server GPU mode
 
 ```bash
-./llama-server   -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf   --mmproj models/mmproj-ultravox-v0_5-llama-3_2-1b-f16.gguf --ctx-size 8192 --n-gpu-layers 99
+./llama-server   -m models/Llama-3.2-1B-Instruct-Q4_K_M.gguf --ctx-size 8192 --n-gpu-layers 99
 ```

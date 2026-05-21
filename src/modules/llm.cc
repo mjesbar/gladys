@@ -36,7 +36,7 @@ bool LLM::start() {
   }
 
   QString exe_path = QCoreApplication::applicationDirPath();
-  QString llama_path = exe_path + "/llama.cpp/llama-b9049-vulkan";
+  QString llama_path = exe_path + "/llama.cpp/llama-b9049";
   QString program = llama_path + "/llama-server";
 
   QFile file(program);
@@ -50,7 +50,7 @@ bool LLM::start() {
   m_serverProcess->setProgram(program);
   m_serverProcess->setArguments(
       QStringList() << "-m"
-                    << exe_path + "/llama.cpp/llama-b9049-vulkan/models/"
+                    << exe_path + "/llama.cpp/llama-b9049/models/"
                                   "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
                     << "--ctx-size" << "8192"
                     << "--n-gpu-layers" << "99"
