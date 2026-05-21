@@ -3,7 +3,7 @@ bin/cuda/cuda_12.4.0_550.54.14_linux.run
 bin/cuda/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 bin/cuda/cudnn-linux-x86_64-9.0.0.312_cuda12-archive.tar.xz
 
-bin/llama.cpp/llama-b9049
+bin/llama.cpp/llama-b9265
 
 bin/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06
 
