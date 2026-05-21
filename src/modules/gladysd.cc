@@ -60,7 +60,8 @@ bool Gladysd::init() {
 
   std::string exe_path = QCoreApplication::applicationDirPath().toStdString();
   std::string model_path =
-      exe_path + "/models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
+      exe_path +
+      "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06";
   if (!STT::load(model_path)) {
     fprintf(stderr, "Gladysd: Failed to load STT model.\n");
     return false;
