@@ -9,8 +9,8 @@
 #include <QThread>
 #include <QWidget>
 
-#include "lib/modules/gladysd.h"
-#include "lib/modules/ui.h"
+#include "modules/gladysd.h"
+#include "modules/ui.h"
 
 int main(int argc, char *argv[]) {
   // Force X11 (xcb) platform - not Wayland (Linux only)
