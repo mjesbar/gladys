@@ -1,5 +1,6 @@
 .PHONY: build clean run package package-linux package-macos package-win
 
+
 # Detect host OS
 UNAME_S := $(shell uname -s)
 
