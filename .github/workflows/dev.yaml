@@ -2,7 +2,8 @@ name: Dev Build
 
 on:
   pull_request:
-    branches: ["*"]
+    branches:
+      - "[0-9]*.[0-9]*.[0-9]*"
 
 env:
   BUILD_TYPE: Release
@@ -23,11 +24,8 @@ jobs:
       - name: Install Qt6
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
       - name: Build
-        run: cmake --build build --parallel
+        run: make build
 
   build-linux-x64:
     name: Build Linux x64
@@ -41,11 +39,8 @@ jobs:
       - name: Install Qt6
         run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
       - name: Build
-        run: cmake --build build --parallel
+        run: make build
 
   # ----------------------------------------------------------------
   # Windows
@@ -65,17 +60,14 @@ jobs:
           arch: "win64_msvc2022_64"
           cache: true
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
       - name: Build
-        run: cmake --build build --parallel
+        run: make build
 
   # ----------------------------------------------------------------
   # macOS
   # ----------------------------------------------------------------
   build-macos-arm64:
-    name: Build macOS x64
+    name: Build macOS ARM64
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -89,8 +81,5 @@ jobs:
           arch: "clang_64"
           cache: true
 
-      - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
       - name: Build
-        run: cmake --build build --parallel
+        run: make build
