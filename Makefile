@@ -13,16 +13,6 @@ build:
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	@cmake --build build --parallel --config Release
 	@ln -sf build/compile_commands.json . 2>/dev/null || true
-	@# Copy sherpa-onnx libraries flat next to executable
-	@if [ -d "src/include/sherpa-onnx/lib/linux/x64" ]; then \
-		cp -n src/include/sherpa-onnx/lib/linux/x64/*.so* dist/ 2>/dev/null || true; \
-	elif [ -d "src/include/sherpa-onnx/lib/linux/arm64" ]; then \
-		cp -n src/include/sherpa-onnx/lib/linux/arm64/*.so* dist/ 2>/dev/null || true; \
-	elif [ -d "src/include/sherpa-onnx/lib/macos/arm64" ]; then \
-		cp -n src/include/sherpa-onnx/lib/macos/arm64/*.dylib dist/ 2>/dev/null || true; \
-	elif [ -d "src/include/sherpa-onnx/lib/win/x64" ]; then \
-		cp -n src/include/sherpa-onnx/lib/win/x64/*.dll dist/ 2>/dev/null || true; \
-	fi
 
 run: build
 	@cmake --build build --target run
