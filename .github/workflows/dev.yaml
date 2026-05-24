@@ -15,32 +15,6 @@ jobs:
   # ----------------------------------------------------------------
   # Linux
   # ----------------------------------------------------------------
-  build-linux-arm64:
-    name: Build Linux ARM64
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Install X11 dev
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "6.8.3"
-          host: "linux"
-          target: "desktop"
-          arch: "linux_arm_64"
-          cache: true
-
-      - name: Build
-        run: make build
-
-      - name: Show dist/ structure
-        run: tree -a dist/
-
   build-linux-x64:
     name: Build Linux x64
     runs-on: ubuntu-24.04
@@ -52,13 +26,14 @@ jobs:
       - name: Install X11 dev
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
 
-      - name: Install Qt6
+      - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "linux"
           target: "desktop"
-          arch: "gcc_64"
+          arch: "linux_gcc_64"
           cache: true
 
       - name: Build
