@@ -27,6 +27,9 @@ jobs:
       - name: Build
         run: make build
 
+      - name: Show dist/ structure
+        run: tree -a dist/
+
   build-linux-x64:
     name: Build Linux x64
     runs-on: ubuntu-24.04
@@ -41,6 +44,9 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Show dist/ structure
+        run: tree -a dist/
 
   # ----------------------------------------------------------------
   # Windows
@@ -63,6 +69,9 @@ jobs:
       - name: Build
         run: make build
 
+      - name: Show dist/ structure
+        run: tree -a dist/
+
   # ----------------------------------------------------------------
   # macOS
   # ----------------------------------------------------------------
@@ -83,3 +92,6 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Show dist/ structure
+        run: tree -a dist/
