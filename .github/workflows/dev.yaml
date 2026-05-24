@@ -20,8 +20,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Install X11 dev
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
@@ -50,8 +48,6 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
@@ -76,8 +72,6 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
