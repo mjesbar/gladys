@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
+        uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.3"
           host: "windows"
@@ -73,9 +73,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Qt6
-        uses: jurplel/install-qt-action@v4.3.1
+        uses: jurplel/install-qt-action@v4
         with:
-          version: "6.7.*"
+          version: "6.8.3"
           host: "mac"
           target: "desktop"
           arch: "clang_64"
