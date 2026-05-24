@@ -11,7 +11,7 @@ build:
 	@cmake -B build \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	@cmake --build build --parallel
+	@cmake --build build --parallel --config Release
 	@ln -sf build/compile_commands.json . 2>/dev/null || true
 	@# Copy sherpa-onnx libraries flat next to executable
 	@if [ -d "src/include/sherpa-onnx/lib/linux/x64" ]; then \
@@ -49,6 +49,10 @@ package:
 		tar xjf sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06.tar.bz2 2>/dev/null || true
 	@# Remove tarballs
 	@find dist/ -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' -o -name '*.zip' | xargs rm -f 2>/dev/null || true
+	@# Remove non-native executables
+	@if [ "$(OS)" != "Linux" ]; then rm -f dist/gladys; fi
+	@if [ "$(OS)" != "Windows_NT" ]; then rm -f dist/gladys.exe; fi
+	@if [ "$(OS)" != "Darwin" ]; then rm -rf dist/gladys.app; fi
 	@mkdir -p release/gladys-v$(VERSION)
 	rsync -a \
 		--exclude=cuda \
