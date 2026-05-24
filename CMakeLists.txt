@@ -146,6 +146,27 @@ target_link_libraries(gladys PRIVATE
 )
 
 # =============================================================================
+# Copy sherpa-onnx runtime libraries to dist/
+# =============================================================================
+if(SHERPA_ONNX_LIB_DIR AND EXISTS ${SHERPA_ONNX_LIB_DIR})
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(SHERPA_COPY_PATTERN "*.so*")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(SHERPA_COPY_PATTERN "*.dylib")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(SHERPA_COPY_PATTERN "*.dll")
+  endif()
+
+  file(GLOB SHERPA_RUNTIME_LIBS
+    ${SHERPA_ONNX_LIB_DIR}/${SHERPA_COPY_PATTERN}
+  )
+
+  foreach(LIB ${SHERPA_RUNTIME_LIBS})
+    configure_file(${LIB} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
+  endforeach()
+endif()
+
+# =============================================================================
 # Install
 # =============================================================================
 install(TARGETS gladys RUNTIME DESTINATION bin)

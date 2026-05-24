@@ -51,9 +51,6 @@ jobs:
       - name: Package release
         run: make package-linux ARCH=arm64 VERSION=${{ needs.version.outputs.version }}
 
-      - name: Copy sherpa-onnx libraries
-        run: cp src/include/sherpa-onnx/lib/linux/arm64/*.so* dist/
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -81,9 +78,6 @@ jobs:
 
       - name: Package release
         run: make package-linux ARCH=x64 VERSION=${{ needs.version.outputs.version }}
-
-      - name: Copy sherpa-onnx libraries
-        run: cp src/include/sherpa-onnx/lib/linux/x64/*.so* dist/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -122,9 +116,6 @@ jobs:
       - name: Package release
         run: make package-win ARCH=x64 VERSION=${{ needs.version.outputs.version }}
 
-      - name: Copy sherpa-onnx libraries
-        run: cp src/include/sherpa-onnx/lib/win/x64/*.dll dist/
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -158,9 +149,6 @@ jobs:
 
       - name: Package release
         run: make package-macos ARCH=arm64 VERSION=${{ needs.version.outputs.version }}
-
-      - name: Copy sherpa-onnx libraries
-        run: cp src/include/sherpa-onnx/lib/macos/arm64/*.dylib dist/
 
       - name: Create release
         uses: softprops/action-gh-release@v2
