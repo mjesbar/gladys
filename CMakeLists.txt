@@ -128,13 +128,7 @@ endif()
 # =============================================================================
 # Executable: gladys
 # =============================================================================
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(GLADYS_EXE_NAME "gladys")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(GLADYS_EXE_NAME "gladys.app")
-else()
-  set(GLADYS_EXE_NAME "gladys")
-endif()
+set(GLADYS_EXE_NAME "gladys")
 
 add_executable(gladys ${GLADYS_SOURCES})
 set_target_properties(gladys PROPERTIES OUTPUT_NAME "${GLADYS_EXE_NAME}")
@@ -174,19 +168,7 @@ install(TARGETS gladys RUNTIME DESTINATION bin)
 # =============================================================================
 # Run target
 # =============================================================================
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  add_custom_target(run
-    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
-    COMMENT "Running gladys"
-  )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  add_custom_target(run
-    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.app
-    COMMENT "Running gladys"
-  )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  add_custom_target(run
-    COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys.exe
-    COMMENT "Running gladys"
-  )
-endif()
+add_custom_target(run
+  COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
+  COMMENT "Running gladys"
+)

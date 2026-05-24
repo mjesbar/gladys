@@ -40,9 +40,8 @@ package:
 	@# Remove tarballs
 	@find dist/ -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' -o -name '*.zip' | xargs rm -f 2>/dev/null || true
 	@# Remove non-native executables
-	@if [ "$(OS)" != "Linux" ]; then rm -f dist/gladys; fi
+	@if [ "$(OS)" != "Linux" ] && [ "$(OS)" != "Darwin" ]; then rm -f dist/gladys; fi
 	@if [ "$(OS)" != "Windows_NT" ]; then rm -f dist/gladys.exe; fi
-	@if [ "$(OS)" != "Darwin" ]; then rm -rf dist/gladys.app; fi
 	@mkdir -p release/gladys-v$(VERSION)
 	rsync -a \
 		--exclude=cuda \
