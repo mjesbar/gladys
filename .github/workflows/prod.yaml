@@ -62,7 +62,7 @@ jobs:
         run: make package-linux ARCH=x64 VERSION=${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
-        run: tree -a -L 3 release/
+        run: tree -a -L 3 release/gladys-v*
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -105,7 +105,7 @@ jobs:
         run: make package-win ARCH=x64 VERSION=${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
-        run: tree /f /a release\
+        run: tree /f /a release\gladys-v*
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -148,7 +148,7 @@ jobs:
         run: make package-macos ARCH=arm64 VERSION=${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
-        run: tree -a -L 3 release/
+        run: tree -a -L 3 release/gladys-v*
 
       - name: Create release
         uses: softprops/action-gh-release@v2
