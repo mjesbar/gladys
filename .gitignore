@@ -1,18 +1,29 @@
 dist/**/*.so
 dist/**/*.dylib
 dist/**/*.dll
+dist/**/*.tar.gz
+dist/**/*.tar.xz
+dist/**/*.tar.bz2
+dist/**/*.zip
+
 dist/cuda/cuda-12.4.0
 dist/cuda/cuda_12.4.0_550.54.14_linux.run
 dist/cuda/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz
 dist/cuda/cudnn-linux-x86_64-9.0.0.312_cuda12-archive.tar.xz
 
 dist/llama.cpp/llama-b9265
+dist/llama.cpp/llama-b9265-bin-macos-arm64.tar.gz
+dist/llama.cpp/llama-b9265-bin-ubuntu-vulkan-x64.tar.gz
+dist/llama.cpp/llama-b9265-bin-win-vulkan-x64.zip
+dist/llama.cpp/llama-models.tar.gz
 
 dist/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06
+dist/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06.tar.bz2
 
 
 .cache/
 moc/
 build/
+
 
 compile_commands.json

@@ -1,0 +1,5 @@
+llamacpp-macos: https://github.com/ggml-org/llama.cpp/releases/download/b9305/llama-b9305-bin-macos-arm64.tar.gz
+llamacpp-linux: https://github.com/ggml-org/llama.cpp/releases/download/b9305/llama-b9305-bin-ubuntu-vulkan-x64.tar.gz
+llamacpp-windows: https://github.com/ggml-org/llama.cpp/releases/download/b9305/llama-b9305-bin-win-vulkan-x64.zip
+llamacpp-model: https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf?download=true
+sherpaonnx-model: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06.tar.bz2

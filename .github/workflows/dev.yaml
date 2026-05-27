@@ -5,6 +5,9 @@ on:
     branches:
       - "[0-9]*.[0-9]*.[0-9]*"
 
+permissions:
+  contents: write
+
 env:
   BUILD_TYPE: Release
 
@@ -12,24 +15,6 @@ jobs:
   # ----------------------------------------------------------------
   # Linux
   # ----------------------------------------------------------------
-  build-linux-arm64:
-    name: Build Linux ARM64
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install X11 dev
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev
-
-      - name: Install Qt6
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
-
-      - name: Build
-        run: make build
-
-      - name: Show dist/ structure
-        run: tree -a dist/
-
   build-linux-x64:
     name: Build Linux x64
     runs-on: ubuntu-24.04
@@ -39,14 +24,21 @@ jobs:
       - name: Install X11 dev
         run: sudo apt-get update && sudo apt-get install -y libx11-dev
 
-      - name: Install Qt6
-        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-svg-dev
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          aqtversion: "==3.3.*"
+          version: "6.8.3"
+          host: "linux"
+          target: "desktop"
+          arch: "linux_gcc_64"
+          cache: true
 
       - name: Build
         run: make build
 
       - name: Show dist/ structure
-        run: tree -a dist/
+        run: tree -ash dist/
 
   # ----------------------------------------------------------------
   # Windows
@@ -60,6 +52,7 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "windows"
           target: "desktop"
@@ -70,7 +63,7 @@ jobs:
         run: make build
 
       - name: Show dist/ structure
-        run: tree -a dist/
+        run: tree /f /a dist\
 
   # ----------------------------------------------------------------
   # macOS
@@ -84,6 +77,7 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "mac"
           target: "desktop"
@@ -93,5 +87,8 @@ jobs:
       - name: Build
         run: make build
 
+      - name: Install tree
+        run: brew install tree
+
       - name: Show dist/ structure
-        run: tree -a dist/
+        run: tree -ash dist/
