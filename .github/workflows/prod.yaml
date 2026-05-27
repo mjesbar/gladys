@@ -43,10 +43,13 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "linux"
           target: "desktop"
-          arch: "gcc_64"
+          arch: "linux_gcc_64"
+          dir: ${{ github.workspace }}/Qt
+          install-deps: true
           cache: true
 
       - name: Build
@@ -78,10 +81,12 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "windows"
           target: "desktop"
           arch: "win64_msvc2022_64"
+          dir: ${{ github.workspace }}/Qt
           cache: true
 
       - name: Build
@@ -116,10 +121,12 @@ jobs:
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
+          aqtversion: "==3.3.*"
           version: "6.8.3"
           host: "mac"
           target: "desktop"
           arch: "clang_64"
+          dir: ${{ github.workspace }}/Qt
           cache: true
 
       - name: Build
