@@ -89,7 +89,6 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(SHERPA_ONNX_LIBS
       -L${SHERPA_ONNX_LIB_DIR}
-      -Wl,-rpath,$ORIGIN
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
       -lonnxruntime
@@ -133,6 +132,8 @@ set(GLADYS_EXE_NAME "gladys")
 add_executable(gladys ${GLADYS_SOURCES})
 set_target_properties(gladys PROPERTIES
   OUTPUT_NAME "${GLADYS_EXE_NAME}"
+  INSTALL_RPATH "$ORIGIN"
+  BUILD_WITH_INSTALL_RPATH TRUE
 )
 target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(gladys PRIVATE
