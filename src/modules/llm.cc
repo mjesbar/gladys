@@ -37,7 +37,7 @@ bool LLM::start() {
 
   QString exe_path = QCoreApplication::applicationDirPath();
   QString llama_path = exe_path + "/llama.cpp/llama-b9265";
-  QString program = llama_path + "/llama-server";
+  QString program = llama_path + "/" + LLAMA_SERVER_BINARY;
 
   QFile file(program);
   if (!file.exists()) {

@@ -11,6 +11,12 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
+#ifdef Q_OS_WIN
+#define LLAMA_SERVER_BINARY "llama-server.exe"
+#else
+#define LLAMA_SERVER_BINARY "llama-server"
+#endif
+
 class LLM : public QObject {
   Q_OBJECT
 
