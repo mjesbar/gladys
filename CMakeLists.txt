@@ -89,7 +89,6 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(SHERPA_ONNX_LIBS
       -L${SHERPA_ONNX_LIB_DIR}
-      -Wl,-rpath,$ORIGIN
       -lsherpa-onnx-c-api
       -lsherpa-onnx-cxx-api
       -lonnxruntime
