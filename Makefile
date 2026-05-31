@@ -88,35 +88,42 @@ fetch-models:
 # -------------------------------------------------------------------
 # Fetch Qt runtime files (libs + plugins + qt.conf)
 # -------------------------------------------------------------------
-dist/qt/lib dist/qt/plugins/platforms dist/qt/plugins/imageformats:
-	@mkdir -p dist/qt/lib dist/qt/plugins/platforms dist/qt/plugins/imageformats
+dist/imageformats dist/platforms dist/styles dist/tls dist/iconengines:
+	@mkdir -p dist/imageformats dist/platforms dist/styles dist/tls dist/iconengines
 
-fetch-qt: dist/qt/lib dist/qt/plugins/platforms dist/qt/plugins/imageformats
+fetch-qt: dist/imageformats dist/platforms dist/styles dist/tls dist/iconengines
 	@echo "=== Fetching Qt runtime for $(OS) ==="
 	@if [ -z "$$QT_ROOT_DIR" ]; then \
 		echo "QT_ROOT_DIR not set, skipping"; \
 		exit 0; \
 	fi
 ifeq ($(OS),Linux)
-	@find "$$QT_ROOT_DIR/lib" -name '*.so*' -exec cp -P {} dist/qt/lib/ \;
-	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*   dist/qt/plugins/platforms/ 2>/dev/null || true
-	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"* dist/qt/plugins/imageformats/ 2>/dev/null || true
+	@find "$$QT_ROOT_DIR/lib" -name '*.so*' -exec cp -P {} dist/ \;
+	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*      dist/platforms/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"*   dist/imageformats/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/styles/"*         dist/styles/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/tls/"*            dist/tls/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/iconengines/"*    dist/iconengines/ 2>/dev/null || true
 else ifeq ($(OS),macOS)
 	@# macOS Qt6 ships as .framework bundles — copy entire frameworks
 	@for fw in Core Gui Widgets Network Svg; do \
-		cp -R "$$QT_ROOT_DIR/lib/Qt$${fw}.framework" dist/qt/lib/ 2>/dev/null || true; \
+		cp -R "$$QT_ROOT_DIR/lib/Qt$${fw}.framework"  dist/ 2>/dev/null || true; \
 	done
-	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*   dist/qt/plugins/platforms/ 2>/dev/null || true
-	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"* dist/qt/plugins/imageformats/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*      dist/platforms/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"*   dist/imageformats/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/styles/"*         dist/styles/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/tls/"*            dist/tls/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/iconengines/"*    dist/iconengines/ 2>/dev/null || true
 else
 	@# Windows: .dll files live in bin/ (and some in lib/)
-	@cp "$$QT_ROOT_DIR/bin/"*.dll   dist/qt/lib/ 2>/dev/null || true
-	@cp "$$QT_ROOT_DIR/lib/"*.dll   dist/qt/lib/ 2>/dev/null || true
-	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*   dist/qt/plugins/platforms/ 2>/dev/null || true
-	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"* dist/qt/plugins/imageformats/ 2>/dev/null || true
+	@cp "$$QT_ROOT_DIR/bin/"*.dll                   dist/ 2>/dev/null || true
+	@cp "$$QT_ROOT_DIR/lib/"*.dll                   dist/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/platforms/"*      dist/platforms/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/imageformats/"*   dist/imageformats/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/styles/"*         dist/styles/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/tls/"*            dist/tls/ 2>/dev/null || true
+	@cp -r "$$QT_ROOT_DIR/plugins/iconengines/"*    dist/iconengines/ 2>/dev/null || true
 endif
-	@# Write qt.conf — paths relative to Prefix (.)
-	@printf '[Paths]\nPrefix = .\nPlugins = qt/plugins\nLibraries = qt/lib\n' > dist/qt.conf
 	@echo "=== Qt runtime fetched ==="
 
 # -------------------------------------------------------------------
