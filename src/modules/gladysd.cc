@@ -120,38 +120,11 @@ void Gladysd::setupConnections() {
     fprintf(stderr, "Gladysd: Ctrl+Alt+P detected!\n");
     static bool stt_running = false;
     if (stt_running) {
-      // Toggle OFF: stop STT, get text and beautify with LLM
+      // Toggle OFF: stop STT
       STT::stop();
       stt_running = false;
-
-      // Get final STT text and beautify with LLM
-      QString sttText = STT::getFinalText();
-      fprintf(stderr, "Gladysd: STT text: %s\n", qPrintable(sttText));
-
-      if (!sttText.isEmpty()) {
-        fprintf(stderr, "Gladysd: Sending to LLM for beautification...\n");
-        QString result = LLM::beautifyText(sttText);
-
-        if (!result.isEmpty()) {
-          fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
-          // Copy to clipboard, select all, and paste
-          m_keyType->copyToClipboard(result);
-          SleepMs(100); // 100ms for clipboard to be ready
-          m_keyType->selectAllAndPaste();
-        } else {
-          fprintf(stderr, "Gladysd: LLM returned empty result\n");
-        }
-      } else {
-        fprintf(stderr, "Gladysd: No STT text to beautify\n");
-      }
-
-      STT::clearLastTyped();
-
-      // Reset keytype queue for clean state
-      m_keyType->reset();
     } else {
       // Toggle ON: start STT
-      STT::clearLastTyped();
       STT::start();
       stt_running = true;
       fprintf(stderr, "Gladysd: STT started\n");
@@ -159,9 +132,28 @@ void Gladysd::setupConnections() {
     emit toggleRequested();
   });
 
-  connect(m_stt, &STT::audioLevelUpdated, this, &Gladysd::audioLevelUpdated);
+  connect(m_stt, &STT::finalTextReady, this, [this](const QString &sttText) {
+    fprintf(stderr, "Gladysd: STT text: %s\n", qPrintable(sttText));
 
-  connect(m_stt, &STT::textReceived, m_keyType, &KeyType::push);
+    if (!sttText.isEmpty()) {
+      fprintf(stderr, "Gladysd: Sending to LLM for beautification...\n");
+      QString result = LLM::beautifyText(sttText);
+
+      if (!result.isEmpty()) {
+        fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
+        // Copy to clipboard, select all, and paste
+        m_keyType->copyToClipboard(result);
+        SleepMs(100); // 100ms for clipboard to be ready
+        m_keyType->selectAllAndPaste();
+      } else {
+        fprintf(stderr, "Gladysd: LLM returned empty result\n");
+      }
+    } else {
+      fprintf(stderr, "Gladysd: No STT text to beautify\n");
+    }
+  });
+
+  connect(m_stt, &STT::audioLevelUpdated, this, &Gladysd::audioLevelUpdated);
 }
 
 void Gladysd::shutdown() {

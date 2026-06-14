@@ -6,7 +6,6 @@
 
 #include <QObject>
 #include <QString>
-#include <QQueue>
 
 #ifdef __linux__
 #include <linux/uinput.h>
@@ -28,10 +27,7 @@ class KeyType : public QObject {
 
 public:
   static KeyType *instance();
-  void reset();
-  void push(const QString &chunk);
   void copyToClipboard(const QString &text);
-  void paste();
   void selectAllAndPaste();
 
 private:
@@ -41,11 +37,6 @@ private:
   bool initKeyboard();
   void closeKeyboard();
   void sendKey(unsigned int code, bool press);
-  void sendText(const QString &text);
-
-  void processQueue();
-  QString extractNewChunk(const QString &newText);
-  void runTyping(const QString &chunk);
 
   static KeyType *s_instance;
 
@@ -54,9 +45,6 @@ private:
 #else
   int m_dummy;
 #endif
-  QQueue<QString> m_queue;
-  bool m_processing;
-  QString m_lastTyped;
 };
 
 #endif // KEYTYPE_H

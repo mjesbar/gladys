@@ -1,5 +1,4 @@
 #include "stt.h"
-#include "keytype.h"
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -21,7 +20,6 @@ bool STT::m_is_audio_context_initialized = false;
 QVector<double> STT::m_audio_levels;
 QVector<double> STT::m_audio_levels_prev;
 QElapsedTimer STT::m_audio_timer;
-QString STT::m_lastTyped;
 
 STT::STT(QObject *parent) : QObject(parent) {}
 
@@ -34,14 +32,6 @@ STT *STT::instance() {
 
 QVector<double> STT::getAudioLevels() {
   return m_audio_levels;
-}
-
-QString STT::getFinalText() {
-  return m_lastTyped;
-}
-
-void STT::clearLastTyped() {
-  m_lastTyped.clear();
 }
 
 STT::~STT() {
@@ -176,16 +166,13 @@ void STT::stop() {
         SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Final Transcription: " << result->text << std::endl;
-      m_lastTyped = QString::fromUtf8(result->text);
-      KeyType::instance()->push(m_lastTyped);
+      emit m_instance->finalTextReady(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
 
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
   }
-
-  KeyType::instance()->reset();
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
