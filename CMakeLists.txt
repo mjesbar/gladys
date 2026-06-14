@@ -39,6 +39,8 @@ set(GLADYS_SOURCES
   src/modules/keygrab.cc
   src/modules/keytype.cc
   src/modules/ui.cc
+  src/modules/settings/settings_manager.cc
+  src/modules/settings/settings_window.cc
 )
 
 # =============================================================================
@@ -47,6 +49,7 @@ set(GLADYS_SOURCES
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/modules
+  ${CMAKE_SOURCE_DIR}/src/modules/settings
   ${CMAKE_SOURCE_DIR}/src/include
 )
 

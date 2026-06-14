@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include "settings/settings_manager.h"
 #include <vector>
 
 // Initialize static members
@@ -108,6 +109,31 @@ bool STT::load(const std::string &model_path) {
   m_audio_config.dataCallback = data_callback;
   m_audio_config.pUserData = m_instance;
 
+  // Set capture device ID from settings (NULL = default)
+  m_audio_config.capture.pDeviceID = NULL;
+  {
+    QString selectedSource = SettingsManager::instance()->inputSource();
+    if (selectedSource != QStringLiteral("default")) {
+      static ma_device_id targetId;
+      bool found = false;
+      ma_device_info *pInfos;
+      ma_uint32 count;
+      if (ma_context_get_devices(&m_audio_context, NULL, NULL, &pInfos,
+                                 &count) == MA_SUCCESS) {
+        for (ma_uint32 i = 0; i < count; ++i) {
+          if (QString::fromUtf8(pInfos[i].name) == selectedSource) {
+            targetId = pInfos[i].id;
+            found = true;
+            break;
+          }
+        }
+      }
+      if (found) {
+        m_audio_config.capture.pDeviceID = &targetId;
+      }
+    }
+  }
+
   result = ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
   if (result != MA_SUCCESS) {
     std::cerr << "STT: Failed to initialize miniaudio device." << std::endl;
@@ -173,6 +199,58 @@ void STT::stop() {
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
   }
+}
+
+void STT::reconfigureAudioSource() {
+  if (!m_instance || !m_is_audio_context_initialized) {
+    return;
+  }
+
+  QString selectedSource = SettingsManager::instance()->inputSource();
+
+  bool wasRunning = ma_device_is_started(&m_audio_device);
+  if (wasRunning) {
+    ma_device_stop(&m_audio_device);
+  }
+
+  ma_device_uninit(&m_audio_device);
+
+  // Set capture device ID from settings (NULL = default)
+  m_audio_config.capture.pDeviceID = NULL;
+  if (selectedSource != QStringLiteral("default")) {
+    static ma_device_id targetId;
+    bool found = false;
+    ma_device_info *pInfos;
+    ma_uint32 count;
+    if (ma_context_get_devices(&m_audio_context, NULL, NULL, &pInfos,
+                               &count) == MA_SUCCESS) {
+      for (ma_uint32 i = 0; i < count; ++i) {
+        if (QString::fromUtf8(pInfos[i].name) == selectedSource) {
+          targetId = pInfos[i].id;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (found) {
+      m_audio_config.capture.pDeviceID = &targetId;
+    }
+  }
+
+  ma_result result =
+      ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
+  if (result != MA_SUCCESS) {
+    std::cerr << "STT: Failed to reinitialize audio device with source: "
+              << qPrintable(selectedSource) << std::endl;
+    return;
+  }
+
+  if (wasRunning) {
+    ma_device_start(&m_audio_device);
+  }
+
+  std::cout << "STT: Reconfigured audio source to: "
+            << qPrintable(selectedSource) << std::endl;
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
