@@ -137,6 +137,7 @@ set_target_properties(gladys PROPERTIES
   OUTPUT_NAME "${GLADYS_EXE_NAME}"
   INSTALL_RPATH "$ORIGIN"
   BUILD_WITH_INSTALL_RPATH TRUE
+  WIN32_EXECUTABLE TRUE
 )
 target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(gladys PRIVATE
