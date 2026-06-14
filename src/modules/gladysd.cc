@@ -136,8 +136,8 @@ void Gladysd::setupConnections() {
     fprintf(stderr, "Gladysd: STT text: %s\n", qPrintable(sttText));
 
     if (!sttText.isEmpty()) {
-      fprintf(stderr, "Gladysd: Sending to LLM for beautification...\n");
-      QString result = LLM::beautifyText(sttText);
+      fprintf(stderr, "Gladysd: Sending to LLM for transcription formatting...\n");
+      QString result = LLM::formatTranscription(sttText);
 
       if (!result.isEmpty()) {
         fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));

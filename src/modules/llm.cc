@@ -125,7 +125,7 @@ QString LLM::postJson(const QJsonObject &json) {
   return QString::fromUtf8(response);
 }
 
-QString LLM::beautifyText(const QString &text) {
+QString LLM::formatTranscription(const QString &text) {
   if (!m_isRunning) {
     std::cerr << "LLM: Server not running." << std::endl;
     return text;
@@ -139,9 +139,20 @@ QString LLM::beautifyText(const QString &text) {
   QJsonObject message;
   message["role"] = "user";
   message["content"] =
-      "Transforma el siguiente texto en formato Markdown nicely estructurado. "
-      "Usa negritas, listas, y formato apropiado. Solo devuelve el resultado "
-      "formateado, sin explicaciones:\n\n" +
+      "You are a speech transcription formatter. Your sole task is to take raw "
+      "speech-to-text output and produce a clean, readable transcription. "
+      "Strict rules:\n"
+      "1. Add proper punctuation (periods, commas, question marks, etc.) where "
+      "grammatically required.\n"
+      "2. Apply proper casing: capitalize the first word of each sentence and "
+      "proper nouns.\n"
+      "3. NEVER use Markdown, bullet points, bold, italics, headers, code "
+      "blocks, or any formatting syntax. Output plain text only.\n"
+      "4. Do not add, remove, or rephrase any words. Preserve the exact spoken "
+      "content.\n"
+      "5. Return ONLY the formatted transcription. No greetings, no "
+      "explanations, no commentary.\n\n"
+      "Raw text:\n" +
       text;
 
   QJsonObject json;
