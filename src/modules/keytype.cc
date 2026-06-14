@@ -5,8 +5,6 @@
 
 #include <QApplication>
 #include <QClipboard>
-#include <QCoreApplication>
-#include <QEventLoop>
 #include <QProcess>
 
 #ifdef __linux__
@@ -41,7 +39,7 @@
 KeyType *KeyType::s_instance = nullptr;
 
 KeyType::KeyType(QObject *parent)
-    : QObject(parent), m_processing(false)
+    : QObject(parent)
 #ifdef __linux__
       , m_fd(-1)
 #else
@@ -261,108 +259,9 @@ void KeyType::selectAllAndPaste() {
   fprintf(stderr, "KeyType: Select All + Paste complete\n");
 }
 
-void KeyType::paste() {
-  // Ctrl+Shift+V (paste without formatting) — Cmd+Shift+V on macOS
-  sendKey(KEY_LEFTSHIFT, true);
-  sendKey(KEY_LEFTCTRL, true);
-  SleepMs(10);
-  sendKey(KEY_V, true);
-  SleepMs(10);
-  sendKey(KEY_V, false);
-  SleepMs(10);
-  sendKey(KEY_LEFTCTRL, false);
-  sendKey(KEY_LEFTSHIFT, false);
-
-#ifdef __linux__
-  // Sync
-  struct input_event ev = {};
-  ev.type = EV_SYN;
-  ev.code = SYN_REPORT;
-  ev.value = 0;
-  write(m_fd, &ev, sizeof(ev));
-#endif
-}
-
-void KeyType::sendText(const QString &text) {
-#ifdef __linux__
-  if (m_fd < 0) return;
-#endif
-
-  copyToClipboard(text);
-  SleepMs(50); // 50ms for clipboard
-
-  paste();
-  SleepMs(100); // 100ms after paste
-}
-
-void KeyType::reset() {
-  m_lastTyped.clear();
-  m_queue.clear();
-  m_processing = false;
-}
-
 KeyType *KeyType::instance() {
   if (!s_instance) {
     s_instance = new KeyType();
   }
   return s_instance;
-}
-
-QString KeyType::extractNewChunk(const QString &newText) {
-  if (m_lastTyped.isEmpty()) {
-    QString trimmed = newText.trimmed();
-    m_lastTyped = newText;
-    return trimmed;
-  }
-
-  int lastLen = m_lastTyped.length();
-  if (newText.length() <= lastLen) {
-    return QString();
-  }
-
-  QString diff = newText.mid(lastLen);
-  diff = diff.trimmed();
-  if (diff.isEmpty()) {
-    return QString();
-  }
-
-  m_lastTyped = newText;
-  return diff;
-}
-
-void KeyType::push(const QString &chunk) {
-  QString newChunk = extractNewChunk(chunk);
-  if (newChunk.isEmpty()) {
-    return;
-  }
-  m_queue.enqueue(newChunk);
-  processQueue();
-}
-
-void KeyType::runTyping(const QString &chunk) {
-#ifdef __linux__
-  if (m_fd < 0) {
-    fprintf(stderr, "KeyType: uinput not initialized\n");
-    m_processing = false;
-    processQueue();
-    return;
-  }
-#endif
-
-  fprintf(stderr, "KeyType: Typing: '%s'\n", qPrintable(chunk));
-  sendText(chunk);
-  fprintf(stderr, "KeyType: Typing complete\n");
-
-  m_processing = false;
-  processQueue();
-}
-
-void KeyType::processQueue() {
-  if (m_processing || m_queue.isEmpty()) {
-    return;
-  }
-
-  m_processing = true;
-  QString chunk = m_queue.dequeue();
-  runTyping(chunk);
 }
