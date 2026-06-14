@@ -20,6 +20,8 @@ public:
   explicit UI(QWidget *parent = nullptr);
   ~UI() override;
 
+  void repositionOnPrimaryScreen();
+
 public slots:
   void toggleVisibility();
   void handleOpacityAnimationFinished();
@@ -42,6 +44,8 @@ private:
   int m_targetYSubtle;
   bool m_isProminent;
   QSize m_originalSize;
+  QPoint m_prominentPos;
+  QPoint m_subtlePos;
   QSystemTrayIcon *m_trayIcon;
   QMenu *m_trayMenu;
   QVector<double> m_audioLevels;

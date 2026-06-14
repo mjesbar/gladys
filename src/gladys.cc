@@ -4,8 +4,6 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QRect>
-#include <QScreen>
 #include <QThread>
 #include <QWidget>
 
@@ -29,9 +27,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // Create UI window
-  QWidget dummy;
-  UI window(&dummy);
+  // Create UI window (no parent — top-level window)
+  UI window(nullptr);
 
   // Connect Gladysd hub signals to UI (direct signals, no IPC needed)
   QObject::connect(gladysd, &Gladysd::toggleRequested, [&]() {
@@ -49,12 +46,9 @@ int main(int argc, char *argv[]) {
     app.quit();
   });
 
-  // Position window
-  QScreen *screen = QApplication::primaryScreen();
-  if (screen) {
-    window.move(960 - window.width() / 2, 10);
-    window.setWindowOpacity(0.0);
-  }
+  // Position window on primary screen
+  window.repositionOnPrimaryScreen();
+  window.setWindowOpacity(0.0);
 
   window.show();
   window.removeShadow();

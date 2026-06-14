@@ -38,8 +38,7 @@ static const QSize SUBTLE_SIZE = QSize(WAVE_TOTAL_WIDTH, 60);
 static const qreal PROMINENT_OPACITY = 1.0;
 static const qreal SUBTLE_OPACITY = 0.0;
 
-static const QPoint PROMINENT_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 66);
-static const QPoint SUBTLE_POS = QPoint(960 - WAVE_TOTAL_WIDTH / 2, 6);
+// Positions are computed dynamically in repositionOnPrimaryScreen()
 
 UI::UI(QWidget *parent)
     : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
@@ -122,6 +121,25 @@ UI::UI(QWidget *parent)
         image.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     m_scaledMicPixmap = m_micPixmap; // Cache for full size
   }
+
+  // Compute initial position from primary screen geometry
+  repositionOnPrimaryScreen();
+}
+
+void UI::repositionOnPrimaryScreen() {
+  QScreen *primary = QApplication::primaryScreen();
+  if (!primary) return;
+
+  QRect geo = primary->availableGeometry();
+  int centerX = geo.x() + geo.width() / 2;
+
+  m_prominentPos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 66);
+  m_subtlePos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 6);
+
+  // If no animation is running, move immediately
+  if (m_positionAnimation->state() != QPropertyAnimation::Running) {
+    move(m_isProminent ? m_prominentPos : m_subtlePos);
+  }
 }
 
 UI::~UI() {
@@ -156,14 +174,14 @@ void UI::toggleVisibility() {
 
   if (m_isProminent) {
     // Collapsing
-    endPos = SUBTLE_POS;
+    endPos = m_subtlePos;
     startOpacity = PROMINENT_OPACITY;
     endOpacity = SUBTLE_OPACITY;
     startScale = 1.0;
     endScale = 0.5;
   } else {
     // Prominent
-    endPos = PROMINENT_POS;
+    endPos = m_prominentPos;
     startOpacity = SUBTLE_OPACITY;
     endOpacity = PROMINENT_OPACITY;
     startScale = 0.5;
