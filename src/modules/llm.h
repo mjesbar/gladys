@@ -27,7 +27,7 @@ public:
   static LLM *instance();
   static bool start();
   static void stop();
-  static QString beautifyText(const QString &text);
+  static QString formatTranscription(const QString &text);
 
 private:
   explicit LLM(QObject *parent = nullptr);
