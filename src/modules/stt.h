@@ -21,6 +21,7 @@ public:
   static bool load(const std::string &model_path);
   static void start();
   static void stop();
+  static void reconfigureAudioSource();
   static QVector<double> getAudioLevels();
 
 private:

@@ -2,6 +2,7 @@
 
 #include "llm.h"
 #include "gladysd.h"
+#include "settings/settings_manager.h"
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonArray>
@@ -136,24 +137,68 @@ QString LLM::formatTranscription(const QString &text) {
     return text;
   }
 
+  SettingsManager *s = SettingsManager::instance();
+  QStringList rules;
+  int ruleNum = 1;
+
+  // Always apply proper casing
+  rules << QString("%1. Apply proper casing: capitalize the first word of "
+                   "each sentence and proper nouns.")
+               .arg(ruleNum++);
+
+  // Punctuation
+  if (s->allowPunctuation()) {
+    rules << QString("%1. Add proper punctuation (periods, commas, question "
+                     "marks, etc.) where grammatically required.")
+                 .arg(ruleNum++);
+  } else {
+    rules << QString("%1. Do NOT add any punctuation. Output without periods, "
+                     "commas, or any punctuation marks.")
+                 .arg(ruleNum++);
+  }
+
+  // Accents
+  if (!s->allowAccents()) {
+    rules << QString("%1. Remove all accents and diacritical marks from "
+                     "characters (e.g. é -> e, ñ -> n).")
+                 .arg(ruleNum++);
+  }
+
+  // Markdown
+  if (!s->markdownMode()) {
+    rules << QString("%1. NEVER use Markdown, bullet points, bold, italics, "
+                     "headers, code blocks, or any formatting syntax. Output "
+                     "plain text only.")
+                 .arg(ruleNum++);
+  }
+
+  // Dictionary aliases
+  const auto dict = s->dictionary();
+  for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
+    rules << QString("%1. Replace the word \"%2\" with \"%3\".")
+                 .arg(ruleNum++)
+                 .arg(it.key(), it.value());
+  }
+
+  // Always preserve exact content
+  rules << QString(
+      "%1. Do not add, remove, or rephrase any words. Preserve the exact "
+      "spoken content.")
+               .arg(ruleNum++);
+  rules << QString(
+      "%1. Return ONLY the formatted transcription. No greetings, no "
+      "explanations, no commentary.")
+               .arg(ruleNum++);
+
+  QString prompt =
+      "You are a speech transcription formatter. Your sole task is to take "
+      "raw speech-to-text output and produce a clean, readable transcription. "
+      "Strict rules:\n" +
+      rules.join("\n") + "\n\nRaw text:\n" + text;
+
   QJsonObject message;
   message["role"] = "user";
-  message["content"] =
-      "You are a speech transcription formatter. Your sole task is to take raw "
-      "speech-to-text output and produce a clean, readable transcription. "
-      "Strict rules:\n"
-      "1. Add proper punctuation (periods, commas, question marks, etc.) where "
-      "grammatically required.\n"
-      "2. Apply proper casing: capitalize the first word of each sentence and "
-      "proper nouns.\n"
-      "3. NEVER use Markdown, bullet points, bold, italics, headers, code "
-      "blocks, or any formatting syntax. Output plain text only.\n"
-      "4. Do not add, remove, or rephrase any words. Preserve the exact spoken "
-      "content.\n"
-      "5. Return ONLY the formatted transcription. No greetings, no "
-      "explanations, no commentary.\n\n"
-      "Raw text:\n" +
-      text;
+  message["content"] = prompt;
 
   QJsonObject json;
   json["messages"] = QJsonArray({message});

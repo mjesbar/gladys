@@ -5,6 +5,7 @@
 #include "keytype.h"
 #include "llm.h"
 #include "stt.h"
+#include "settings/settings_manager.h"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <csignal>
@@ -154,6 +155,13 @@ void Gladysd::setupConnections() {
   });
 
   connect(m_stt, &STT::audioLevelUpdated, this, &Gladysd::audioLevelUpdated);
+
+  // React to settings changes (input source, style, dictionary)
+  connect(SettingsManager::instance(), &SettingsManager::settingsChanged, this,
+          [this]() {
+            fprintf(stderr, "Gladysd: Settings changed, reconfiguring STT audio source.\n");
+            STT::reconfigureAudioSource();
+          });
 }
 
 void Gladysd::shutdown() {

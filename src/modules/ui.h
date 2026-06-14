@@ -11,6 +11,8 @@
 #include <QWidget>
 #include <QPixmap>
 
+class SettingsWindow;
+
 class UI : public QWidget {
   Q_OBJECT
 
@@ -24,6 +26,7 @@ public slots:
   void removeShadow();
   void quitApp();
   void updateAudioLevels(const QVector<double> &levels);
+  void openSettings();
 
 signals:
   void quitRequested();
@@ -45,6 +48,7 @@ private:
   QVariantAnimation *m_scaleAnimation;
   QPixmap m_micPixmap;
   QPixmap m_scaledMicPixmap;
+  SettingsWindow *m_settingsWindow;
 
 private:
   void drawAudioWave(QPainter &p, const QSize &size, double scale);

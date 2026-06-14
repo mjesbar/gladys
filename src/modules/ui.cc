@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "settings/settings_window.h"
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
@@ -70,11 +71,24 @@ UI::UI(QWidget *parent)
   palette.setColor(QPalette::Window, Qt::transparent);
   setPalette(palette);
 
+  // Settings window (not parented to UI widget; standalone dialog)
+  m_settingsWindow = new SettingsWindow(nullptr);
+
+  // Tray menu: Settings, Quit
+  QAction *settingsAction = m_trayMenu->addAction("Settings");
+  connect(settingsAction, &QAction::triggered, this, &UI::openSettings);
+  m_trayMenu->addSeparator();
   QAction *quitAction = m_trayMenu->addAction("Quit");
   connect(quitAction, &QAction::triggered, this, &UI::quitApp);
   m_trayIcon->setContextMenu(m_trayMenu);
   m_trayIcon->setIcon(QIcon(iconsPath() + "/icon-app.svg"));
-  // Click disabled - only keyboard shortcut (Ctrl+Alt+P) toggles the app
+  // Left-click opens settings; right-click shows context menu
+  connect(m_trayIcon, &QSystemTrayIcon::activated, this,
+          [this](QSystemTrayIcon::ActivationReason reason) {
+            if (reason == QSystemTrayIcon::Trigger) {
+              openSettings();
+            }
+          });
   m_trayIcon->show();
 
   m_positionAnimation->setDuration(300);
@@ -114,6 +128,7 @@ UI::~UI() {
   delete m_positionAnimation;
   delete m_opacityAnimation;
   delete m_sizeAnimation;
+  delete m_settingsWindow;
 }
 
 void UI::removeShadow() {
@@ -173,6 +188,12 @@ void UI::toggleVisibility() {
 void UI::handleOpacityAnimationFinished() {
   if (!m_isProminent) {
   }
+}
+
+void UI::openSettings() {
+  m_settingsWindow->show();
+  m_settingsWindow->raise();
+  m_settingsWindow->activateWindow();
 }
 
 void UI::quitApp() {
