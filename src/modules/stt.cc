@@ -1,8 +1,8 @@
 #include "stt.h"
-#include "keytype.h"
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include "settings/settings_manager.h"
 #include <vector>
 
 // Initialize static members
@@ -21,7 +21,6 @@ bool STT::m_is_audio_context_initialized = false;
 QVector<double> STT::m_audio_levels;
 QVector<double> STT::m_audio_levels_prev;
 QElapsedTimer STT::m_audio_timer;
-QString STT::m_lastTyped;
 
 STT::STT(QObject *parent) : QObject(parent) {}
 
@@ -34,14 +33,6 @@ STT *STT::instance() {
 
 QVector<double> STT::getAudioLevels() {
   return m_audio_levels;
-}
-
-QString STT::getFinalText() {
-  return m_lastTyped;
-}
-
-void STT::clearLastTyped() {
-  m_lastTyped.clear();
 }
 
 STT::~STT() {
@@ -118,6 +109,31 @@ bool STT::load(const std::string &model_path) {
   m_audio_config.dataCallback = data_callback;
   m_audio_config.pUserData = m_instance;
 
+  // Set capture device ID from settings (NULL = default)
+  m_audio_config.capture.pDeviceID = NULL;
+  {
+    QString selectedSource = SettingsManager::instance()->inputSource();
+    if (selectedSource != QStringLiteral("default")) {
+      static ma_device_id targetId;
+      bool found = false;
+      ma_device_info *pInfos;
+      ma_uint32 count;
+      if (ma_context_get_devices(&m_audio_context, NULL, NULL, &pInfos,
+                                 &count) == MA_SUCCESS) {
+        for (ma_uint32 i = 0; i < count; ++i) {
+          if (QString::fromUtf8(pInfos[i].name) == selectedSource) {
+            targetId = pInfos[i].id;
+            found = true;
+            break;
+          }
+        }
+      }
+      if (found) {
+        m_audio_config.capture.pDeviceID = &targetId;
+      }
+    }
+  }
+
   result = ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
   if (result != MA_SUCCESS) {
     std::cerr << "STT: Failed to initialize miniaudio device." << std::endl;
@@ -176,16 +192,65 @@ void STT::stop() {
         SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Final Transcription: " << result->text << std::endl;
-      m_lastTyped = QString::fromUtf8(result->text);
-      KeyType::instance()->push(m_lastTyped);
+      emit m_instance->finalTextReady(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
 
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
   }
+}
 
-  KeyType::instance()->reset();
+void STT::reconfigureAudioSource() {
+  if (!m_instance || !m_is_audio_context_initialized) {
+    return;
+  }
+
+  QString selectedSource = SettingsManager::instance()->inputSource();
+
+  bool wasRunning = ma_device_is_started(&m_audio_device);
+  if (wasRunning) {
+    ma_device_stop(&m_audio_device);
+  }
+
+  ma_device_uninit(&m_audio_device);
+
+  // Set capture device ID from settings (NULL = default)
+  m_audio_config.capture.pDeviceID = NULL;
+  if (selectedSource != QStringLiteral("default")) {
+    static ma_device_id targetId;
+    bool found = false;
+    ma_device_info *pInfos;
+    ma_uint32 count;
+    if (ma_context_get_devices(&m_audio_context, NULL, NULL, &pInfos,
+                               &count) == MA_SUCCESS) {
+      for (ma_uint32 i = 0; i < count; ++i) {
+        if (QString::fromUtf8(pInfos[i].name) == selectedSource) {
+          targetId = pInfos[i].id;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (found) {
+      m_audio_config.capture.pDeviceID = &targetId;
+    }
+  }
+
+  ma_result result =
+      ma_device_init(&m_audio_context, &m_audio_config, &m_audio_device);
+  if (result != MA_SUCCESS) {
+    std::cerr << "STT: Failed to reinitialize audio device with source: "
+              << qPrintable(selectedSource) << std::endl;
+    return;
+  }
+
+  if (wasRunning) {
+    ma_device_start(&m_audio_device);
+  }
+
+  std::cout << "STT: Reconfigured audio source to: "
+            << qPrintable(selectedSource) << std::endl;
 }
 
 void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,

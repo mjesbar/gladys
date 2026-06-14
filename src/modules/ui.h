@@ -11,6 +11,8 @@
 #include <QWidget>
 #include <QPixmap>
 
+class SettingsWindow;
+
 class UI : public QWidget {
   Q_OBJECT
 
@@ -18,12 +20,15 @@ public:
   explicit UI(QWidget *parent = nullptr);
   ~UI() override;
 
+  void repositionOnPrimaryScreen();
+
 public slots:
   void toggleVisibility();
   void handleOpacityAnimationFinished();
   void removeShadow();
   void quitApp();
   void updateAudioLevels(const QVector<double> &levels);
+  void openSettings();
 
 signals:
   void quitRequested();
@@ -39,12 +44,15 @@ private:
   int m_targetYSubtle;
   bool m_isProminent;
   QSize m_originalSize;
+  QPoint m_prominentPos;
+  QPoint m_subtlePos;
   QSystemTrayIcon *m_trayIcon;
   QMenu *m_trayMenu;
   QVector<double> m_audioLevels;
   QVariantAnimation *m_scaleAnimation;
   QPixmap m_micPixmap;
   QPixmap m_scaledMicPixmap;
+  SettingsWindow *m_settingsWindow;
 
 private:
   void drawAudioWave(QPainter &p, const QSize &size, double scale);

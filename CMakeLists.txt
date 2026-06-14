@@ -39,6 +39,8 @@ set(GLADYS_SOURCES
   src/modules/keygrab.cc
   src/modules/keytype.cc
   src/modules/ui.cc
+  src/modules/settings/settings_manager.cc
+  src/modules/settings/settings_window.cc
 )
 
 # =============================================================================
@@ -47,6 +49,7 @@ set(GLADYS_SOURCES
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/modules
+  ${CMAKE_SOURCE_DIR}/src/modules/settings
   ${CMAKE_SOURCE_DIR}/src/include
 )
 
@@ -134,6 +137,7 @@ set_target_properties(gladys PROPERTIES
   OUTPUT_NAME "${GLADYS_EXE_NAME}"
   INSTALL_RPATH "$ORIGIN"
   BUILD_WITH_INSTALL_RPATH TRUE
+  WIN32_EXECUTABLE TRUE
 )
 target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(gladys PRIVATE

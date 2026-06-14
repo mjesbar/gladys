@@ -21,6 +21,7 @@ public:
   static bool load(const std::string &model_path);
   static void start();
   static void stop();
+  static void reconfigureAudioSource();
   static QVector<double> getAudioLevels();
 
 private:
@@ -43,11 +44,6 @@ private:
   static QVector<double> m_audio_levels;
   static QVector<double> m_audio_levels_prev;
   static QElapsedTimer m_audio_timer;
-  static QString m_lastTyped;
-
-public:
-  static QString getFinalText();
-  static void clearLastTyped();
 
   static void data_callback(ma_device *pDevice, void *pOutput,
                             const void *pInput, ma_uint32 frameCount);
@@ -55,6 +51,7 @@ public:
 signals:
   void audioLevelUpdated(const QVector<double> &levels);
   void textReceived(const QString &text);
+  void finalTextReady(const QString &text);
 };
 
 #endif // STT_H
