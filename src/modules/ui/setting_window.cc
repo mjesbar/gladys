@@ -1,33 +1,31 @@
-// Settings Window - QDialog for editing all user preferences.
+// Setting Window - QDialog for editing user preferences.
 
-#include "settings_window.hpp"
-#include "settings_manager.hpp"
+#include "setting_window.hpp"
+
+#include "../setting/setting.hpp"
 
 #include <QFormLayout>
+#include <QGroupBox>
 #include <QHeaderView>
 #include <QVBoxLayout>
 
-SettingsWindow::SettingsWindow(QWidget *parent)
-    : QDialog(parent), m_input_source_combo(nullptr), m_markdown_check(nullptr),
-      m_accent_check(nullptr), m_punctuation_check(nullptr),
-      m_alias_table(nullptr), m_alias_from_edit(nullptr),
-      m_alias_to_edit(nullptr), m_add_alias_btn(nullptr),
-      m_remove_alias_btn(nullptr), m_button_box(nullptr) {
+SettingWindow::SettingWindow(QWidget *parent)
+    : QDialog(parent) {
   setWindowTitle(tr("Gladys Settings"));
   setMinimumWidth(480);
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   build_ui();
-  load_from_manager();
+  load_from_setting();
 }
 
-void SettingsWindow::build_ui() {
+void SettingWindow::build_ui() {
   auto *mainLayout = new QVBoxLayout(this);
 
   // --- Input Source ---
   auto *audioGroup = new QGroupBox(tr("Input Source"), this);
   auto *audioLayout = new QVBoxLayout(audioGroup);
   m_input_source_combo = new QComboBox(this);
-  m_input_source_combo->addItems(SettingsManager::available_input_sources());
+  m_input_source_combo->addItems(Setting::available_input_sources());
   audioLayout->addWidget(m_input_source_combo);
   mainLayout->addWidget(audioGroup);
 
@@ -51,17 +49,14 @@ void SettingsWindow::build_ui() {
   dictLayout->addLayout(aliasInputLayout);
 
   auto *aliasBtnLayout = new QVBoxLayout();
-  m_add_alias_btn = new QPushButton(tr("Add Alias"), this);
-  m_remove_alias_btn = new QPushButton(tr("Remove Selected"), this);
-  aliasBtnLayout->addWidget(m_add_alias_btn);
-  aliasBtnLayout->addWidget(m_remove_alias_btn);
+  auto *addAliasBtn = new QPushButton(tr("Add Alias"), this);
+  auto *removeAliasBtn = new QPushButton(tr("Remove Selected"), this);
+  aliasBtnLayout->addWidget(addAliasBtn);
+  aliasBtnLayout->addWidget(removeAliasBtn);
   dictLayout->addLayout(aliasBtnLayout);
 
-  connect(m_add_alias_btn, &QPushButton::clicked, this,
-          &SettingsWindow::on_add_alias);
-  connect(m_remove_alias_btn, &QPushButton::clicked, this,
-          &SettingsWindow::on_remove_alias);
-
+  connect(addAliasBtn, &QPushButton::clicked, this, &SettingWindow::on_add_alias);
+  connect(removeAliasBtn, &QPushButton::clicked, this, &SettingWindow::on_remove_alias);
   mainLayout->addWidget(dictGroup);
 
   // --- Style ---
@@ -75,25 +70,21 @@ void SettingsWindow::build_ui() {
   styleLayout->addWidget(m_punctuation_check);
   mainLayout->addWidget(styleGroup);
 
-  // --- Apply button ---
-  auto *btnLayout = new QVBoxLayout();
   auto *applyBtn = new QPushButton(tr("Apply"), this);
-  btnLayout->addWidget(applyBtn);
-  connect(applyBtn, &QPushButton::clicked, this, &SettingsWindow::on_apply);
-  mainLayout->addLayout(btnLayout);
+  connect(applyBtn, &QPushButton::clicked, this, &SettingWindow::on_apply);
+  mainLayout->addWidget(applyBtn);
 }
 
-void SettingsWindow::load_from_manager() {
-  SettingsManager *mgr = SettingsManager::instance();
+void SettingWindow::load_from_setting() {
+  Setting *s = Setting::instance();
 
-  // Input source
-  int idx = m_input_source_combo->findText(mgr->input_source());
-  if (idx >= 0)
+  int idx = m_input_source_combo->findText(s->input_source());
+  if (idx >= 0) {
     m_input_source_combo->setCurrentIndex(idx);
+  }
 
-  // Dictionary
   m_alias_table->setRowCount(0);
-  const auto dict = mgr->dictionary();
+  const auto dict = s->dictionary();
   for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
     int row = m_alias_table->rowCount();
     m_alias_table->insertRow(row);
@@ -101,39 +92,37 @@ void SettingsWindow::load_from_manager() {
     m_alias_table->setItem(row, 1, new QTableWidgetItem(it.value()));
   }
 
-  // Style
-  m_markdown_check->setChecked(mgr->markdown_mode());
-  m_accent_check->setChecked(mgr->allow_accents());
-  m_punctuation_check->setChecked(mgr->allow_punctuation());
+  m_markdown_check->setChecked(s->markdown_mode());
+  m_accent_check->setChecked(s->allow_accents());
+  m_punctuation_check->setChecked(s->allow_punctuation());
 }
 
-void SettingsWindow::write_to_manager() {
-  SettingsManager *mgr = SettingsManager::instance();
+void SettingWindow::write_to_setting() {
+  Setting *s = Setting::instance();
 
-  mgr->set_input_source(m_input_source_combo->currentText());
+  s->set_input_source(m_input_source_combo->currentText());
 
   QMap<QString, QString> dict;
   for (int i = 0; i < m_alias_table->rowCount(); ++i) {
     auto *fromItem = m_alias_table->item(i, 0);
     auto *toItem = m_alias_table->item(i, 1);
     if (fromItem && !fromItem->text().isEmpty()) {
-      dict.insert(fromItem->text(),
-                  toItem ? toItem->text() : QString());
+      dict.insert(fromItem->text(), toItem ? toItem->text() : QString());
     }
   }
-  mgr->set_dictionary(dict);
+  s->set_dictionary(dict);
 
-  mgr->set_markdown_mode(m_markdown_check->isChecked());
-  mgr->set_allow_accents(m_accent_check->isChecked());
-  mgr->set_allow_punctuation(m_punctuation_check->isChecked());
+  s->set_markdown_mode(m_markdown_check->isChecked());
+  s->set_allow_accents(m_accent_check->isChecked());
+  s->set_allow_punctuation(m_punctuation_check->isChecked());
 }
 
-void SettingsWindow::on_apply() {
-  write_to_manager();
-  emit settings_applied();
+void SettingWindow::on_apply() {
+  write_to_setting();
+  Setting::instance()->save();
 }
 
-void SettingsWindow::on_add_alias() {
+void SettingWindow::on_add_alias() {
   QString from = m_alias_from_edit->text().trimmed();
   QString to = m_alias_to_edit->text().trimmed();
   if (from.isEmpty()) {
@@ -148,7 +137,7 @@ void SettingsWindow::on_add_alias() {
   m_alias_from_edit->setFocus();
 }
 
-void SettingsWindow::on_remove_alias() {
+void SettingWindow::on_remove_alias() {
   int row = m_alias_table->currentRow();
   if (row >= 0) {
     m_alias_table->removeRow(row);

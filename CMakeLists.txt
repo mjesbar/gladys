@@ -31,16 +31,15 @@ endif()
 # Source files
 # =============================================================================
 set(GLADYS_SOURCES
-  src/gladys.cc
-  src/modules/gladysd.cc
-  src/modules/ipc.cc
-  src/modules/stt.cc
-  src/modules/llm.cc
-  src/modules/keygrab.cc
-  src/modules/keytype.cc
-  src/modules/ui.cc
-  src/modules/settings/settings_manager.cc
-  src/modules/settings/settings_window.cc
+  src/main.cc
+  src/modules/ai/stt.cc
+  src/modules/ai/llm.cc
+  src/modules/key/toggle.cc
+  src/modules/key/paste.cc
+  src/modules/setting/setting.cc
+  src/modules/ui/app_window.cc
+  src/modules/ui/mic.cc
+  src/modules/ui/setting_window.cc
 )
 
 # =============================================================================
@@ -49,7 +48,10 @@ set(GLADYS_SOURCES
 set(INCLUDE_DIRS
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/modules
-  ${CMAKE_SOURCE_DIR}/src/modules/settings
+  ${CMAKE_SOURCE_DIR}/src/modules/ai
+  ${CMAKE_SOURCE_DIR}/src/modules/setting
+  ${CMAKE_SOURCE_DIR}/src/modules/ui
+  ${CMAKE_SOURCE_DIR}/src/modules/key
   ${CMAKE_SOURCE_DIR}/src/include
 )
 
@@ -61,7 +63,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
 # =============================================================================
 # Miniaudio (single-header library, define implementation in stt.cc)
 # =============================================================================
-set_source_files_properties(src/modules/stt.cc PROPERTIES
+set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
 add_compile_definitions(MA_DEBUG_OUTPUT)
