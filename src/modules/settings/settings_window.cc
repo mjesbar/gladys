@@ -1,156 +1,156 @@
 // Settings Window - QDialog for editing all user preferences.
 
-#include "settings_window.h"
-#include "settings_manager.h"
+#include "settings_window.hpp"
+#include "settings_manager.hpp"
 
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QVBoxLayout>
 
 SettingsWindow::SettingsWindow(QWidget *parent)
-    : QDialog(parent), m_inputSourceCombo(nullptr), m_markdownCheck(nullptr),
-      m_accentCheck(nullptr), m_punctuationCheck(nullptr),
-      m_aliasTable(nullptr), m_aliasFromEdit(nullptr),
-      m_aliasToEdit(nullptr), m_addAliasBtn(nullptr),
-      m_removeAliasBtn(nullptr), m_buttonBox(nullptr) {
+    : QDialog(parent), m_input_source_combo(nullptr), m_markdown_check(nullptr),
+      m_accent_check(nullptr), m_punctuation_check(nullptr),
+      m_alias_table(nullptr), m_alias_from_edit(nullptr),
+      m_alias_to_edit(nullptr), m_add_alias_btn(nullptr),
+      m_remove_alias_btn(nullptr), m_button_box(nullptr) {
   setWindowTitle(tr("Gladys Settings"));
   setMinimumWidth(480);
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-  buildUi();
-  loadFromManager();
+  build_ui();
+  load_from_manager();
 }
 
-void SettingsWindow::buildUi() {
+void SettingsWindow::build_ui() {
   auto *mainLayout = new QVBoxLayout(this);
 
   // --- Input Source ---
   auto *audioGroup = new QGroupBox(tr("Input Source"), this);
   auto *audioLayout = new QVBoxLayout(audioGroup);
-  m_inputSourceCombo = new QComboBox(this);
-  m_inputSourceCombo->addItems(SettingsManager::availableInputSources());
-  audioLayout->addWidget(m_inputSourceCombo);
+  m_input_source_combo = new QComboBox(this);
+  m_input_source_combo->addItems(SettingsManager::available_input_sources());
+  audioLayout->addWidget(m_input_source_combo);
   mainLayout->addWidget(audioGroup);
 
   // --- Dictionary (Aliases) ---
   auto *dictGroup = new QGroupBox(tr("Dictionary (Aliases)"), this);
   auto *dictLayout = new QVBoxLayout(dictGroup);
 
-  m_aliasTable = new QTableWidget(0, 2, this);
-  m_aliasTable->setHorizontalHeaderLabels({tr("From"), tr("To")});
-  m_aliasTable->horizontalHeader()->setStretchLastSection(true);
-  m_aliasTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-  dictLayout->addWidget(m_aliasTable);
+  m_alias_table = new QTableWidget(0, 2, this);
+  m_alias_table->setHorizontalHeaderLabels({tr("From"), tr("To")});
+  m_alias_table->horizontalHeader()->setStretchLastSection(true);
+  m_alias_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  dictLayout->addWidget(m_alias_table);
 
   auto *aliasInputLayout = new QFormLayout();
-  m_aliasFromEdit = new QLineEdit(this);
-  m_aliasFromEdit->setPlaceholderText(tr("Original word"));
-  m_aliasToEdit = new QLineEdit(this);
-  m_aliasToEdit->setPlaceholderText(tr("Replacement"));
-  aliasInputLayout->addRow(tr("From:"), m_aliasFromEdit);
-  aliasInputLayout->addRow(tr("To:"), m_aliasToEdit);
+  m_alias_from_edit = new QLineEdit(this);
+  m_alias_from_edit->setPlaceholderText(tr("Original word"));
+  m_alias_to_edit = new QLineEdit(this);
+  m_alias_to_edit->setPlaceholderText(tr("Replacement"));
+  aliasInputLayout->addRow(tr("From:"), m_alias_from_edit);
+  aliasInputLayout->addRow(tr("To:"), m_alias_to_edit);
   dictLayout->addLayout(aliasInputLayout);
 
   auto *aliasBtnLayout = new QVBoxLayout();
-  m_addAliasBtn = new QPushButton(tr("Add Alias"), this);
-  m_removeAliasBtn = new QPushButton(tr("Remove Selected"), this);
-  aliasBtnLayout->addWidget(m_addAliasBtn);
-  aliasBtnLayout->addWidget(m_removeAliasBtn);
+  m_add_alias_btn = new QPushButton(tr("Add Alias"), this);
+  m_remove_alias_btn = new QPushButton(tr("Remove Selected"), this);
+  aliasBtnLayout->addWidget(m_add_alias_btn);
+  aliasBtnLayout->addWidget(m_remove_alias_btn);
   dictLayout->addLayout(aliasBtnLayout);
 
-  connect(m_addAliasBtn, &QPushButton::clicked, this,
-          &SettingsWindow::onAddAlias);
-  connect(m_removeAliasBtn, &QPushButton::clicked, this,
-          &SettingsWindow::onRemoveAlias);
+  connect(m_add_alias_btn, &QPushButton::clicked, this,
+          &SettingsWindow::on_add_alias);
+  connect(m_remove_alias_btn, &QPushButton::clicked, this,
+          &SettingsWindow::on_remove_alias);
 
   mainLayout->addWidget(dictGroup);
 
   // --- Style ---
   auto *styleGroup = new QGroupBox(tr("Style"), this);
   auto *styleLayout = new QVBoxLayout(styleGroup);
-  m_markdownCheck = new QCheckBox(tr("Markdown mode"), this);
-  m_accentCheck = new QCheckBox(tr("Allow accents"), this);
-  m_punctuationCheck = new QCheckBox(tr("Allow punctuation"), this);
-  styleLayout->addWidget(m_markdownCheck);
-  styleLayout->addWidget(m_accentCheck);
-  styleLayout->addWidget(m_punctuationCheck);
+  m_markdown_check = new QCheckBox(tr("Markdown mode"), this);
+  m_accent_check = new QCheckBox(tr("Allow accents"), this);
+  m_punctuation_check = new QCheckBox(tr("Allow punctuation"), this);
+  styleLayout->addWidget(m_markdown_check);
+  styleLayout->addWidget(m_accent_check);
+  styleLayout->addWidget(m_punctuation_check);
   mainLayout->addWidget(styleGroup);
 
   // --- Apply button ---
   auto *btnLayout = new QVBoxLayout();
   auto *applyBtn = new QPushButton(tr("Apply"), this);
   btnLayout->addWidget(applyBtn);
-  connect(applyBtn, &QPushButton::clicked, this, &SettingsWindow::onApply);
+  connect(applyBtn, &QPushButton::clicked, this, &SettingsWindow::on_apply);
   mainLayout->addLayout(btnLayout);
 }
 
-void SettingsWindow::loadFromManager() {
+void SettingsWindow::load_from_manager() {
   SettingsManager *mgr = SettingsManager::instance();
 
   // Input source
-  int idx = m_inputSourceCombo->findText(mgr->inputSource());
+  int idx = m_input_source_combo->findText(mgr->input_source());
   if (idx >= 0)
-    m_inputSourceCombo->setCurrentIndex(idx);
+    m_input_source_combo->setCurrentIndex(idx);
 
   // Dictionary
-  m_aliasTable->setRowCount(0);
+  m_alias_table->setRowCount(0);
   const auto dict = mgr->dictionary();
   for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
-    int row = m_aliasTable->rowCount();
-    m_aliasTable->insertRow(row);
-    m_aliasTable->setItem(row, 0, new QTableWidgetItem(it.key()));
-    m_aliasTable->setItem(row, 1, new QTableWidgetItem(it.value()));
+    int row = m_alias_table->rowCount();
+    m_alias_table->insertRow(row);
+    m_alias_table->setItem(row, 0, new QTableWidgetItem(it.key()));
+    m_alias_table->setItem(row, 1, new QTableWidgetItem(it.value()));
   }
 
   // Style
-  m_markdownCheck->setChecked(mgr->markdownMode());
-  m_accentCheck->setChecked(mgr->allowAccents());
-  m_punctuationCheck->setChecked(mgr->allowPunctuation());
+  m_markdown_check->setChecked(mgr->markdown_mode());
+  m_accent_check->setChecked(mgr->allow_accents());
+  m_punctuation_check->setChecked(mgr->allow_punctuation());
 }
 
-void SettingsWindow::writeToManager() {
+void SettingsWindow::write_to_manager() {
   SettingsManager *mgr = SettingsManager::instance();
 
-  mgr->setInputSource(m_inputSourceCombo->currentText());
+  mgr->set_input_source(m_input_source_combo->currentText());
 
   QMap<QString, QString> dict;
-  for (int i = 0; i < m_aliasTable->rowCount(); ++i) {
-    auto *fromItem = m_aliasTable->item(i, 0);
-    auto *toItem = m_aliasTable->item(i, 1);
+  for (int i = 0; i < m_alias_table->rowCount(); ++i) {
+    auto *fromItem = m_alias_table->item(i, 0);
+    auto *toItem = m_alias_table->item(i, 1);
     if (fromItem && !fromItem->text().isEmpty()) {
       dict.insert(fromItem->text(),
                   toItem ? toItem->text() : QString());
     }
   }
-  mgr->setDictionary(dict);
+  mgr->set_dictionary(dict);
 
-  mgr->setMarkdownMode(m_markdownCheck->isChecked());
-  mgr->setAllowAccents(m_accentCheck->isChecked());
-  mgr->setAllowPunctuation(m_punctuationCheck->isChecked());
+  mgr->set_markdown_mode(m_markdown_check->isChecked());
+  mgr->set_allow_accents(m_accent_check->isChecked());
+  mgr->set_allow_punctuation(m_punctuation_check->isChecked());
 }
 
-void SettingsWindow::onApply() {
-  writeToManager();
-  emit settingsApplied();
+void SettingsWindow::on_apply() {
+  write_to_manager();
+  emit settings_applied();
 }
 
-void SettingsWindow::onAddAlias() {
-  QString from = m_aliasFromEdit->text().trimmed();
-  QString to = m_aliasToEdit->text().trimmed();
+void SettingsWindow::on_add_alias() {
+  QString from = m_alias_from_edit->text().trimmed();
+  QString to = m_alias_to_edit->text().trimmed();
   if (from.isEmpty()) {
     return;
   }
-  int row = m_aliasTable->rowCount();
-  m_aliasTable->insertRow(row);
-  m_aliasTable->setItem(row, 0, new QTableWidgetItem(from));
-  m_aliasTable->setItem(row, 1, new QTableWidgetItem(to));
-  m_aliasFromEdit->clear();
-  m_aliasToEdit->clear();
-  m_aliasFromEdit->setFocus();
+  int row = m_alias_table->rowCount();
+  m_alias_table->insertRow(row);
+  m_alias_table->setItem(row, 0, new QTableWidgetItem(from));
+  m_alias_table->setItem(row, 1, new QTableWidgetItem(to));
+  m_alias_from_edit->clear();
+  m_alias_to_edit->clear();
+  m_alias_from_edit->setFocus();
 }
 
-void SettingsWindow::onRemoveAlias() {
-  int row = m_aliasTable->currentRow();
+void SettingsWindow::on_remove_alias() {
+  int row = m_alias_table->currentRow();
   if (row >= 0) {
-    m_aliasTable->removeRow(row);
+    m_alias_table->removeRow(row);
   }
 }

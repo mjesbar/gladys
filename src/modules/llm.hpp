@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QProcess>
+#include <memory>
 #include <QString>
 #include <QByteArray>
 #include <QJsonObject>
@@ -27,18 +28,18 @@ public:
   static LLM *instance();
   static bool start();
   static void stop();
-  static QString formatTranscription(const QString &text);
+  static QString format_transcription(const QString &text);
 
 private:
   explicit LLM(QObject *parent = nullptr);
   ~LLM() override;
 
   static LLM *m_instance;
-  static QProcess *m_serverProcess;
-  static QString m_serverUrl;
-  static bool m_isRunning;
+  static std::unique_ptr<QProcess> m_server_process;
+  static QString m_server_url;
+  static bool m_is_running;
 
-  static QString postJson(const QJsonObject &json);
+  static QString post_json(const QJsonObject &json);
 };
 
 #endif // LLM_H

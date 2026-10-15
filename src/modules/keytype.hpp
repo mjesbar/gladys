@@ -27,16 +27,16 @@ class KeyType : public QObject {
 
 public:
   static KeyType *instance();
-  void copyToClipboard(const QString &text);
-  void selectAllAndPaste();
+  void copy_to_clipboard(const QString &text);
+  void select_all_and_paste();
 
 private:
   explicit KeyType(QObject *parent = nullptr);
   ~KeyType();
 
-  bool initKeyboard();
-  void closeKeyboard();
-  void sendKey(unsigned int code, bool press);
+  bool init_keyboard();
+  void close_keyboard();
+  void send_key(unsigned int code, bool press);
 
   static KeyType *s_instance;
 

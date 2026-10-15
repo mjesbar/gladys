@@ -1,16 +1,26 @@
 // KeyGrab Module - Global hotkey detection.
 // Cross-platform: X11 (Linux), CGEventTap (macOS), SetWindowsHookEx (Windows).
 
-#include "keygrab.h"
+#include "keygrab.hpp"
 #include <stdio.h>
+
+#ifdef __linux__
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+#endif
+#ifdef __APPLE__
+#include <CoreGraphics/CoreGraphics.h>
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 // ---------------------------------------------------------------------------
 // Linux (X11) implementation
 // ---------------------------------------------------------------------------
 
 #ifdef __linux__
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
 
 KeyGrab::KeyGrab(QObject *parent)
     : QObject(parent), m_display(nullptr), m_root(0), m_keycode(0), m_modifiers(0) {
@@ -52,7 +62,7 @@ bool KeyGrab::init(void *display) {
   return true;
 }
 
-void KeyGrab::processEvents() {
+void KeyGrab::process_events() {
   if (!m_display) return;
   if (!m_timer.isValid() || m_timer.hasExpired(10)) { // 100fps max
     m_timer.restart();
@@ -73,7 +83,7 @@ void KeyGrab::processEvents() {
            Mod3Mask | Mod4Mask | Mod5Mask);
       unsigned int eventKeycode = event.xkey.keycode;
       if (eventKeycode == m_keycode && (eventMods & m_modifiers) == m_modifiers) {
-        emit keyPressed();
+        emit key_pressed();
       }
     }
   }
@@ -86,22 +96,20 @@ void KeyGrab::processEvents() {
 // ---------------------------------------------------------------------------
 
 #ifdef __APPLE__
-#include <CoreGraphics/CoreGraphics.h>
-#include <CoreFoundation/CoreFoundation.h>
 
 KeyGrab::KeyGrab(QObject *parent)
     : QObject(parent), m_display(nullptr), m_root(0), m_keycode(0), m_modifiers(0),
-      m_eventTap(nullptr), m_runLoopSource(nullptr) {
+      m_event_tap(nullptr), m_run_loop_source(nullptr) {
 }
 
 KeyGrab::~KeyGrab() {
-  if (m_eventTap) {
-    CFMachPortInvalidate(static_cast<CFMachPortRef>(m_eventTap));
-    CFRelease(static_cast<CFMachPortRef>(m_eventTap));
+  if (m_event_tap) {
+    CFMachPortInvalidate(static_cast<CFMachPortRef>(m_event_tap));
+    CFRelease(static_cast<CFMachPortRef>(m_event_tap));
   }
-  if (m_runLoopSource) {
-    CFRunLoopSourceInvalidate(static_cast<CFRunLoopSourceRef>(m_runLoopSource));
-    CFRelease(static_cast<CFRunLoopSourceRef>(m_runLoopSource));
+  if (m_run_loop_source) {
+    CFRunLoopSourceInvalidate(static_cast<CFRunLoopSourceRef>(m_run_loop_source));
+    CFRelease(static_cast<CFRunLoopSourceRef>(m_run_loop_source));
   }
 }
 
@@ -120,24 +128,24 @@ bool KeyGrab::init(void *display) {
                                  kCGHeadInsertEventTap,
                                  kCGEventTapOptionDefault,
                                  eventMask,
-                                 eventTapCallback,
+                                 event_tap_callback,
                                  this);
   if (!tap) {
     fprintf(stderr, "KeyGrab: CGEventTapCreate failed. "
                     "Grant Accessibility permission in System Preferences.\n");
     return false;
   }
-  m_eventTap = tap;
+  m_event_tap = tap;
 
   CFRunLoopSourceRef source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault,
                                                              tap, 0);
   if (!source) {
     fprintf(stderr, "KeyGrab: Failed to create run loop source.\n");
     CFRelease(tap);
-    m_eventTap = nullptr;
+    m_event_tap = nullptr;
     return false;
   }
-  m_runLoopSource = source;
+  m_run_loop_source = source;
 
   CFRunLoopAddSource(CFRunLoopGetCurrent(), source,
                      kCFRunLoopCommonModes);
@@ -145,11 +153,11 @@ bool KeyGrab::init(void *display) {
   return true;
 }
 
-void KeyGrab::processEvents() {
+void KeyGrab::process_events() {
   // macOS uses callback-driven CGEventTap; no polling needed.
 }
 
-CGEventRef KeyGrab::eventTapCallback(CGEventTapProxy proxy,
+CGEventRef KeyGrab::event_tap_callback(CGEventTapProxy proxy,
                                      CGEventType type,
                                      CGEventRef event,
                                      void *userInfo) {
@@ -165,7 +173,7 @@ CGEventRef KeyGrab::eventTapCallback(CGEventTapProxy proxy,
     if (keyCode == self->m_keycode &&
         (flags & required) == required) {
       fprintf(stderr, "KeyGrab: Cmd+Option+P detected!\n");
-      emit self->keyPressed();
+      emit self->key_pressed();
     }
   }
   return event; // pass through
@@ -178,20 +186,19 @@ CGEventRef KeyGrab::eventTapCallback(CGEventTapProxy proxy,
 // ---------------------------------------------------------------------------
 
 #ifdef _WIN32
-#include <windows.h>
 
 // Global pointer for hook callback access
 static KeyGrab *g_keyGrabInstance = nullptr;
 
 KeyGrab::KeyGrab(QObject *parent)
     : QObject(parent), m_display(nullptr), m_root(0), m_keycode(0), m_modifiers(0),
-      m_keyboardHook(nullptr) {
+      m_keyboard_hook(nullptr) {
 }
 
 KeyGrab::~KeyGrab() {
-  if (m_keyboardHook) {
-    UnhookWindowsHookEx(static_cast<HHOOK>(m_keyboardHook));
-    m_keyboardHook = nullptr;
+  if (m_keyboard_hook) {
+    UnhookWindowsHookEx(static_cast<HHOOK>(m_keyboard_hook));
+    m_keyboard_hook = nullptr;
   }
   if (g_keyGrabInstance == this) {
     g_keyGrabInstance = nullptr;
@@ -209,7 +216,7 @@ bool KeyGrab::init(void *display) {
   fprintf(stderr, "KeyGrab: Setting up low-level keyboard hook for Ctrl+Alt+P...\n");
 
   HHOOK hook = SetWindowsHookEx(WH_KEYBOARD_LL,
-                                 lowLevelKeyboardProc,
+                                 low_level_keyboard_proc,
                                  GetModuleHandle(NULL),
                                  0);
   if (!hook) {
@@ -218,13 +225,13 @@ bool KeyGrab::init(void *display) {
     g_keyGrabInstance = nullptr;
     return false;
   }
-  m_keyboardHook = hook;
+  m_keyboard_hook = hook;
 
   fprintf(stderr, "KeyGrab: Keyboard hook active.\n");
   return true;
 }
 
-void KeyGrab::processEvents() {
+void KeyGrab::process_events() {
   // Windows uses callback-driven hook; no polling needed.
   // Process message queue to allow hook dispatch.
   MSG msg;
@@ -234,7 +241,7 @@ void KeyGrab::processEvents() {
   }
 }
 
-LRESULT CALLBACK KeyGrab::lowLevelKeyboardProc(int nCode,
+LRESULT CALLBACK KeyGrab::low_level_keyboard_proc(int nCode,
                                                WPARAM wParam,
                                                LPARAM lParam) {
   if (nCode == HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
@@ -245,7 +252,7 @@ LRESULT CALLBACK KeyGrab::lowLevelKeyboardProc(int nCode,
     if (p->vkCode == 'P' && ctrl && alt) {
       fprintf(stderr, "KeyGrab: Ctrl+Alt+P detected!\n");
       if (g_keyGrabInstance) {
-        emit g_keyGrabInstance->keyPressed();
+        emit g_keyGrabInstance->key_pressed();
       }
     }
   }
@@ -253,3 +260,7 @@ LRESULT CALLBACK KeyGrab::lowLevelKeyboardProc(int nCode,
 }
 
 #endif // _WIN32
+
+unsigned int KeyGrab::keycode() const { return m_keycode; }
+unsigned int KeyGrab::modifiers() const { return m_modifiers; }
+void *KeyGrab::display() const { return m_display; }

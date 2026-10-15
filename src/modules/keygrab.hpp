@@ -26,15 +26,15 @@ public:
   ~KeyGrab() override;
 
   bool init(void *display);
-  unsigned int keycode() const { return m_keycode; }
-  unsigned int modifiers() const { return m_modifiers; }
-  void *display() const { return m_display; }
+  unsigned int keycode() const;
+  unsigned int modifiers() const;
+  void *display() const;
 
 public slots:
-  void processEvents();
+  void process_events();
 
 signals:
-  void keyPressed();
+  void key_pressed();
 
 private:
   void *m_display;
@@ -44,17 +44,17 @@ private:
   QElapsedTimer m_timer;
 
 #ifdef __APPLE__
-  void *m_eventTap;       // CFMachPortRef (opaque)
-  void *m_runLoopSource;  // CFRunLoopSourceRef (opaque)
-  static CGEventRef eventTapCallback(CGEventTapProxy proxy,
+  void *m_event_tap;       // CFMachPortRef (opaque)
+  void *m_run_loop_source;  // CFRunLoopSourceRef (opaque)
+  static CGEventRef event_tap_callback(CGEventTapProxy proxy,
                                      CGEventType type,
                                      CGEventRef event,
                                      void *userInfo);
 #endif
 
 #ifdef _WIN32
-  void *m_keyboardHook;   // HHOOK (opaque)
-  static LRESULT CALLBACK lowLevelKeyboardProc(int nCode,
+  void *m_keyboard_hook;   // HHOOK (opaque)
+  static LRESULT CALLBACK low_level_keyboard_proc(int nCode,
                                                WPARAM wParam,
                                                LPARAM lParam);
 #endif

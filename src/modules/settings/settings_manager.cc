@@ -1,6 +1,6 @@
 // Settings Manager - Singleton managing persistent user preferences.
 
-#include "settings_manager.h"
+#include "settings_manager.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -29,48 +29,48 @@ SettingsManager::~SettingsManager() { save(); }
 
 void SettingsManager::load() {
   QSettings s("gladys", "gladys");
-  applyFromSettings(s);
+  apply_from_settings(s);
 }
 
 void SettingsManager::save() {
   QSettings s("gladys", "gladys");
-  writeToSettings(s);
-  emit settingsChanged();
+  write_to_settings(s);
+  emit settings_changed();
 }
 
-void SettingsManager::resetToDefaults() {
+void SettingsManager::reset_to_defaults() {
   m_data = SettingsData();
   save();
 }
 
-void SettingsManager::setInputSource(const QString &v) {
-  m_data.inputSource = v;
+void SettingsManager::set_input_source(const QString &v) {
+  m_data.input_source = v;
   save();
 }
 
-void SettingsManager::setDictionary(const QMap<QString, QString> &d) {
+void SettingsManager::set_dictionary(const QMap<QString, QString> &d) {
   m_data.dictionary = d;
   save();
 }
 
-void SettingsManager::setMarkdownMode(bool v) {
-  m_data.markdownMode = v;
+void SettingsManager::set_markdown_mode(bool v) {
+  m_data.markdown_mode = v;
   save();
 }
 
-void SettingsManager::setAllowAccents(bool v) {
-  m_data.allowAccents = v;
+void SettingsManager::set_allow_accents(bool v) {
+  m_data.allow_accents = v;
   save();
 }
 
-void SettingsManager::setAllowPunctuation(bool v) {
-  m_data.allowPunctuation = v;
+void SettingsManager::set_allow_punctuation(bool v) {
+  m_data.allow_punctuation = v;
   save();
 }
 
-void SettingsManager::applyFromSettings(QSettings &s) {
-  m_data.inputSource =
-      s.value("audio/inputSource", defaultInputSource()).toString();
+void SettingsManager::apply_from_settings(QSettings &s) {
+  m_data.input_source =
+      s.value("audio/inputSource", default_input_source()).toString();
 
   m_data.dictionary.clear();
   int dictSize = s.beginReadArray("dictionary");
@@ -84,13 +84,13 @@ void SettingsManager::applyFromSettings(QSettings &s) {
   }
   s.endArray();
 
-  m_data.markdownMode = s.value("style/markdownMode", false).toBool();
-  m_data.allowAccents = s.value("style/allowAccents", true).toBool();
-  m_data.allowPunctuation = s.value("style/allowPunctuation", true).toBool();
+  m_data.markdown_mode = s.value("style/markdownMode", false).toBool();
+  m_data.allow_accents = s.value("style/allowAccents", true).toBool();
+  m_data.allow_punctuation = s.value("style/allowPunctuation", true).toBool();
 }
 
-void SettingsManager::writeToSettings(QSettings &s) const {
-  s.setValue("audio/inputSource", m_data.inputSource);
+void SettingsManager::write_to_settings(QSettings &s) const {
+  s.setValue("audio/inputSource", m_data.input_source);
 
   s.beginWriteArray("dictionary");
   int idx = 0;
@@ -102,15 +102,15 @@ void SettingsManager::writeToSettings(QSettings &s) const {
   }
   s.endArray();
 
-  s.setValue("style/markdownMode", m_data.markdownMode);
-  s.setValue("style/allowAccents", m_data.allowAccents);
-  s.setValue("style/allowPunctuation", m_data.allowPunctuation);
+  s.setValue("style/markdownMode", m_data.markdown_mode);
+  s.setValue("style/allowAccents", m_data.allow_accents);
+  s.setValue("style/allowPunctuation", m_data.allow_punctuation);
 }
 
 // ---------------------------------------------------------------------------
 // Platform-specific input source enumeration
 // ---------------------------------------------------------------------------
-QStringList SettingsManager::availableInputSources() {
+QStringList SettingsManager::available_input_sources() {
   QStringList sources;
   sources << "default";
 
@@ -135,6 +135,13 @@ QStringList SettingsManager::availableInputSources() {
   return sources;
 }
 
-QString SettingsManager::defaultInputSource() {
+QString SettingsManager::default_input_source() {
   return QStringLiteral("default");
 }
+
+QString SettingsManager::input_source() const { return m_data.input_source; }
+QMap<QString, QString> SettingsManager::dictionary() const { return m_data.dictionary; }
+bool SettingsManager::markdown_mode() const { return m_data.markdown_mode; }
+bool SettingsManager::allow_accents() const { return m_data.allow_accents; }
+bool SettingsManager::allow_punctuation() const { return m_data.allow_punctuation; }
+SettingsData SettingsManager::data() const { return m_data; }

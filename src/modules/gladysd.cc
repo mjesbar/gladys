@@ -1,11 +1,11 @@
 // Gladysd Hub - Main controller managing all system components.
 
-#include "gladysd.h"
-#include "keygrab.h"
-#include "keytype.h"
-#include "llm.h"
-#include "stt.h"
-#include "settings/settings_manager.h"
+#include "gladysd.hpp"
+#include "keygrab.hpp"
+#include "keytype.hpp"
+#include "llm.hpp"
+#include "stt.hpp"
+#include "settings/settings_manager.hpp"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <csignal>
@@ -33,18 +33,18 @@ Gladysd *Gladysd::instance() {
 }
 
 Gladysd::Gladysd(QObject *parent)
-    : QObject(parent), m_ipcServer(nullptr),
-      m_ipcServerName("gladys-ipc-server"), m_keyGrab(nullptr),
-      m_display(nullptr), m_sttThread(nullptr), m_stt(nullptr),
-      m_keyTypeThread(nullptr), m_llm(nullptr), m_keyType(nullptr) {
+    : QObject(parent), m_ipc_server(nullptr),
+      m_ipc_server_name("gladys-ipc-server"), m_key_grab(nullptr),
+      m_display(nullptr), m_stt_thread(nullptr), m_stt(nullptr),
+      m_key_type_thread(nullptr), m_llm(nullptr), m_key_type(nullptr) {
 
-  std::signal(SIGTERM, signalHandler);
-  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signal_handler);
+  std::signal(SIGINT, signal_handler);
 }
 
 Gladysd::~Gladysd() { shutdown(); }
 
-void Gladysd::signalHandler(int signum) {
+void Gladysd::signal_handler(int signum) {
   if (signum == SIGTERM || signum == SIGINT) {
     fprintf(stderr, "Gladysd: Received signal %d, shutting down.\n", signum);
     instance()->shutdown();
@@ -53,8 +53,8 @@ void Gladysd::signalHandler(int signum) {
 }
 
 bool Gladysd::init() {
-  m_ipcServer = new IPCServer(m_ipcServerName, this);
-  if (!m_ipcServer->start()) {
+  m_ipc_server = new IPCServer(m_ipc_server_name, this);
+  if (!m_ipc_server->start()) {
     fprintf(stderr, "Gladysd: IPC server failed to start.\n");
     return false;
   }
@@ -84,8 +84,8 @@ bool Gladysd::init() {
   m_display = nullptr;
 #endif
 
-  m_keyGrab = new KeyGrab(this);
-  if (!m_keyGrab->init(m_display)) {
+  m_key_grab = new KeyGrab(this);
+  if (!m_key_grab->init(m_display)) {
     return false;
   }
 
@@ -95,29 +95,29 @@ bool Gladysd::init() {
   // frequency
   QTimer *x11PollTimer = new QTimer(this);
   x11PollTimer->setInterval(33); // ~30fps
-  connect(x11PollTimer, &QTimer::timeout, m_keyGrab, &KeyGrab::processEvents);
+  connect(x11PollTimer, &QTimer::timeout, m_key_grab, &KeyGrab::process_events);
   x11PollTimer->start();
 #endif
 
   m_stt = STT::instance();
-  m_sttThread = new QThread();
-  m_stt->moveToThread(m_sttThread);
-  m_sttThread->start();
+  m_stt_thread = new QThread();
+  m_stt->moveToThread(m_stt_thread);
+  m_stt_thread->start();
 
   // KeyType runs on its own thread to avoid blocking main thread
-  m_keyType = KeyType::instance();
-  m_keyTypeThread = new QThread();
-  m_keyType->moveToThread(m_keyTypeThread);
-  m_keyTypeThread->start();
+  m_key_type = KeyType::instance();
+  m_key_type_thread = new QThread();
+  m_key_type->moveToThread(m_key_type_thread);
+  m_key_type_thread->start();
 
-  setupConnections();
+  setup_connections();
 
   fprintf(stderr, "Gladysd: Initialized successfully.\n");
   return true;
 }
 
-void Gladysd::setupConnections() {
-  connect(m_keyGrab, &KeyGrab::keyPressed, this, [this]() {
+void Gladysd::setup_connections() {
+  connect(m_key_grab, &KeyGrab::key_pressed, this, [this]() {
     fprintf(stderr, "Gladysd: Ctrl+Alt+P detected!\n");
     static bool stt_running = false;
     if (stt_running) {
@@ -130,22 +130,22 @@ void Gladysd::setupConnections() {
       stt_running = true;
       fprintf(stderr, "Gladysd: STT started\n");
     }
-    emit toggleRequested();
+    emit toggle_requested();
   });
 
-  connect(m_stt, &STT::finalTextReady, this, [this](const QString &sttText) {
+  connect(m_stt, &STT::final_text_ready, this, [this](const QString &sttText) {
     fprintf(stderr, "Gladysd: STT text: %s\n", qPrintable(sttText));
 
     if (!sttText.isEmpty()) {
       fprintf(stderr, "Gladysd: Sending to LLM for transcription formatting...\n");
-      QString result = LLM::formatTranscription(sttText);
+      QString result = LLM::format_transcription(sttText);
 
       if (!result.isEmpty()) {
         fprintf(stderr, "Gladysd: LLM result: %s\n", qPrintable(result));
         // Copy to clipboard, select all, and paste
-        m_keyType->copyToClipboard(result);
+        m_key_type->copy_to_clipboard(result);
         SleepMs(100); // 100ms for clipboard to be ready
-        m_keyType->selectAllAndPaste();
+        m_key_type->select_all_and_paste();
       } else {
         fprintf(stderr, "Gladysd: LLM returned empty result\n");
       }
@@ -154,13 +154,13 @@ void Gladysd::setupConnections() {
     }
   });
 
-  connect(m_stt, &STT::audioLevelUpdated, this, &Gladysd::audioLevelUpdated);
+  connect(m_stt, &STT::audio_level_updated, this, &Gladysd::audio_level_updated);
 
   // React to settings changes (input source, style, dictionary)
-  connect(SettingsManager::instance(), &SettingsManager::settingsChanged, this,
+  connect(SettingsManager::instance(), &SettingsManager::settings_changed, this,
           [this]() {
             fprintf(stderr, "Gladysd: Settings changed, reconfiguring STT audio source.\n");
-            STT::reconfigureAudioSource();
+            STT::reconfigure_audio_source();
           });
 }
 
@@ -169,19 +169,19 @@ void Gladysd::shutdown() {
 
   LLM::stop();
 
-  if (m_sttThread) {
-    m_sttThread->quit();
-    m_sttThread->wait();
+  if (m_stt_thread) {
+    m_stt_thread->quit();
+    m_stt_thread->wait();
   }
 
-  if (m_keyTypeThread) {
-    m_keyTypeThread->quit();
-    m_keyTypeThread->wait();
+  if (m_key_type_thread) {
+    m_key_type_thread->quit();
+    m_key_type_thread->wait();
   }
 
-  if (m_ipcServer) {
-    m_ipcServer->deleteLater();
-    m_ipcServer = nullptr;
+  if (m_ipc_server) {
+    m_ipc_server->deleteLater();
+    m_ipc_server = nullptr;
   }
 
 #ifdef __linux__
@@ -193,3 +193,9 @@ void Gladysd::shutdown() {
 
   fprintf(stderr, "Gladysd: Shutdown complete.\n");
 }
+
+KeyGrab *Gladysd::key_grab() { return m_key_grab; }
+KeyType *Gladysd::key_type() { return m_key_type; }
+STT *Gladysd::stt() { return m_stt; }
+LLM *Gladysd::llm() { return m_llm; }
+IPCServer *Gladysd::ipc_server() { return m_ipc_server; }

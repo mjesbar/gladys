@@ -1,5 +1,5 @@
-#include "ui.h"
-#include "settings/settings_window.h"
+#include "ui.hpp"
+#include "settings/settings_window.hpp"
 #include "qnamespace.h"
 #include <QApplication>
 #include <QDebug>
@@ -38,15 +38,15 @@ static const QSize SUBTLE_SIZE = QSize(WAVE_TOTAL_WIDTH, 60);
 static const qreal PROMINENT_OPACITY = 1.0;
 static const qreal SUBTLE_OPACITY = 0.0;
 
-// Positions are computed dynamically in repositionOnPrimaryScreen()
+// Positions are computed dynamically in reposition_on_primary_screen()
 
 UI::UI(QWidget *parent)
-    : QWidget(parent), m_positionAnimation(new QPropertyAnimation(this, "pos")),
-      m_opacityAnimation(new QPropertyAnimation(this, "windowOpacity")),
-      m_sizeAnimation(new QPropertyAnimation(this, "size")),
-      m_targetYVisible(30), m_targetYSubtle(10), m_isProminent(false),
-      m_originalSize(size()), m_trayIcon(new QSystemTrayIcon(this)),
-      m_trayMenu(new QMenu(this)) {
+    : QWidget(parent), m_position_animation(new QPropertyAnimation(this, "pos")),
+      m_opacity_animation(new QPropertyAnimation(this, "windowOpacity")),
+      m_size_animation(new QPropertyAnimation(this, "size")),
+      m_target_y_visible(30), m_target_y_subtle(10), m_is_prominent(false),
+      m_original_size(size()), m_tray_icon(new QSystemTrayIcon(this)),
+      m_tray_menu(new QMenu(this)) {
   resize(PROMINENT_SIZE);
   setWindowTitle("Gladys");
   setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint |
@@ -71,41 +71,41 @@ UI::UI(QWidget *parent)
   setPalette(palette);
 
   // Settings window (not parented to UI widget; standalone dialog)
-  m_settingsWindow = new SettingsWindow(nullptr);
+  m_settings_window = new SettingsWindow(nullptr);
 
   // Tray menu: Settings, Quit
-  QAction *settingsAction = m_trayMenu->addAction("Settings");
-  connect(settingsAction, &QAction::triggered, this, &UI::openSettings);
-  m_trayMenu->addSeparator();
-  QAction *quitAction = m_trayMenu->addAction("Quit");
-  connect(quitAction, &QAction::triggered, this, &UI::quitApp);
-  m_trayIcon->setContextMenu(m_trayMenu);
-  m_trayIcon->setIcon(QIcon(iconsPath() + "/icon-app.svg"));
+  QAction *settingsAction = m_tray_menu->addAction("Settings");
+  connect(settingsAction, &QAction::triggered, this, &UI::open_settings);
+  m_tray_menu->addSeparator();
+  QAction *quitAction = m_tray_menu->addAction("Quit");
+  connect(quitAction, &QAction::triggered, this, &UI::quit_app);
+  m_tray_icon->setContextMenu(m_tray_menu);
+  m_tray_icon->setIcon(QIcon(iconsPath() + "/icon-app.svg"));
   // Left-click opens settings; right-click shows context menu
-  connect(m_trayIcon, &QSystemTrayIcon::activated, this,
+  connect(m_tray_icon, &QSystemTrayIcon::activated, this,
           [this](QSystemTrayIcon::ActivationReason reason) {
             if (reason == QSystemTrayIcon::Trigger) {
-              openSettings();
+              open_settings();
             }
           });
-  m_trayIcon->show();
+  m_tray_icon->show();
 
-  m_positionAnimation->setDuration(300);
-  m_positionAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+  m_position_animation->setDuration(300);
+  m_position_animation->setEasingCurve(QEasingCurve::InOutQuad);
 
-  m_opacityAnimation->setDuration(300);
-  m_opacityAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-  connect(m_opacityAnimation, &QPropertyAnimation::finished, this,
-          &UI::handleOpacityAnimationFinished);
+  m_opacity_animation->setDuration(300);
+  m_opacity_animation->setEasingCurve(QEasingCurve::InOutQuad);
+  connect(m_opacity_animation, &QPropertyAnimation::finished, this,
+          &UI::handle_opacity_animation_finished);
 
-  m_scaleAnimation = new QVariantAnimation(this);
-  m_scaleAnimation->setDuration(300);
-  m_scaleAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-  connect(m_scaleAnimation, &QVariantAnimation::valueChanged, this,
+  m_scale_animation = new QVariantAnimation(this);
+  m_scale_animation->setDuration(300);
+  m_scale_animation->setEasingCurve(QEasingCurve::InOutQuad);
+  connect(m_scale_animation, &QVariantAnimation::valueChanged, this,
           [this](const QVariant &) { update(); });
-  connect(m_scaleAnimation, &QVariantAnimation::finished, this, [this]() {
-    if (!m_isProminent) {
-      m_audioLevels.clear();
+  connect(m_scale_animation, &QVariantAnimation::finished, this, [this]() {
+    if (!m_is_prominent) {
+      m_audio_levels.clear();
     }
     update();
   });
@@ -117,39 +117,39 @@ UI::UI(QWidget *parent)
     image.fill(Qt::transparent);
     QPainter painter(&image);
     renderer.render(&painter);
-    m_micPixmap = QPixmap::fromImage(
+    m_mic_pixmap = QPixmap::fromImage(
         image.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    m_scaledMicPixmap = m_micPixmap; // Cache for full size
+    m_scaled_mic_pixmap = m_mic_pixmap; // Cache for full size
   }
 
   // Compute initial position from primary screen geometry
-  repositionOnPrimaryScreen();
+  reposition_on_primary_screen();
 }
 
-void UI::repositionOnPrimaryScreen() {
+void UI::reposition_on_primary_screen() {
   QScreen *primary = QApplication::primaryScreen();
   if (!primary) return;
 
   QRect geo = primary->availableGeometry();
   int centerX = geo.x() + geo.width() / 2;
 
-  m_prominentPos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 66);
-  m_subtlePos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 6);
+  m_prominent_pos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 66);
+  m_subtle_pos = QPoint(centerX - WAVE_TOTAL_WIDTH / 2, geo.y() + 6);
 
   // If no animation is running, move immediately
-  if (m_positionAnimation->state() != QPropertyAnimation::Running) {
-    move(m_isProminent ? m_prominentPos : m_subtlePos);
+  if (m_position_animation->state() != QPropertyAnimation::Running) {
+    move(m_is_prominent ? m_prominent_pos : m_subtle_pos);
   }
 }
 
 UI::~UI() {
-  delete m_positionAnimation;
-  delete m_opacityAnimation;
-  delete m_sizeAnimation;
-  delete m_settingsWindow;
+  delete m_position_animation;
+  delete m_opacity_animation;
+  delete m_size_animation;
+  delete m_settings_window;
 }
 
-void UI::removeShadow() {
+void UI::remove_shadow() {
 #ifdef __linux__
   Display *d = XOpenDisplay(NULL);
   XDeleteProperty(d, (Window)winId(),
@@ -158,10 +158,10 @@ void UI::removeShadow() {
 #endif
 }
 
-void UI::toggleVisibility() {
-  if (m_positionAnimation->state() == QPropertyAnimation::Running ||
-      m_opacityAnimation->state() == QPropertyAnimation::Running ||
-      m_scaleAnimation->state() == QVariantAnimation::Running) {
+void UI::toggle_visibility() {
+  if (m_position_animation->state() == QPropertyAnimation::Running ||
+      m_opacity_animation->state() == QPropertyAnimation::Running ||
+      m_scale_animation->state() == QVariantAnimation::Running) {
     return;
   }
 
@@ -172,51 +172,51 @@ void UI::toggleVisibility() {
   double startScale;
   double endScale;
 
-  if (m_isProminent) {
+  if (m_is_prominent) {
     // Collapsing
-    endPos = m_subtlePos;
+    endPos = m_subtle_pos;
     startOpacity = PROMINENT_OPACITY;
     endOpacity = SUBTLE_OPACITY;
     startScale = 1.0;
     endScale = 0.5;
   } else {
     // Prominent
-    endPos = m_prominentPos;
+    endPos = m_prominent_pos;
     startOpacity = SUBTLE_OPACITY;
     endOpacity = PROMINENT_OPACITY;
     startScale = 0.5;
     endScale = 1.0;
   }
 
-  m_positionAnimation->setStartValue(startPos);
-  m_positionAnimation->setEndValue(endPos);
-  m_positionAnimation->start();
+  m_position_animation->setStartValue(startPos);
+  m_position_animation->setEndValue(endPos);
+  m_position_animation->start();
 
-  m_opacityAnimation->setStartValue(startOpacity);
-  m_opacityAnimation->setEndValue(endOpacity);
-  m_opacityAnimation->start();
+  m_opacity_animation->setStartValue(startOpacity);
+  m_opacity_animation->setEndValue(endOpacity);
+  m_opacity_animation->start();
 
-  m_scaleAnimation->setStartValue(startScale);
-  m_scaleAnimation->setEndValue(endScale);
-  m_scaleAnimation->start();
+  m_scale_animation->setStartValue(startScale);
+  m_scale_animation->setEndValue(endScale);
+  m_scale_animation->start();
 
-  m_isProminent = !m_isProminent;
+  m_is_prominent = !m_is_prominent;
 }
 
-void UI::handleOpacityAnimationFinished() {
-  if (!m_isProminent) {
+void UI::handle_opacity_animation_finished() {
+  if (!m_is_prominent) {
   }
 }
 
-void UI::openSettings() {
-  m_settingsWindow->show();
-  m_settingsWindow->raise();
-  m_settingsWindow->activateWindow();
+void UI::open_settings() {
+  m_settings_window->show();
+  m_settings_window->raise();
+  m_settings_window->activateWindow();
 }
 
-void UI::quitApp() {
+void UI::quit_app() {
   qDebug() << "UI: Quit requested";
-  emit quitRequested();
+  emit quit_requested();
   QApplication::quit();
 }
 
@@ -230,23 +230,23 @@ void UI::paintEvent(QPaintEvent *event) {
   static const int MIC_SIZE_FULL = 48;
 
   double scale =
-      m_scaleAnimation ? m_scaleAnimation->currentValue().toDouble() : 1.0;
+      m_scale_animation ? m_scale_animation->currentValue().toDouble() : 1.0;
   int micSize = static_cast<int>(MIC_SIZE_FULL * scale);
 
   // Draw wave bars during animation or when fully prominent
-  if (!m_audioLevels.isEmpty() &&
-      (m_scaleAnimation->state() == QVariantAnimation::Running ||
+  if (!m_audio_levels.isEmpty() &&
+      (m_scale_animation->state() == QVariantAnimation::Running ||
        scale >= 1.0)) {
-    drawAudioWave(p, QSize(width(), height()), scale);
+    draw_audio_wave(p, QSize(width(), height()), scale);
   }
 
   // Use cached pixmap (scaled to current size)
-  if (!m_micPixmap.isNull()) {
+  if (!m_mic_pixmap.isNull()) {
     QPixmap *sourcePix;
-    if (!m_scaledMicPixmap.isNull() && m_scaledMicPixmap.size() == QSize(micSize, micSize)) {
-      sourcePix = &m_scaledMicPixmap;
+    if (!m_scaled_mic_pixmap.isNull() && m_scaled_mic_pixmap.size() == QSize(micSize, micSize)) {
+      sourcePix = &m_scaled_mic_pixmap;
     } else {
-      sourcePix = new QPixmap(m_micPixmap.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      sourcePix = new QPixmap(m_mic_pixmap.scaled(micSize, micSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
 
     int x = (width() - sourcePix->width()) / 2;
@@ -291,19 +291,19 @@ void UI::paintEvent(QPaintEvent *event) {
     p.drawPixmap(x - 12, y - 12, cachedShadow);
     p.drawPixmap(x, y, *sourcePix);
 
-    if (sourcePix != &m_scaledMicPixmap) delete sourcePix;
+    if (sourcePix != &m_scaled_mic_pixmap) delete sourcePix;
   }
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 }
 
-void UI::updateAudioLevels(const QVector<double> &levels) {
-  m_audioLevels = levels;
+void UI::update_audio_levels(const QVector<double> &levels) {
+  m_audio_levels = levels;
   update();
 }
 
-void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
-  if (m_audioLevels.isEmpty()) {
+void UI::draw_audio_wave(QPainter &p, const QSize &size, double scale) {
+  if (m_audio_levels.isEmpty()) {
     return;
   }
 
@@ -324,9 +324,9 @@ void UI::drawAudioWave(QPainter &p, const QSize &size, double scale) {
 
   for (int i = 0; i < WAVE_BAR_COUNT; ++i) {
     // Map each bar to a fixed position in the buffer (waveform pattern)
-    int levelIndex = i * m_audioLevels.size() / WAVE_BAR_COUNT;
+    int levelIndex = i * m_audio_levels.size() / WAVE_BAR_COUNT;
     double level =
-        (levelIndex < m_audioLevels.size()) ? m_audioLevels[levelIndex] : 0.0;
+        (levelIndex < m_audio_levels.size()) ? m_audio_levels[levelIndex] : 0.0;
     double normalizedLevel = qBound(0.0, level, 1.0);
 
     // Bell curve: 0.0 at edges, 1.0 at center

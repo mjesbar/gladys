@@ -20,28 +20,28 @@ public:
   explicit SettingsWindow(QWidget *parent = nullptr);
 
 signals:
-  void settingsApplied();
+  void settings_applied();
 
 private slots:
-  void onApply();
-  void onAddAlias();
-  void onRemoveAlias();
+  void on_apply();
+  void on_add_alias();
+  void on_remove_alias();
 
 private:
-  void buildUi();
-  void loadFromManager();
-  void writeToManager();
+  void build_ui();
+  void load_from_manager();
+  void write_to_manager();
 
-  QComboBox *m_inputSourceCombo;
-  QCheckBox *m_markdownCheck;
-  QCheckBox *m_accentCheck;
-  QCheckBox *m_punctuationCheck;
-  QTableWidget *m_aliasTable;
-  QLineEdit *m_aliasFromEdit;
-  QLineEdit *m_aliasToEdit;
-  QPushButton *m_addAliasBtn;
-  QPushButton *m_removeAliasBtn;
-  QDialogButtonBox *m_buttonBox;
+  QComboBox *m_input_source_combo;
+  QCheckBox *m_markdown_check;
+  QCheckBox *m_accent_check;
+  QCheckBox *m_punctuation_check;
+  QTableWidget *m_alias_table;
+  QLineEdit *m_alias_from_edit;
+  QLineEdit *m_alias_to_edit;
+  QPushButton *m_add_alias_btn;
+  QPushButton *m_remove_alias_btn;
+  QDialogButtonBox *m_button_box;
 };
 
 #endif // SETTINGS_WINDOW_H

@@ -19,15 +19,15 @@ public:
   bool start();
 
 signals:
-  void toggleRequested();
-  void quitRequested();
-  void audioLevelUpdated(const QVector<double> &levels);
+  void toggle_requested();
+  void quit_requested();
+  void audio_level_updated(const QVector<double> &levels);
 
 private:
-  void onNewConnection();
+  void on_new_connection();
 
   QLocalServer *m_server;
-  QString m_serverName;
+  QString m_server_name;
 };
 
 class IPCClient : public QObject {
@@ -36,12 +36,12 @@ class IPCClient : public QObject {
 public:
   explicit IPCClient(const QString &serverName, QObject *parent = nullptr);
 
-  bool sendToggle();
-  bool sendQuit();
-  bool sendAudioLevels(const QVector<double> &levels);
+  bool send_toggle();
+  bool send_quit();
+  bool send_audio_levels(const QVector<double> &levels);
 
 private:
-  QString m_serverName;
+  QString m_server_name;
 };
 
 #endif // IPC_H

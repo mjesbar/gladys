@@ -1,8 +1,8 @@
 // LLM Module - llama.cpp server for audio transcription.
 
-#include "llm.h"
-#include "gladysd.h"
-#include "settings/settings_manager.h"
+#include "llm.hpp"
+#include "gladysd.hpp"
+#include "settings/settings_manager.hpp"
 #include <QCoreApplication>
 #include <QFile>
 #include <QJsonArray>
@@ -15,9 +15,9 @@
 #include <iostream>
 
 LLM *LLM::m_instance = nullptr;
-QProcess *LLM::m_serverProcess = nullptr;
-QString LLM::m_serverUrl = "http://127.0.0.1:8080";
-bool LLM::m_isRunning = false;
+std::unique_ptr<QProcess> LLM::m_server_process;
+QString LLM::m_server_url = "http://127.0.0.1:8080";
+bool LLM::m_is_running = false;
 
 LLM::LLM(QObject *parent) : QObject(parent) {}
 
@@ -31,7 +31,7 @@ LLM *LLM::instance() {
 }
 
 bool LLM::start() {
-  if (m_isRunning) {
+  if (m_is_running) {
     std::cout << "LLM: Server already running." << std::endl;
     return true;
   }
@@ -47,9 +47,9 @@ bool LLM::start() {
     return false;
   }
 
-  m_serverProcess = new QProcess();
-  m_serverProcess->setProgram(program);
-  m_serverProcess->setArguments(
+  m_server_process = std::make_unique<QProcess>();
+  m_server_process->setProgram(program);
+  m_server_process->setArguments(
       QStringList() << "-m"
                     << exe_path + "/llama.cpp/llama-b9265/models/"
                                   "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
@@ -61,18 +61,17 @@ bool LLM::start() {
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH",
              llama_path + ":" + env.value("LD_LIBRARY_PATH"));
-  m_serverProcess->setProcessEnvironment(env);
+  m_server_process->setProcessEnvironment(env);
 
-  QObject::connect(m_serverProcess, &QProcess::readyReadStandardError, []() {
+  QObject::connect(m_server_process.get(), &QProcess::readyReadStandardError, []() {
     // Optionally log server output for debugging
   });
 
-  m_serverProcess->start();
+  m_server_process->start();
 
-  if (!m_serverProcess->waitForStarted(5000)) {
+  if (!m_server_process->waitForStarted(5000)) {
     std::cerr << "LLM: Failed to start llama-server." << std::endl;
-    delete m_serverProcess;
-    m_serverProcess = nullptr;
+    m_server_process.reset();
     return false;
   }
 
@@ -85,29 +84,28 @@ bool LLM::start() {
   QTimer::singleShot(2000, &loop, &QEventLoop::quit);
   loop.exec();
 
-  m_isRunning = true;
-  std::cout << "LLM: Server started on " << qPrintable(m_serverUrl)
+  m_is_running = true;
+  std::cout << "LLM: Server started on " << qPrintable(m_server_url)
             << std::endl;
   return true;
 }
 
 void LLM::stop() {
-  if (m_serverProcess) {
-    m_serverProcess->terminate();
-    if (!m_serverProcess->waitForFinished(3000)) {
-      m_serverProcess->kill();
+  if (m_server_process) {
+    m_server_process->terminate();
+    if (!m_server_process->waitForFinished(3000)) {
+      m_server_process->kill();
     }
-    delete m_serverProcess;
-    m_serverProcess = nullptr;
+    m_server_process.reset();
   }
-  m_isRunning = false;
+  m_is_running = false;
   std::cout << "LLM: Server stopped." << std::endl;
 }
 
-QString LLM::postJson(const QJsonObject &json) {
+QString LLM::post_json(const QJsonObject &json) {
   QNetworkAccessManager manager;
   QNetworkRequest request;
-  request.setUrl(QUrl(m_serverUrl + "/v1/chat/completions"));
+  request.setUrl(QUrl(m_server_url + "/v1/chat/completions"));
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
   QJsonDocument doc(json);
@@ -126,8 +124,8 @@ QString LLM::postJson(const QJsonObject &json) {
   return QString::fromUtf8(response);
 }
 
-QString LLM::formatTranscription(const QString &text) {
-  if (!m_isRunning) {
+QString LLM::format_transcription(const QString &text) {
+  if (!m_is_running) {
     std::cerr << "LLM: Server not running." << std::endl;
     return text;
   }
@@ -147,7 +145,7 @@ QString LLM::formatTranscription(const QString &text) {
                .arg(ruleNum++);
 
   // Punctuation
-  if (s->allowPunctuation()) {
+  if (s->allow_punctuation()) {
     rules << QString("%1. Add proper punctuation (periods, commas, question "
                      "marks, etc.) where grammatically required.")
                  .arg(ruleNum++);
@@ -158,14 +156,14 @@ QString LLM::formatTranscription(const QString &text) {
   }
 
   // Accents
-  if (!s->allowAccents()) {
+  if (!s->allow_accents()) {
     rules << QString("%1. Remove all accents and diacritical marks from "
                      "characters (e.g. é -> e, ñ -> n).")
                  .arg(ruleNum++);
   }
 
   // Markdown
-  if (!s->markdownMode()) {
+  if (!s->markdown_mode()) {
     rules << QString("%1. NEVER use Markdown, bullet points, bold, italics, "
                      "headers, code blocks, or any formatting syntax. Output "
                      "plain text only.")
@@ -206,7 +204,7 @@ QString LLM::formatTranscription(const QString &text) {
 
   std::cout << "LLM: Beautifying text: " << text.left(50).toStdString() << "..."
             << std::endl;
-  QString response = postJson(json);
+  QString response = post_json(json);
   std::cout << "LLM: Beautified response: " << response.left(200).toStdString()
             << "..." << std::endl;
 

@@ -7,11 +7,11 @@
 #include <QString>
 
 struct SettingsData {
-  QString inputSource;                 // Audio capture device name or "default"
+  QString input_source;                 // Audio capture device name or "default"
   QMap<QString, QString> dictionary;   // Original word -> replacement word
-  bool markdownMode = false;
-  bool allowAccents = true;
-  bool allowPunctuation = true;
+  bool markdown_mode = false;
+  bool allow_accents = true;
+  bool allow_punctuation = true;
 };
 
 #endif // SETTINGS_DATA_H

@@ -7,8 +7,8 @@
 #include <QThread>
 #include <QWidget>
 
-#include "modules/gladysd.h"
-#include "modules/ui.h"
+#include "modules/gladysd.hpp"
+#include "modules/ui.hpp"
 
 int main(int argc, char *argv[]) {
   // Force X11 (xcb) platform - not Wayland (Linux only)
@@ -31,27 +31,27 @@ int main(int argc, char *argv[]) {
   UI window(nullptr);
 
   // Connect Gladysd hub signals to UI (direct signals, no IPC needed)
-  QObject::connect(gladysd, &Gladysd::toggleRequested, [&]() {
+  QObject::connect(gladysd, &Gladysd::toggle_requested, [&]() {
     qDebug() << "Gladys: Toggling visibility";
-    window.toggleVisibility();
+    window.toggle_visibility();
   });
 
-  QObject::connect(gladysd, &Gladysd::audioLevelUpdated, &window,
-                   &UI::updateAudioLevels);
+  QObject::connect(gladysd, &Gladysd::audio_level_updated, &window,
+                   &UI::update_audio_levels);
 
   // Connect window quit request to gladysd shutdown
-  QObject::connect(&window, &UI::quitRequested, [&]() {
+  QObject::connect(&window, &UI::quit_requested, [&]() {
     fprintf(stderr, "Gladys: Quit requested, shutting down.\n");
     gladysd->shutdown();
     app.quit();
   });
 
   // Position window on primary screen
-  window.repositionOnPrimaryScreen();
+  window.reposition_on_primary_screen();
   window.setWindowOpacity(0.0);
 
   window.show();
-  window.removeShadow();
+  window.remove_shadow();
   qDebug() << "Gladys: Window shown";
 
   return app.exec();

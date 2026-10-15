@@ -1,8 +1,8 @@
-#include "stt.h"
+#include "stt.hpp"
 #include <cmath>
 #include <cstring>
 #include <iostream>
-#include "settings/settings_manager.h"
+#include "settings/settings_manager.hpp"
 #include <vector>
 
 // Initialize static members
@@ -31,7 +31,7 @@ STT *STT::instance() {
   return m_instance;
 }
 
-QVector<double> STT::getAudioLevels() {
+QVector<double> STT::get_audio_levels() {
   return m_audio_levels;
 }
 
@@ -112,7 +112,7 @@ bool STT::load(const std::string &model_path) {
   // Set capture device ID from settings (NULL = default)
   m_audio_config.capture.pDeviceID = NULL;
   {
-    QString selectedSource = SettingsManager::instance()->inputSource();
+    QString selectedSource = SettingsManager::instance()->input_source();
     if (selectedSource != QStringLiteral("default")) {
       static ma_device_id targetId;
       bool found = false;
@@ -192,7 +192,7 @@ void STT::stop() {
         SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Final Transcription: " << result->text << std::endl;
-      emit m_instance->finalTextReady(QString::fromUtf8(result->text));
+      emit m_instance->final_text_ready(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
 
@@ -201,12 +201,12 @@ void STT::stop() {
   }
 }
 
-void STT::reconfigureAudioSource() {
+void STT::reconfigure_audio_source() {
   if (!m_instance || !m_is_audio_context_initialized) {
     return;
   }
 
-  QString selectedSource = SettingsManager::instance()->inputSource();
+  QString selectedSource = SettingsManager::instance()->input_source();
 
   bool wasRunning = ma_device_is_started(&m_audio_device);
   if (wasRunning) {
@@ -294,7 +294,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   if (!m_audio_timer.isValid()) m_audio_timer.start();
   if (m_audio_timer.hasExpired(33)) {
     m_audio_timer.restart();
-    emit stt_instance->audioLevelUpdated(m_audio_levels);
+    emit stt_instance->audio_level_updated(m_audio_levels);
   }
 
   SherpaOnnxOnlineStreamAcceptWaveform(stt_instance->m_stream,
@@ -310,7 +310,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                                         stt_instance->m_stream);
     if (result && result->text[0] != '\0') {
       std::cout << "Transcription: " << result->text << std::endl;
-      emit m_instance->textReceived(QString::fromUtf8(result->text));
+      emit m_instance->text_received(QString::fromUtf8(result->text));
     }
     SherpaOnnxDestroyOnlineRecognizerResult(result);
   }

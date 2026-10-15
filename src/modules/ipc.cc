@@ -1,24 +1,24 @@
-#include "ipc.h"
+#include "ipc.hpp"
 #include <QDebug>
 
 IPCServer::IPCServer(const QString &serverName, QObject *parent)
-    : QObject(parent), m_server(new QLocalServer(this)), m_serverName(serverName) {
+    : QObject(parent), m_server(new QLocalServer(this)), m_server_name(serverName) {
 }
 
 IPCServer::~IPCServer() = default;
 
 bool IPCServer::start() {
-  QLocalServer::removeServer(m_serverName);
-  if (!m_server->listen(m_serverName)) {
+  QLocalServer::removeServer(m_server_name);
+  if (!m_server->listen(m_server_name)) {
     qWarning() << "IPCServer: Could not start server:" << m_server->errorString();
     return false;
   }
-  qDebug() << "IPCServer: Listening on" << m_serverName;
-  connect(m_server, &QLocalServer::newConnection, this, &IPCServer::onNewConnection);
+  qDebug() << "IPCServer: Listening on" << m_server_name;
+  connect(m_server, &QLocalServer::newConnection, this, &IPCServer::on_new_connection);
   return true;
 }
 
-void IPCServer::onNewConnection() {
+void IPCServer::on_new_connection() {
   qDebug() << "IPCServer: New connection";
   QLocalSocket *clientConnection = m_server->nextPendingConnection();
   connect(clientConnection, &QLocalSocket::readyRead,
@@ -26,9 +26,9 @@ void IPCServer::onNewConnection() {
             QByteArray data = clientConnection->readAll();
             qDebug() << "IPCServer: Received:" << data;
             if (data == "toggle") {
-              emit toggleRequested();
+              emit toggle_requested();
             } else if (data == "quit") {
-              emit quitRequested();
+              emit quit_requested();
             } else if (data.startsWith("levels:")) {
               QStringList parts = QString::fromUtf8(data).split(':');
               if (parts.size() == 2) {
@@ -36,7 +36,7 @@ void IPCServer::onNewConnection() {
                 for (const QString &s : parts[1].split(',')) {
                   levels.append(s.toDouble());
                 }
-                emit audioLevelUpdated(levels);
+                emit audio_level_updated(levels);
               }
             }
             clientConnection->disconnectFromServer();
@@ -46,12 +46,12 @@ void IPCServer::onNewConnection() {
 }
 
 IPCClient::IPCClient(const QString &serverName, QObject *parent)
-    : QObject(parent), m_serverName(serverName) {
+    : QObject(parent), m_server_name(serverName) {
 }
 
-bool IPCClient::sendToggle() {
+bool IPCClient::send_toggle() {
   QLocalSocket socket;
-  socket.connectToServer(m_serverName);
+  socket.connectToServer(m_server_name);
   if (!socket.waitForConnected(200)) {
     return false;
   }
@@ -61,9 +61,9 @@ bool IPCClient::sendToggle() {
   return true;
 }
 
-bool IPCClient::sendQuit() {
+bool IPCClient::send_quit() {
   QLocalSocket socket;
-  socket.connectToServer(m_serverName);
+  socket.connectToServer(m_server_name);
   if (!socket.waitForConnected(200)) {
     return false;
   }
@@ -73,9 +73,9 @@ bool IPCClient::sendQuit() {
   return true;
 }
 
-bool IPCClient::sendAudioLevels(const QVector<double> &levels) {
+bool IPCClient::send_audio_levels(const QVector<double> &levels) {
   QLocalSocket socket;
-  socket.connectToServer(m_serverName);
+  socket.connectToServer(m_server_name);
   if (!socket.waitForConnected(200)) {
     return false;
   }

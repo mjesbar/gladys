@@ -10,7 +10,7 @@
 #include <QTimer>
 #include <QElapsedTimer>
 
-#include "ipc.h"
+#include "ipc.hpp"
 
 class KeyGrab;
 class KeyType;
@@ -26,15 +26,15 @@ public:
   bool init();
   void shutdown();
 
-  KeyGrab *keyGrab() { return m_keyGrab; }
-  KeyType *keyType() { return m_keyType; }
-  STT *stt() { return m_stt; }
-  LLM *llm() { return m_llm; }
-  IPCServer *ipcServer() { return m_ipcServer; }
+  KeyGrab *key_grab();
+  KeyType *key_type();
+  STT *stt();
+  LLM *llm();
+  IPCServer *ipc_server();
 
 signals:
-  void toggleRequested();
-  void audioLevelUpdated(const QVector<double> &levels);
+  void toggle_requested();
+  void audio_level_updated(const QVector<double> &levels);
 
 private:
   static Gladysd *s_instance;
@@ -42,24 +42,24 @@ private:
   explicit Gladysd(QObject *parent = nullptr);
   ~Gladysd() override;
 
-  void setupConnections();
-  static void signalHandler(int signum);
+  void setup_connections();
+  static void signal_handler(int signum);
 
   // IPC Module
-  IPCServer *m_ipcServer;
-  QString m_ipcServerName;
+  IPCServer *m_ipc_server;
+  QString m_ipc_server_name;
   // KeyGrab Module
-  KeyGrab *m_keyGrab;
+  KeyGrab *m_key_grab;
   void *m_display;
   // STT Module
-  QThread *m_sttThread;
+  QThread *m_stt_thread;
   STT *m_stt;
   // LLM Module
   LLM *m_llm;
   // KeyType Module
-  KeyType *m_keyType;
-  QThread *m_keyTypeThread;
-  QElapsedTimer m_audioThrottle;
+  KeyType *m_key_type;
+  QThread *m_key_type_thread;
+  QElapsedTimer m_audio_throttle;
 };
 
 #endif // GLADYSD_H
