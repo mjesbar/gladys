@@ -12,6 +12,8 @@
 #include <QSvgRenderer>
 #include <cmath>
 
+#include "../log/log.hpp"
+
 static const int MIC_SIZE_FULL = 48;
 static const int WAVE_BAR_COUNT = 20;
 static const int WAVE_BAR_WIDTH = 5;
@@ -23,6 +25,7 @@ Mic::Mic(QWidget *parent)
       m_is_expanded(false), m_shadow_size(0) {
   setAttribute(Qt::WA_TransparentForMouseEvents);
   setAutoFillBackground(false);
+  qCInfo(lcUi) << "mic started";
 
   m_scale_animation->setDuration(300);
   m_scale_animation->setEasingCurve(QEasingCurve::InOutQuad);

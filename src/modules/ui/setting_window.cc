@@ -2,6 +2,7 @@
 
 #include "setting_window.hpp"
 
+#include "../log/log.hpp"
 #include "../setting/setting.hpp"
 
 #include <QFormLayout>
@@ -13,6 +14,7 @@ SettingWindow::SettingWindow(QWidget *parent)
     : QDialog(parent) {
   setWindowTitle(tr("Gladys Settings"));
   setMinimumWidth(480);
+  qCInfo(lcUi) << "settings window started";
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   build_ui();
   load_from_setting();

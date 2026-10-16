@@ -5,8 +5,8 @@
 #include <QSocketNotifier>
 #include <QThread>
 
-#include <cstdio>
 
+#include "modules/log/log.hpp"
 #include "modules/key/paste.hpp"
 #include "modules/key/toggle.hpp"
 #include "modules/ai/llm.hpp"
@@ -32,9 +32,12 @@ int main(int argc, char *argv[]) {
   qputenv("QT_QPA_PLATFORM", "xcb");
 #endif
 
+  log_setup();
+
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
+  qCInfo(lcMain) << "started";
 
   Setting *setting = Setting::instance();
 
@@ -77,8 +80,10 @@ int main(int argc, char *argv[]) {
   QObject::connect(toggle, &Toggle::KEY_PRESSED, &window, [&]() {
     recording = !recording;
     if (recording) {
+      qCInfo(lcToggle) << "window open";
       QMetaObject::invokeMethod(stt, &STT::start_recording);
     } else {
+      qCInfo(lcToggle) << "window close";
       QMetaObject::invokeMethod(stt, &STT::stop_recording);
     }
     window.toggle_visibility();
@@ -93,6 +98,7 @@ int main(int argc, char *argv[]) {
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt, &STT::reconfigure_audio_source);
 
   QObject::connect(&app, &QApplication::aboutToQuit, [&]() {
+    qCInfo(lcMain) << "quitting";
     llm->stop();
     for (QThread *t : {stt_thread, toggle_thread, paste_thread}) {
       t->quit();
@@ -102,7 +108,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef _WIN32
   if (pipe(g_signal_pipe) != 0) {
-    fprintf(stderr, "ERROR: Gladys: failed to create signal pipe\n");
+    qCCritical(lcMain) << "failed to create signal pipe";
     return 1;
   }
   std::signal(SIGINT, on_signal);

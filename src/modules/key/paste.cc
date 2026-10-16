@@ -6,7 +6,7 @@
 #include <QClipboard>
 #include <QProcess>
 
-#include <cstdio>
+#include "../log/log.hpp"
 
 #ifdef __linux__
 #include <cerrno>
@@ -50,6 +50,7 @@ Paste::Paste(QObject *parent)
 }
 
 Paste::~Paste() {
+  qCInfo(lcPaste) << "stopped";
 #ifdef __linux__
   if (m_fd >= 0) {
     ioctl(m_fd, UI_DEV_DESTROY);
@@ -70,7 +71,7 @@ void Paste::init() {
     m_fd = open("/dev/input/uinput", O_WRONLY);
   }
   if (m_fd < 0) {
-    fprintf(stderr, "ERROR: Paste: failed to open uinput: %s\n", strerror(errno));
+    qCCritical(lcPaste) << "failed to open uinput:" << strerror(errno);
     return;
   }
 
@@ -88,12 +89,12 @@ void Paste::init() {
   ioctl(m_fd, UI_DEV_SETUP, &usetup);
 
   if (ioctl(m_fd, UI_DEV_CREATE) < 0) {
-    fprintf(stderr, "ERROR: Paste: failed to create uinput: %s\n", strerror(errno));
+    qCCritical(lcPaste) << "failed to create uinput:" << strerror(errno);
     close(m_fd);
     m_fd = -1;
     return;
   }
-  fprintf(stderr, "INFO: Paste: uinput device ready\n");
+  qCInfo(lcPaste) << "started, uinput device ready";
 }
 
 void Paste::send_key(unsigned int code, bool press) {
@@ -126,7 +127,7 @@ void Paste::copy_to_clipboard(const QString &text) {
 
 #ifdef __APPLE__
 
-void Paste::init() {}
+void Paste::init() { qCInfo(lcPaste) << "started"; }
 
 void Paste::send_key(unsigned int code, bool press) {
   CGKeyCode keyCode;
@@ -163,7 +164,7 @@ void Paste::copy_to_clipboard(const QString &text) {
 
 #ifdef _WIN32
 
-void Paste::init() {}
+void Paste::init() { qCInfo(lcPaste) << "started"; }
 
 void Paste::send_key(unsigned int code, bool press) {
   WORD vk;
@@ -200,7 +201,7 @@ void Paste::copy_to_clipboard(const QString &text) {
 // ---------------------------------------------------------------------------
 
 void Paste::send_paste() {
-  printf("INFO: Paste: sending Ctrl+Shift+V\n");
+  qCInfo(lcPaste) << "sending Ctrl+Shift+V";
   SleepMs(100); // let the clipboard settle before pasting
 
   send_key(KEY_LEFTCTRL, true);

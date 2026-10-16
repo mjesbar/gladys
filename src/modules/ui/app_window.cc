@@ -9,6 +9,8 @@
 #include <QIcon>
 #include <QScreen>
 
+#include "../log/log.hpp"
+
 #ifdef __linux__
 #include <X11/Xlib.h> // only to remove the shadow
 #endif
@@ -59,9 +61,13 @@ AppWindow::AppWindow(QWidget *parent)
   m_tray_icon->show();
 
   reposition_on_primary_screen();
+  qCInfo(lcUi) << "started";
 }
 
-AppWindow::~AppWindow() { delete m_setting_window; }
+AppWindow::~AppWindow() {
+  delete m_setting_window;
+  qCInfo(lcUi) << "stopped";
+}
 
 Mic *AppWindow::mic() const { return m_mic; }
 

@@ -27,6 +27,7 @@ endif()
 # =============================================================================
 qt_add_executable(gladys WIN32
   src/main.cc
+  src/modules/log/log.cc
   src/modules/ai/stt.cc
   src/modules/ai/llm.cc
   src/modules/key/toggle.cc

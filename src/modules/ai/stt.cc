@@ -3,23 +3,24 @@
 #include "stt.hpp"
 
 #include <cmath>
-#include <cstdio>
 #include <cstring>
 #include <vector>
 
+#include "../log/log.hpp"
 #include "../setting/setting.hpp"
 
 static const int SAMPLE_RATE = 16000;
 static const int LEVEL_BARS = 30;
 
 STT::STT()
-    : m_is_context_ready(false), m_is_device_ready(false), m_recognizer(nullptr),
-      m_stream(nullptr) {
+    : m_is_context_ready(false), m_is_device_ready(false),
+      m_recognizer(nullptr), m_stream(nullptr) {
   memset(&m_context, 0, sizeof(m_context));
   memset(&m_device, 0, sizeof(m_device));
 }
 
 STT::~STT() {
+  qCInfo(lcStt) << "stopped";
   if (m_stream) {
     SherpaOnnxDestroyOnlineStream(m_stream);
   }
@@ -42,7 +43,7 @@ bool STT::init(const std::string &model_dir) {
 
   for (const std::string *path : {&encoder, &decoder, &joiner, &tokens}) {
     if (!SherpaOnnxFileExists(path->c_str())) {
-      fprintf(stderr, "ERROR: STT: model file not found: %s\n", path->c_str());
+      qCCritical(lcStt) << "model file not found:" << path->c_str();
       return false;
     }
   }
@@ -61,12 +62,12 @@ bool STT::init(const std::string &model_dir) {
 
   m_recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
   if (!m_recognizer) {
-    fprintf(stderr, "ERROR: STT: failed to create recognizer\n");
+    qCCritical(lcStt) << "failed to create recognizer";
     return false;
   }
 
   if (ma_context_init(NULL, 0, NULL, &m_context) != MA_SUCCESS) {
-    fprintf(stderr, "ERROR: STT: failed to initialize audio context\n");
+    qCCritical(lcStt) << "failed to initialize audio context";
     return false;
   }
   m_is_context_ready = true;
@@ -93,7 +94,8 @@ bool STT::open_device(const QString &source) {
   if (source != QStringLiteral("default")) {
     ma_device_info *pInfos;
     ma_uint32 count;
-    if (ma_context_get_devices(&m_context, NULL, NULL, &pInfos, &count) == MA_SUCCESS) {
+    if (ma_context_get_devices(&m_context, NULL, NULL, &pInfos, &count) ==
+        MA_SUCCESS) {
       for (ma_uint32 i = 0; i < count; ++i) {
         if (QString::fromUtf8(pInfos[i].name) == source) {
           m_device_id = pInfos[i].id;
@@ -105,12 +107,11 @@ bool STT::open_device(const QString &source) {
   }
 
   if (ma_device_init(&m_context, &m_config, &m_device) != MA_SUCCESS) {
-    fprintf(stderr, "ERROR: STT: failed to initialize capture device: %s\n",
-            qPrintable(source));
+    qCCritical(lcStt) << "failed to initialize capture device:" << source;
     return false;
   }
   m_is_device_ready = true;
-  fprintf(stderr, "INFO: STT: capture device ready: %s\n", qPrintable(source));
+  qCInfo(lcStt) << "capture device ready:" << source;
   return true;
 }
 
@@ -122,21 +123,25 @@ void STT::start_recording() {
   // Create the stream before the device starts, so the callback never races it.
   m_stream = SherpaOnnxCreateOnlineStream(m_recognizer);
   if (!m_stream) {
-    fprintf(stderr, "ERROR: STT: failed to create stream\n");
+    qCCritical(lcStt) << "failed to create stream";
     return;
   }
   if (ma_device_start(&m_device) != MA_SUCCESS) {
-    fprintf(stderr, "ERROR: STT: failed to start capture device\n");
+    qCCritical(lcStt) << "failed to start capture device";
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
+    return;
   }
+  qCInfo(lcStt) << "audio recognition started";
 }
 
 void STT::stop_recording() {
   if (!m_is_device_ready || !ma_device_is_started(&m_device)) {
     return;
   }
-  ma_device_stop(&m_device); // joins the audio callback before we touch m_stream
+  ma_device_stop(
+      &m_device); // joins the audio callback before we touch m_stream
+  qCInfo(lcStt) << "audio recognition stopped";
   if (!m_stream) {
     return;
   }
@@ -148,6 +153,7 @@ void STT::stop_recording() {
   const SherpaOnnxOnlineRecognizerResult *result =
       SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
   if (result && result->text[0] != '\0') {
+    qCInfo(lcStt) << "transcription output:" << result->text;
     emit FINAL_TEXT_READY(QString::fromUtf8(result->text));
   }
   SherpaOnnxDestroyOnlineRecognizerResult(result);

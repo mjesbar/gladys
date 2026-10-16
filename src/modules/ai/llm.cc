@@ -1,4 +1,5 @@
-// LLM Module - Manages llama-server (QProcess) and formats transcriptions over HTTP.
+// LLM Module - Manages llama-server (QProcess) and formats transcriptions over
+// HTTP.
 
 #include "llm.hpp"
 
@@ -7,12 +8,11 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QThread>
 
-#include <cstdio>
-
+#include "../log/log.hpp"
 #include "../setting/setting.hpp"
 
 #ifdef Q_OS_WIN
@@ -61,15 +61,18 @@ static QString build_prompt(const QString &text) {
                  .arg(QString::number(ruleNum++), it.key(), it.value());
   }
 
-  rules << QString("%1. Do not add, remove, or rephrase any words. Preserve the "
-                   "exact spoken content.")
+  rules << QString(
+               "%1. Do not add, remove, or rephrase any words. Preserve the "
+               "exact spoken content.")
                .arg(ruleNum++);
-  rules << QString("%1. Return ONLY the formatted transcription. No greetings, no "
-                   "explanations, no commentary.")
+  rules << QString(
+               "%1. Return ONLY the formatted transcription. No greetings, no "
+               "explanations, no commentary.")
                .arg(ruleNum++);
 
   return "You are a speech transcription formatter. Your sole task is to take "
-         "raw speech-to-text output and produce a clean, readable transcription. "
+         "raw speech-to-text output and produce a clean, readable "
+         "transcription. "
          "Strict rules:\n" +
          rules.join("\n") + "\n\nRaw text:\n" + text;
 }
@@ -96,20 +99,25 @@ bool LLM::start() {
     return true;
   }
 
-  QString dir = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
+  QString dir =
+      QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
   QString program = dir + "/" + LLAMA_SERVER_BINARY;
   if (!QFileInfo::exists(program)) {
-    fprintf(stderr, "ERROR: LLM: llama-server not found at: %s\n", qPrintable(program));
+    qCCritical(lcLlm) << "llama-server not found at:" << program;
     return false;
   }
 
   m_server.setProgram(program);
-  m_server.setArguments(QStringList()
-                        << "-m" << dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
-                        << "--ctx-size" << "8192"
-                        << "--n-gpu-layers" << "99"
-                        << "-ngl" << "99"
-                        << "--port" << "8080");
+  m_server.setArguments(
+      QStringList() << "-m" << dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+                    << "--ctx-size" << "8192"
+                    << "--temperature" << "0.25"
+                    << "--top-k" << "20"
+                    << "--reasoning" << "off"
+                    << "--reasoning-budget" << "0"
+                    << "--n-gpu-layers" << "99"
+                    << "-ngl" << "99"
+                    << "--port" << "8080");
 
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH", dir + ":" + env.value("LD_LIBRARY_PATH"));
@@ -117,14 +125,15 @@ bool LLM::start() {
 
   m_server.start();
   if (!m_server.waitForStarted(5000)) {
-    fprintf(stderr, "ERROR: LLM: failed to start llama-server\n");
+    qCCritical(lcLlm) << "failed to start llama-server";
     return false;
   }
 
-  // Startup only (before the UI is shown): give the server time to load the model
+  // Startup only (before the UI is shown): give the server time to load the
+  // model
   QThread::sleep(2);
   m_is_running = true;
-  fprintf(stderr, "INFO: LLM: server ready\n");
+  qCInfo(lcLlm) << "started, server ready";
   return true;
 }
 
@@ -137,6 +146,7 @@ void LLM::stop() {
     }
   }
   m_is_running = false;
+  qCInfo(lcLlm) << "stopped";
 }
 
 // Async: emits FORMATTED_TEXT_READY when the server replies. On any failure the
@@ -146,6 +156,8 @@ void LLM::format_transcription(const QString &text) {
     emit FORMATTED_TEXT_READY(text);
     return;
   }
+
+  qCInfo(lcLlm) << "request:" << text.length() << "chars:" << text;
 
   QJsonObject message;
   message["role"] = "user";
@@ -165,9 +177,9 @@ void LLM::format_transcription(const QString &text) {
     if (reply->error() == QNetworkReply::NoError) {
       result = parse_content(reply->readAll());
     } else {
-      fprintf(stderr, "ERROR: LLM: request failed: %s\n",
-              qPrintable(reply->errorString()));
+      qCCritical(lcLlm) << "request failed:" << reply->errorString();
     }
+    qCInfo(lcLlm) << "response:" << result.length() << "chars:" << result;
     emit FORMATTED_TEXT_READY(result.isEmpty() ? text : result);
   });
 }
