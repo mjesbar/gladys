@@ -53,13 +53,13 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
 
       - name: Show dist/ structure
         run: tree -a dist/
 
       - name: Package release
-        run: make package-linux ARCH=x64 VERSION=${{ needs.version.outputs.version }}
+        run: scripts/package.sh linux x64 ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*
@@ -93,7 +93,8 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
+        shell: bash
 
       - name: Show dist/ structure
         run: tree /f dist\
@@ -102,7 +103,8 @@ jobs:
         run: choco install rsync zip --no-progress -y
 
       - name: Package release
-        run: make package-win ARCH=x64 VERSION=${{ needs.version.outputs.version }}
+        run: scripts/package.sh windows x64 ${{ needs.version.outputs.version }}
+        shell: bash
 
       - name: Show release/ structure
         run: tree /f /a release\gladys-v*
@@ -136,7 +138,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
 
       - name: Install tree
         run: brew install tree
@@ -145,7 +147,7 @@ jobs:
         run: tree -a dist/
 
       - name: Package release
-        run: make package-macos ARCH=arm64 VERSION=${{ needs.version.outputs.version }}
+        run: scripts/package.sh macos arm64 ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*

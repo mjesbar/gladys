@@ -1,20 +1,15 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 
 # =============================================================================
-# Compiler & build settings
+# Qt6 (standard project setup: AUTOMOC/AUTOUIC/AUTORCC + C++17)
 # =============================================================================
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
+qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
-foreach(CONFIG DEBUG RELEASE MINSIZEREL RELWITHDEBINFO)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG} ${CMAKE_SOURCE_DIR}/dist)
-endforeach()
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
 
 # =============================================================================
 # Architecture
@@ -28,49 +23,54 @@ else()
 endif()
 
 # =============================================================================
-# Source files
+# Executable: gladys
 # =============================================================================
-set(GLADYS_SOURCES
-  src/gladys.cc
-  src/modules/gladysd.cc
-  src/modules/ipc.cc
-  src/modules/stt.cc
-  src/modules/llm.cc
-  src/modules/keygrab.cc
-  src/modules/keytype.cc
-  src/modules/ui.cc
-  src/modules/settings/settings_manager.cc
-  src/modules/settings/settings_window.cc
+qt_add_executable(gladys WIN32
+  src/main.cc
+  src/modules/log/log.cc
+  src/modules/ai/stt.cc
+  src/modules/ai/llm.cc
+  src/modules/key/toggle.cc
+  src/modules/key/paste.cc
+  src/modules/setting/setting.cc
+  src/modules/ui/app_window.cc
+  src/modules/ui/mic.cc
+  src/modules/ui/setting_window.cc
 )
 
-# =============================================================================
-# Include directories
-# =============================================================================
-set(INCLUDE_DIRS
-  ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/modules
-  ${CMAKE_SOURCE_DIR}/src/modules/settings
-  ${CMAKE_SOURCE_DIR}/src/include
+target_include_directories(gladys PRIVATE
+  src
+  src/modules
+  src/modules/ai
+  src/modules/setting
+  src/modules/ui
+  src/modules/key
+  src/include
 )
 
-# =============================================================================
-# Qt6
-# =============================================================================
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
-
-# =============================================================================
-# Miniaudio (single-header library, define implementation in stt.cc)
-# =============================================================================
-set_source_files_properties(src/modules/stt.cc PROPERTIES
+# Miniaudio: single-header library, implementation compiled in stt.cc only
+set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
-add_compile_definitions(MA_DEBUG_OUTPUT)
+# target_compile_definitions(gladys PRIVATE MA_DEBUG_OUTPUT)
+
+target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Svg)
+
+set_target_properties(gladys PROPERTIES
+  INSTALL_RPATH "$ORIGIN"
+  BUILD_WITH_INSTALL_RPATH TRUE
+)
 
 # =============================================================================
-# X11 (Linux only)
+# Platform libraries
 # =============================================================================
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_package(X11 REQUIRED)
+  target_link_libraries(gladys PRIVATE ${X11_LIBRARIES})
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_link_libraries(gladys PRIVATE "-framework CoreGraphics" "-framework CoreFoundation")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_link_libraries(gladys PRIVATE user32)
 endif()
 
 # =============================================================================
@@ -89,93 +89,36 @@ set(SHERPA_ONNX_LIB_DIR
 )
 
 if(EXISTS ${SHERPA_ONNX_LIB_DIR})
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(SHERPA_ONNX_LIBS
-      -L${SHERPA_ONNX_LIB_DIR}
-      -lsherpa-onnx-c-api
-      -lsherpa-onnx-cxx-api
-      -lonnxruntime
-    )
-  elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(SHERPA_ONNX_LIBS
-      -L${SHERPA_ONNX_LIB_DIR}
-      -Wl,-rpath,@loader_path
-      -lsherpa-onnx-c-api
-      -lsherpa-onnx-cxx-api
-      -lonnxruntime
-    )
-  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(SHERPA_ONNX_LIBS
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(gladys PRIVATE
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-c-api.lib
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
       ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
     )
+  else()
+    target_link_directories(gladys PRIVATE ${SHERPA_ONNX_LIB_DIR})
+    target_link_libraries(gladys PRIVATE sherpa-onnx-c-api sherpa-onnx-cxx-api onnxruntime)
   endif()
-else()
-  message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
-  set(SHERPA_ONNX_LIBS "")
-endif()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set_target_properties(gladys PROPERTIES BUILD_RPATH "@loader_path")
+  endif()
 
-# =============================================================================
-# Platform-specific libraries
-# =============================================================================
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(PLATFORM_LIBS ${X11_LIBRARIES})
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(PLATFORM_LIBS "-framework CoreGraphics" "-framework CoreFoundation")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(PLATFORM_LIBS user32)
-endif()
-
-# =============================================================================
-# Executable: gladys
-# =============================================================================
-set(GLADYS_EXE_NAME "gladys")
-
-add_executable(gladys ${GLADYS_SOURCES})
-set_target_properties(gladys PROPERTIES
-  OUTPUT_NAME "${GLADYS_EXE_NAME}"
-  INSTALL_RPATH "$ORIGIN"
-  BUILD_WITH_INSTALL_RPATH TRUE
-  WIN32_EXECUTABLE TRUE
-)
-target_include_directories(gladys PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(gladys PRIVATE
-  Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Svg
-  ${PLATFORM_LIBS}
-  ${SHERPA_ONNX_LIBS}
-)
-
-# =============================================================================
-# Copy sherpa-onnx runtime libraries to dist/
-# =============================================================================
-if(SHERPA_ONNX_LIB_DIR AND EXISTS ${SHERPA_ONNX_LIB_DIR})
+  # Copy sherpa-onnx runtime libraries next to the executable
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(SHERPA_COPY_PATTERN "*.so*")
+    file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.so*)
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(SHERPA_COPY_PATTERN "*.dylib")
-  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(SHERPA_COPY_PATTERN "*.dll")
+    file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dylib)
+  else()
+    file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
-
-  file(GLOB SHERPA_RUNTIME_LIBS
-    ${SHERPA_ONNX_LIB_DIR}/${SHERPA_COPY_PATTERN}
-  )
-
   foreach(LIB ${SHERPA_RUNTIME_LIBS})
     configure_file(${LIB} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
   endforeach()
+else()
+  message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
 endif()
 
 # =============================================================================
 # Install
 # =============================================================================
 install(TARGETS gladys RUNTIME DESTINATION bin)
-
-# =============================================================================
-# Run target
-# =============================================================================
-add_custom_target(run
-  COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gladys
-  COMMENT "Running gladys"
-)
