@@ -68,8 +68,7 @@ Mic::Mic(QWidget *parent)
     update();
   });
 
-  QSvgRenderer renderer(QCoreApplication::applicationDirPath() +
-                        "/icons/icon-app.svg");
+  QSvgRenderer renderer(QStringLiteral(":/icons/icon-app.svg"));
   if (renderer.isValid()) {
     QImage image(512, 512, QImage::Format_ARGB32);
     image.fill(Qt::transparent);

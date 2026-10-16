@@ -31,8 +31,7 @@ SplashWindow::SplashWindow(QWidget *parent)
   QPoint center = QApplication::primaryScreen()->geometry().center();
   move(center - rect().center());
 
-  QSvgRenderer renderer(QCoreApplication::applicationDirPath() +
-                        "/icons/icon.svg");
+  QSvgRenderer renderer(QStringLiteral(":/icons/icon.svg"));
   m_logo = QPixmap(LOGO_SIZE, LOGO_SIZE);
   m_logo.fill(Qt::transparent);
   if (renderer.isValid()) {

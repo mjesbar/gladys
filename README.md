@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="dist/icons/icon.svg" alt="Gladys" width="200" height="200">
+  <img src="src/assets/icons/icon.svg" alt="Gladys" width="200" height="200">
 </p>
 
 # Gladys

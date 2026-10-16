@@ -46,8 +46,7 @@ AppWindow::AppWindow(QWidget *parent)
   m_tray_menu->addAction(tr("Settings"), this, &AppWindow::open_settings);
   m_tray_menu->addAction(tr("Quit"), qApp, &QApplication::quit);
   m_tray_icon->setContextMenu(m_tray_menu);
-  m_tray_icon->setIcon(
-      QIcon(QCoreApplication::applicationDirPath() + "/icons/icon-app.svg"));
+  m_tray_icon->setIcon(QIcon(":/icons/icon-app.svg"));
   connect(m_tray_icon, &QSystemTrayIcon::activated, this,
           [this](QSystemTrayIcon::ActivationReason reason) {
             if (reason == QSystemTrayIcon::Trigger) {

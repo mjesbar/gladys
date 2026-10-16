@@ -43,6 +43,8 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/fonts/RobotoSlab-Regular.ttf
   src/assets/fonts/RobotoSlab-Bold.ttf
   src/assets/styles/style.qss
+  src/assets/icons/icon.svg
+  src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg
   src/assets/icons/trash.svg
   src/assets/icons/chevron-right.svg
