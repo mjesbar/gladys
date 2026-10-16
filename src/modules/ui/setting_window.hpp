@@ -19,12 +19,12 @@ public:
 private slots:
   void on_apply();
   void on_add_alias();
-  void on_remove_alias();
 
 private:
   void build_ui();
   void load_from_setting();
   void write_to_setting();
+  void add_alias_row(const QString &from, const QString &to);
 
   QComboBox *m_input_source_combo;
   QCheckBox *m_markdown_check;

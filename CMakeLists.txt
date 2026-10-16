@@ -36,6 +36,16 @@ qt_add_executable(gladys WIN32
   src/modules/ui/app_window.cc
   src/modules/ui/mic.cc
   src/modules/ui/setting_window.cc
+
+)
+
+qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
+  src/assets/fonts/RobotoSlab-Regular.ttf
+  src/assets/fonts/RobotoSlab-Bold.ttf
+  src/assets/styles/style.qss
+  src/assets/icons/plus.svg
+  src/assets/icons/trash.svg
+  src/assets/icons/chevron-right.svg
 )
 
 target_include_directories(gladys PRIVATE

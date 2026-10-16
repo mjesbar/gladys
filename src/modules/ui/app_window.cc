@@ -2,10 +2,10 @@
 
 #include "app_window.hpp"
 
-#include <QAction>
 #include <QApplication>
 #include <QCoreApplication>
 #include <QEasingCurve>
+#include <QMenu>
 #include <QIcon>
 #include <QScreen>
 
@@ -21,6 +21,7 @@ AppWindow::AppWindow(QWidget *parent)
       m_opacity_animation(new QPropertyAnimation(this, "windowOpacity")),
       m_is_prominent(false), m_tray_icon(new QSystemTrayIcon(this)),
       m_tray_menu(new QMenu(this)), m_setting_window(new SettingWindow(nullptr)) {
+  setObjectName("appWindow");
   setWindowTitle("Gladys");
   setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::WindowDoesNotAcceptFocus |
@@ -28,7 +29,6 @@ AppWindow::AppWindow(QWidget *parent)
   setAttribute(Qt::WA_TranslucentBackground);
   setAttribute(Qt::WA_ShowWithoutActivating);
   setAttribute(Qt::WA_NoSystemBackground);
-  setStyleSheet("*{border:none;background:transparent;}");
 #ifdef __linux__
   setProperty("_kde_no_shadows", true);
   setProperty("_KDE_NET_WM_SHADOW", false);
@@ -43,12 +43,9 @@ AppWindow::AppWindow(QWidget *parent)
   m_opacity_animation->setDuration(300);
   m_opacity_animation->setEasingCurve(QEasingCurve::InOutQuad);
 
-  // Tray: left-click opens settings; menu has Settings and Quit
-  QAction *settingsAction = m_tray_menu->addAction("Settings");
-  connect(settingsAction, &QAction::triggered, this, &AppWindow::open_settings);
-  m_tray_menu->addSeparator();
-  QAction *quitAction = m_tray_menu->addAction("Quit");
-  connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+  // Tray: left-click opens settings; right-click shows the menu (OS-managed).
+  m_tray_menu->addAction(tr("Settings"), this, &AppWindow::open_settings);
+  m_tray_menu->addAction(tr("Quit"), qApp, &QApplication::quit);
   m_tray_icon->setContextMenu(m_tray_menu);
   m_tray_icon->setIcon(
       QIcon(QCoreApplication::applicationDirPath() + "/icons/icon-app.svg"));

@@ -2,6 +2,8 @@
 // shutdown.
 
 #include <QApplication>
+#include <QFile>
+#include <QFontDatabase>
 #include <QMetaObject>
 #include <QSocketNotifier>
 #include <QThread>
@@ -31,6 +33,19 @@ static void on_signal(int) {
 }
 #endif
 
+// Loads the embedded fonts and the global QSS theme (src/assets).
+static void load_theme(QApplication &app) {
+  QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Bold.ttf");
+
+  QFile qss(":/styles/style.qss");
+  if (!qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qCWarning(lcMain) << "theme not found, using default style:" << qss.errorString();
+    return;
+  }
+  app.setStyleSheet(QString::fromUtf8(qss.readAll()));
+}
+
 int main(int argc, char *argv[]) {
 #ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
@@ -41,6 +56,7 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
+  load_theme(app);
   qCInfo(lcMain) << "started";
 
   Setting *setting = Setting::instance();
