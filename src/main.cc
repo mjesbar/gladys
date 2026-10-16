@@ -15,7 +15,8 @@
 #include "modules/setting/setting.hpp"
 #include "modules/ui/app_window.hpp"
 
-constexpr int STEP_DELAY_MS = 100; // pause between pipeline steps to avoid glitches
+constexpr int STEP_DELAY_MS =
+    250; // pause between pipeline steps to avoid glitches
 
 #ifndef _WIN32
 #include <csignal>
