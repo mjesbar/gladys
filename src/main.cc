@@ -2,6 +2,9 @@
 // shutdown.
 
 #include <QApplication>
+#include <QEventLoop>
+#include <QFile>
+#include <QFontDatabase>
 #include <QMetaObject>
 #include <QSocketNotifier>
 #include <QThread>
@@ -14,6 +17,7 @@
 #include "modules/log/log.hpp"
 #include "modules/setting/setting.hpp"
 #include "modules/ui/app_window.hpp"
+#include "modules/ui/splash_window.hpp"
 
 constexpr int STEP_DELAY_MS =
     200; // pause between pipeline steps to avoid glitches
@@ -31,6 +35,19 @@ static void on_signal(int) {
 }
 #endif
 
+// Loads the embedded fonts and the global QSS theme (src/assets).
+static void load_theme(QApplication &app) {
+  QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Bold.ttf");
+
+  QFile qss(":/styles/style.qss");
+  if (!qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    qCWarning(lcMain) << "theme not found, using default style:" << qss.errorString();
+    return;
+  }
+  app.setStyleSheet(QString::fromUtf8(qss.readAll()));
+}
+
 int main(int argc, char *argv[]) {
 #ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
@@ -41,15 +58,30 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
+  load_theme(app);
   qCInfo(lcMain) << "started";
+
+  SplashWindow splash;
+  splash.fade_in();
 
   Setting *setting = Setting::instance();
 
+  // Model load is blocking: run it off the GUI thread so the splash keeps spinning.
   STT *stt = new STT();
-  if (!stt->init(
-          (QCoreApplication::applicationDirPath() +
-           "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
-              .toStdString())) {
+  bool stt_ready = false;
+  QThread *loader = QThread::create([&]() {
+    stt_ready = stt->init(
+        (QCoreApplication::applicationDirPath() +
+         "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
+            .toStdString());
+  });
+  QEventLoop loading;
+  QObject::connect(loader, &QThread::finished, &loading, &QEventLoop::quit);
+  loader->start();
+  loading.exec();
+  loader->wait();
+  delete loader;
+  if (!stt_ready) {
     return 1;
   }
 
@@ -78,9 +110,16 @@ int main(int argc, char *argv[]) {
   toggle_thread->start();
   paste_thread->start();
 
+  QEventLoop fading;
+  QObject::connect(&splash, &SplashWindow::FADE_OUT_FINISHED, &fading,
+                   &QEventLoop::quit);
+  splash.fade_out();
+  fading.exec();
+
   AppWindow window;
   window.show();
   window.remove_shadow();
+  window.reveal();
 
   bool recording = false;
   QObject::connect(toggle, &Toggle::KEY_PRESSED, &window, [&]() {
