@@ -35,7 +35,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
 
       - name: Show dist/ structure
         run: tree -ash dist/
@@ -60,7 +60,8 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
+        shell: bash
 
       - name: Show dist/ structure
         run: tree /f /a dist\
@@ -85,7 +86,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: make build
+        run: scripts/build.sh
 
       - name: Install tree
         run: brew install tree

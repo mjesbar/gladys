@@ -1,3 +1,5 @@
+dist/gladys
+
 dist/**/*.so
 dist/**/*.dylib
 dist/**/*.dll
