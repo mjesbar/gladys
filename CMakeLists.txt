@@ -52,7 +52,7 @@ target_include_directories(gladys PRIVATE
 set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
-target_compile_definitions(gladys PRIVATE MA_DEBUG_OUTPUT)
+# target_compile_definitions(gladys PRIVATE MA_DEBUG_OUTPUT)
 
 target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Svg)
 

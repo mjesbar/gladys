@@ -7,4 +7,4 @@ cd "$(dirname "$0")/.."
 
 cmake --preset release
 cmake --build --preset release
-ln -sfn build/compile_commands.json compile_commands.json
+# ln -sfn build/compile_commands.json compile_commands.json
