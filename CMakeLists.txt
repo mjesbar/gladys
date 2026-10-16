@@ -36,7 +36,7 @@ qt_add_executable(gladys WIN32
   src/modules/ui/app_window.cc
   src/modules/ui/mic.cc
   src/modules/ui/setting_window.cc
-
+  src/modules/ui/splash_window.cc
 )
 
 qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
