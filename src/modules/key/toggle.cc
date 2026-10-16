@@ -66,14 +66,14 @@ void Toggle::start_polling() { m_poll_timer->start(); }
 bool Toggle::init() {
   Display *d = XOpenDisplay(nullptr);
   if (!d) {
-    fprintf(stderr, "Toggle: unable to open X display\n");
+    fprintf(stderr, "ERROR: Toggle: unable to open X display\n");
     return false;
   }
   m_display = d;
 
   m_keycode = XKeysymToKeycode(d, XK_P);
   if (!m_keycode) {
-    fprintf(stderr, "Toggle: key P not mapped\n");
+    fprintf(stderr, "ERROR: Toggle: key P not mapped\n");
     return false;
   }
   m_modifiers = ControlMask | Mod1Mask;
@@ -87,6 +87,7 @@ bool Toggle::init() {
              GrabModeAsync);
   }
   XFlush(d);
+  fprintf(stderr, "INFO: Toggle: hotkey registered\n");
   return true;
 }
 
@@ -105,6 +106,7 @@ void Toggle::process_events() {
     }
     unsigned int mods = event.xkey.state & relevant;
     if (event.xkey.keycode == m_keycode && (mods & m_modifiers) == m_modifiers) {
+      printf("INFO: Toggle: hotkey pressed\n");
       emit KEY_PRESSED();
     }
   }
@@ -127,7 +129,7 @@ bool Toggle::init() {
                                        kCGEventTapOptionDefault, eventMask,
                                        event_tap_callback, this);
   if (!tap) {
-    fprintf(stderr, "Toggle: CGEventTapCreate failed. "
+    fprintf(stderr, "ERROR: Toggle: CGEventTapCreate failed. "
                     "Grant Accessibility permission in System Preferences.\n");
     return false;
   }
@@ -136,11 +138,12 @@ bool Toggle::init() {
   CFRunLoopSourceRef source =
       CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
   if (!source) {
-    fprintf(stderr, "Toggle: failed to create run loop source.\n");
+    fprintf(stderr, "ERROR: Toggle: failed to create run loop source.\n");
     return false;
   }
   m_run_loop_source = source;
   CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopCommonModes);
+  fprintf(stderr, "INFO: Toggle: hotkey registered\n");
   return true;
 }
 
@@ -158,6 +161,7 @@ CGEventRef Toggle::event_tap_callback(CGEventTapProxy proxy, CGEventType type,
     CGEventFlags flags = CGEventGetFlags(event);
     if (keyCode == self->m_keycode &&
         (flags & self->m_modifiers) == self->m_modifiers) {
+      printf("INFO: Toggle: hotkey pressed\n");
       emit self->KEY_PRESSED();
     }
   }
@@ -180,13 +184,14 @@ bool Toggle::init() {
   HHOOK hook = SetWindowsHookEx(WH_KEYBOARD_LL, low_level_keyboard_proc,
                                 GetModuleHandle(NULL), 0);
   if (!hook) {
-    fprintf(stderr, "Toggle: SetWindowsHookEx failed (error %lu). "
+    fprintf(stderr, "ERROR: Toggle: SetWindowsHookEx failed (error %lu). "
                     "Run as Administrator.\n",
             GetLastError());
     g_toggle = nullptr;
     return false;
   }
   m_keyboard_hook = hook;
+  fprintf(stderr, "INFO: Toggle: hotkey registered\n");
   return true;
 }
 
@@ -205,6 +210,7 @@ LRESULT CALLBACK Toggle::low_level_keyboard_proc(int nCode, WPARAM wParam,
     bool ctrl = GetAsyncKeyState(VK_CONTROL) & 0x8000;
     bool alt = GetAsyncKeyState(VK_MENU) & 0x8000;
     if (p->vkCode == 'P' && ctrl && alt && g_toggle) {
+      printf("INFO: Toggle: hotkey pressed\n");
       emit g_toggle->KEY_PRESSED();
     }
   }

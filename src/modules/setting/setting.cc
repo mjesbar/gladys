@@ -4,6 +4,8 @@
 
 #include <QSettings>
 
+#include <cstdio>
+
 // Miniaudio header only (implementation is in stt.cc)
 #include "miniaudio/miniaudio.h"
 
@@ -20,6 +22,7 @@ Setting::Setting(QObject *parent) : QObject(parent) { load(); }
 
 void Setting::load() {
   QSettings s("gladys", "gladys");
+  fprintf(stderr, "INFO: Setting: loaded %s\n", qPrintable(s.fileName()));
   m_input_source = s.value("audio/inputSource", "default").toString();
 
   m_dictionary.clear();

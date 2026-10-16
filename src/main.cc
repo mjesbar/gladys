@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
 #ifndef _WIN32
   if (pipe(g_signal_pipe) != 0) {
-    fprintf(stderr, "Gladys: failed to create signal pipe\n");
+    fprintf(stderr, "ERROR: Gladys: failed to create signal pipe\n");
     return 1;
   }
   std::signal(SIGINT, on_signal);

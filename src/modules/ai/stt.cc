@@ -42,7 +42,7 @@ bool STT::init(const std::string &model_dir) {
 
   for (const std::string *path : {&encoder, &decoder, &joiner, &tokens}) {
     if (!SherpaOnnxFileExists(path->c_str())) {
-      fprintf(stderr, "STT: model file not found: %s\n", path->c_str());
+      fprintf(stderr, "ERROR: STT: model file not found: %s\n", path->c_str());
       return false;
     }
   }
@@ -61,12 +61,12 @@ bool STT::init(const std::string &model_dir) {
 
   m_recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
   if (!m_recognizer) {
-    fprintf(stderr, "STT: failed to create recognizer\n");
+    fprintf(stderr, "ERROR: STT: failed to create recognizer\n");
     return false;
   }
 
   if (ma_context_init(NULL, 0, NULL, &m_context) != MA_SUCCESS) {
-    fprintf(stderr, "STT: failed to initialize audio context\n");
+    fprintf(stderr, "ERROR: STT: failed to initialize audio context\n");
     return false;
   }
   m_is_context_ready = true;
@@ -105,11 +105,12 @@ bool STT::open_device(const QString &source) {
   }
 
   if (ma_device_init(&m_context, &m_config, &m_device) != MA_SUCCESS) {
-    fprintf(stderr, "STT: failed to initialize capture device: %s\n",
+    fprintf(stderr, "ERROR: STT: failed to initialize capture device: %s\n",
             qPrintable(source));
     return false;
   }
   m_is_device_ready = true;
+  fprintf(stderr, "INFO: STT: capture device ready: %s\n", qPrintable(source));
   return true;
 }
 
@@ -121,11 +122,11 @@ void STT::start_recording() {
   // Create the stream before the device starts, so the callback never races it.
   m_stream = SherpaOnnxCreateOnlineStream(m_recognizer);
   if (!m_stream) {
-    fprintf(stderr, "STT: failed to create stream\n");
+    fprintf(stderr, "ERROR: STT: failed to create stream\n");
     return;
   }
   if (ma_device_start(&m_device) != MA_SUCCESS) {
-    fprintf(stderr, "STT: failed to start capture device\n");
+    fprintf(stderr, "ERROR: STT: failed to start capture device\n");
     SherpaOnnxDestroyOnlineStream(m_stream);
     m_stream = nullptr;
   }

@@ -3,10 +3,17 @@
 # Usage: scripts/linux/uinput.sh {allow|deny}
 set -euo pipefail
 
+ACTION=${1:-}
+case "$ACTION" in
+    allow|deny) ;;
+    *) echo "Usage: $0 {allow|deny}" >&2; exit 1 ;;
+esac
+
 # Re-run with graphical root prompt
 if [ "$EUID" -ne 0 ]; then
-    exec pkexec "$(readlink -f "$0")" "$1"
+    exec pkexec "$(readlink -f "$0")" "$ACTION"
 fi
+
 # Detect the actual user behind the root session
 REAL_USER=$(logname)
 
@@ -26,8 +33,7 @@ deny() {
     echo "Access denied for $REAL_USER."
 }
 
-case "$1" in
+case "$ACTION" in
     allow) allow ;;
     deny)  deny ;;
-    *)     echo "Usage: $0 {allow|deny}" >&2; exit 1 ;;
 esac

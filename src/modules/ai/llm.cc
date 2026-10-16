@@ -99,7 +99,7 @@ bool LLM::start() {
   QString dir = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
   QString program = dir + "/" + LLAMA_SERVER_BINARY;
   if (!QFileInfo::exists(program)) {
-    fprintf(stderr, "LLM: llama-server not found at: %s\n", qPrintable(program));
+    fprintf(stderr, "ERROR: LLM: llama-server not found at: %s\n", qPrintable(program));
     return false;
   }
 
@@ -117,13 +117,14 @@ bool LLM::start() {
 
   m_server.start();
   if (!m_server.waitForStarted(5000)) {
-    fprintf(stderr, "LLM: failed to start llama-server\n");
+    fprintf(stderr, "ERROR: LLM: failed to start llama-server\n");
     return false;
   }
 
   // Startup only (before the UI is shown): give the server time to load the model
   QThread::sleep(2);
   m_is_running = true;
+  fprintf(stderr, "INFO: LLM: server ready\n");
   return true;
 }
 
@@ -164,7 +165,7 @@ void LLM::format_transcription(const QString &text) {
     if (reply->error() == QNetworkReply::NoError) {
       result = parse_content(reply->readAll());
     } else {
-      fprintf(stderr, "LLM: request failed: %s\n",
+      fprintf(stderr, "ERROR: LLM: request failed: %s\n",
               qPrintable(reply->errorString()));
     }
     emit FORMATTED_TEXT_READY(result.isEmpty() ? text : result);
