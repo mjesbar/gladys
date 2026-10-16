@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Grant or revoke the current user access to /dev/uinput (Wayland paste).
+# Usage: scripts/linux/uinput.sh {allow|deny}
+set -euo pipefail
 
-# Ensure script re-runs with graphical root prompt
+# Re-run with graphical root prompt
 if [ "$EUID" -ne 0 ]; then
-    pkexec "$0" "$1"
-    exit $?
+    exec pkexec "$(readlink -f "$0")" "$1"
 fi
-
 # Detect the actual user behind the root session
 REAL_USER=$(logname)
 
@@ -28,5 +29,5 @@ deny() {
 case "$1" in
     allow) allow ;;
     deny)  deny ;;
-    *)     echo "Usage: $0 {allow|deny}" ;;
+    *)     echo "Usage: $0 {allow|deny}" >&2; exit 1 ;;
 esac

@@ -79,21 +79,16 @@ git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
 # Fetch models (llama.cpp binary, GGUF model, sherpa-onnx model)
-make fetch-models
+scripts/fetch-deps.sh
 
-# Build
-make build
+# Build (CMakePresets.json, Release)
+export QT_ROOT_DIR=/path/to/Qt/6.8.3/gcc_64
+scripts/build.sh
 ```
 
 The binary and all runtime dependencies will be placed in the `dist/` directory.
 
 ### Run
-
-```bash
-make run
-```
-
-Or directly:
 
 ```bash
 ./dist/gladys
@@ -103,7 +98,7 @@ Or directly:
 
 ```bash
 # Set QT_ROOT_DIR to your Qt installation path, then:
-make package-linux   # or package-win / package-macos
+scripts/package.sh linux x64 1.0.0   # or: windows x64 / macos arm64 1.0.0
 ```
 
 ---
