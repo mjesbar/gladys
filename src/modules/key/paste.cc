@@ -202,7 +202,6 @@ void Paste::copy_to_clipboard(const QString &text) {
 
 void Paste::send_paste() {
   qCInfo(lcPaste) << "sending Ctrl+Shift+V";
-  SleepMs(100); // let the clipboard settle before pasting
 
   send_key(KEY_LEFTCTRL, true);
   send_key(KEY_LEFTSHIFT, true);

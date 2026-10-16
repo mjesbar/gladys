@@ -1,18 +1,21 @@
-// Gladys - Entry point. Creates the modules, wires their signals and owns shutdown.
+// Gladys - Entry point. Creates the modules, wires their signals and owns
+// shutdown.
 
 #include <QApplication>
 #include <QMetaObject>
 #include <QSocketNotifier>
 #include <QThread>
+#include <QTimer>
 
-
-#include "modules/log/log.hpp"
+#include "modules/ai/llm.hpp"
+#include "modules/ai/stt.hpp"
 #include "modules/key/paste.hpp"
 #include "modules/key/toggle.hpp"
-#include "modules/ai/llm.hpp"
+#include "modules/log/log.hpp"
 #include "modules/setting/setting.hpp"
-#include "modules/ai/stt.hpp"
 #include "modules/ui/app_window.hpp"
+
+constexpr int STEP_DELAY_MS = 100; // pause between pipeline steps to avoid glitches
 
 #ifndef _WIN32
 #include <csignal>
@@ -42,9 +45,10 @@ int main(int argc, char *argv[]) {
   Setting *setting = Setting::instance();
 
   STT *stt = new STT();
-  if (!stt->init((QCoreApplication::applicationDirPath() +
-                  "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
-                     .toStdString())) {
+  if (!stt->init(
+          (QCoreApplication::applicationDirPath() +
+           "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
+              .toStdString())) {
     return 1;
   }
 
@@ -67,7 +71,8 @@ int main(int argc, char *argv[]) {
   stt->moveToThread(stt_thread);
   toggle->moveToThread(toggle_thread);
   paste->moveToThread(paste_thread);
-  QObject::connect(toggle_thread, &QThread::started, toggle, &Toggle::start_polling);
+  QObject::connect(toggle_thread, &QThread::started, toggle,
+                   &Toggle::start_polling);
   stt_thread->start();
   toggle_thread->start();
   paste_thread->start();
@@ -89,13 +94,23 @@ int main(int argc, char *argv[]) {
     window.toggle_visibility();
   });
 
-  QObject::connect(stt, &STT::AUDIO_LEVEL_UPDATED, window.mic(), &Mic::update_audio_levels);
-  QObject::connect(stt, &STT::FINAL_TEXT_READY, llm, &LLM::format_transcription);
-  QObject::connect(llm, &LLM::FORMATTED_TEXT_READY, &window, [paste](const QString &text) {
-    Paste::copy_to_clipboard(text);
-    QMetaObject::invokeMethod(paste, &Paste::send_paste);
-  });
-  QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt, &STT::reconfigure_audio_source);
+  // ASR -> LLM -> Text Copy -> Text Paste
+  QObject::connect(stt, &STT::AUDIO_LEVEL_UPDATED, window.mic(),
+                   &Mic::update_audio_levels);
+  QObject::connect(
+      stt, &STT::FINAL_TEXT_READY, llm, [llm](const QString &text) {
+        QTimer::singleShot(STEP_DELAY_MS, llm,
+                           [llm, text]() { llm->format_transcription(text); });
+      });
+  QObject::connect(llm, &LLM::FORMATTED_TEXT_READY, &window,
+                   [paste](const QString &text) {
+                     Paste::copy_to_clipboard(text);
+                     QTimer::singleShot(STEP_DELAY_MS, paste, [paste]() {
+                       QMetaObject::invokeMethod(paste, &Paste::send_paste);
+                     });
+                   });
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt,
+                   &STT::reconfigure_audio_source);
 
   QObject::connect(&app, &QApplication::aboutToQuit, [&]() {
     qCInfo(lcMain) << "quitting";
@@ -113,7 +128,8 @@ int main(int argc, char *argv[]) {
   }
   std::signal(SIGINT, on_signal);
   std::signal(SIGTERM, on_signal);
-  auto *signalNotifier = new QSocketNotifier(g_signal_pipe[0], QSocketNotifier::Read, &app);
+  auto *signalNotifier =
+      new QSocketNotifier(g_signal_pipe[0], QSocketNotifier::Read, &app);
   QObject::connect(signalNotifier, &QSocketNotifier::activated, &app, []() {
     char c;
     (void)!read(g_signal_pipe[0], &c, 1);
