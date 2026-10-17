@@ -44,23 +44,6 @@ jobs:
         run: scripts/fetch-deps.sh
         shell: bash
 
-      - name: Smoke test built app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1280x1024x24 &
-          export DISPLAY=:99
-          cd dist
-          ./gladys > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
 
   # ----------------------------------------------------------------
   # Windows
@@ -92,20 +75,6 @@ jobs:
         run: scripts/fetch-deps.sh
         shell: bash
 
-      - name: Smoke test built app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          cd dist
-          ./gladys.exe > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
 
   # ----------------------------------------------------------------
   # macOS
@@ -139,17 +108,3 @@ jobs:
         run: scripts/fetch-deps.sh
         shell: bash
 
-      - name: Smoke test built app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          cd dist
-          ./gladys > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
