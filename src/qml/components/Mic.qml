@@ -12,12 +12,18 @@ Item {
 
     readonly property real scaleFactor: 0.5 + 0.5 * progress
     readonly property real micCenterY: height - 80 // mic center, above the dot
+    // Average bar height normalized to the tallest bar (48 px, see audio_bars.cc).
+    readonly property real audioLevel: {
+        let sum = 0;
+        for (const h of audioBars.heights) sum += h;
+        return Math.min(sum / (audioBars.heights.length * 48), 1);
+    }
 
     Behavior on progress { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
 
-    // Halo behind the mic: flat translucent disc, no runtime blur.
+    // Halo behind the mic: flat translucent disc, no runtime blur. Pulses with audio.
     Rectangle {
-        width: 72 * mic.scaleFactor
+        width: 48 + 24 * mic.audioLevel
         height: width
         radius: width / 2
         x: (mic.width - width) / 2

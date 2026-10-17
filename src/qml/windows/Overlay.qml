@@ -11,7 +11,7 @@ Window {
     property bool expanded: false
 
     width: 119
-    height: 110
+    height: 130
     color: "transparent"
     flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
            | Qt.NoDropShadowWindowHint
