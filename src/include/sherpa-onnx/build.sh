@@ -2,6 +2,14 @@
 
 PWD=$(pwd)
 
+# Activate CUDA 12.4.0 for this build
+
+# source env.sh
+# echo "${CUDA_HOME}"
+  # -DSHERPA_ONNX_ENABLE_GPU=ON \
+
+# exit
+
 if [ ! -d "${PWD}/repo" ]; then
   echo "Cloning sherpa-onnx repository ..."
   git clone https://github.com/k2-fsa/sherpa-onnx ./repo

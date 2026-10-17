@@ -10,7 +10,6 @@
 #include <QString>
 #include <QVector>
 #include <string>
-#include <vector>
 
 class STT : public QObject {
   Q_OBJECT
@@ -42,8 +41,8 @@ private:
   bool m_is_context_ready;
   bool m_is_device_ready;
 
-  const SherpaOnnxOfflineRecognizer *m_recognizer;
-  std::vector<float> m_buffer; // full utterance, decoded once on stop
+  const SherpaOnnxOnlineRecognizer *m_recognizer;
+  const SherpaOnnxOnlineStream *m_stream;
 
   QVector<double> m_audio_levels;
   QVector<double> m_audio_levels_prev;
