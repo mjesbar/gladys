@@ -1,27 +1,19 @@
 dist/gladys
 
-dist/**/*.so
-dist/**/*.dylib
-dist/**/*.dll
-dist/**/*.tar.gz
-dist/**/*.tar.xz
-dist/**/*.tar.bz2
-dist/**/*.zip
+dist/**/*
+!dist/llama.cpp/
+!dist/llama.cpp/README.md
 
+!dist/sherpaonnx/
+!dist/sherpaonnx/README.md
 
-dist/llama.cpp/llama-b9265
-dist/llama.cpp/llama-b9265-bin-macos-arm64.tar.gz
-dist/llama.cpp/llama-b9265-bin-ubuntu-vulkan-x64.tar.gz
-dist/llama.cpp/llama-b9265-bin-win-vulkan-x64.zip
-dist/llama.cpp/llama-models.tar.gz
-
-dist/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8
-dist/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2
-
+!dist/llama.cpp/
+!dist/llama.cpp/README.md
 
 .cache/
 moc/
 build/
 
-
 compile_commands.json
+
+qt-*/
