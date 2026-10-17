@@ -102,7 +102,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_link_libraries(gladys PRIVATE "-framework CoreGraphics" "-framework CoreFoundation")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # Qt DLLs load from <exe>/lib, set by main() before first use.
   target_link_libraries(gladys PRIVATE user32)
+  target_link_options(gladys PRIVATE
+    /DELAYLOAD:Qt6Core.dll /DELAYLOAD:Qt6Gui.dll /DELAYLOAD:Qt6Qml.dll
+    /DELAYLOAD:Qt6Quick.dll /DELAYLOAD:Qt6QuickControls2.dll /DELAYLOAD:Qt6LabsPlatform.dll
+    /DELAYLOAD:Qt6Widgets.dll /DELAYLOAD:Qt6Network.dll /DELAYLOAD:Qt6Svg.dll
+  )
 endif()
 
 # =============================================================================
@@ -127,6 +133,9 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
       ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
     )
+    target_link_options(gladys PRIVATE
+      /DELAYLOAD:sherpa-onnx-c-api.dll /DELAYLOAD:sherpa-onnx-cxx-api.dll
+    )
   else()
     target_link_directories(gladys PRIVATE ${SHERPA_ONNX_LIB_DIR})
     target_link_libraries(gladys PRIVATE sherpa-onnx-c-api sherpa-onnx-cxx-api onnxruntime)
@@ -143,9 +152,7 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   else()
     file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
-  foreach(LIB ${SHERPA_RUNTIME_LIBS})
-    configure_file(${LIB} ${CMAKE_SOURCE_DIR}/dist/ COPYONLY)
-  endforeach()
+  install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
 endif()
@@ -157,12 +164,12 @@ install(TARGETS gladys RUNTIME DESTINATION .)
 
 set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
 file(GENERATE OUTPUT ${deploy_script} CONTENT "
-set(QT_DEPLOY_BIN_DIR \".\")
+set(QT_DEPLOY_BIN_DIR \"lib\")
 set(QT_DEPLOY_LIB_DIR \"lib\")
 set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
 set(QT_DEPLOY_QML_DIR \"qml\")
 include(\"${QT_DEPLOY_SUPPORT}\")
-qt_deploy_runtime_dependencies(EXECUTABLE \"\${QT_DEPLOY_BIN_DIR}/$<TARGET_FILE_NAME:gladys>\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:gladys>\")
 ")
 install(SCRIPT ${deploy_script})
 foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)

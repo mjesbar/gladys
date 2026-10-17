@@ -41,6 +41,21 @@ static void on_signal(int) {
 }
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+
+#include <string>
+
+// Adds <exe dir>/lib to the DLL search path. Must run before any Qt or sherpa call.
+static bool set_dll_directory() {
+  wchar_t path[MAX_PATH];
+  if (GetModuleFileNameW(nullptr, path, MAX_PATH) == 0) return false;
+  std::wstring dir(path);
+  dir.resize(dir.find_last_of(L'\\'));
+  return SetDllDirectoryW((dir + L"\\lib").c_str()) != FALSE;
+}
+#endif
+
 // Loads the embedded fonts (src/assets).
 static void load_fonts() {
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
@@ -48,6 +63,9 @@ static void load_fonts() {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef _WIN32
+  if (!set_dll_directory()) return 1;
+#endif
 #ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
 #endif
