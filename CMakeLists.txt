@@ -9,7 +9,6 @@ qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
 
 # =============================================================================
 # Architecture
@@ -84,8 +83,13 @@ set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
 
 target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::LabsPlatform Qt6::Widgets Qt6::Network Qt6::Svg)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(GLADYS_RPATH "@executable_path/lib")
+else()
+  set(GLADYS_RPATH "$ORIGIN;$ORIGIN/lib")
+endif()
 set_target_properties(gladys PROPERTIES
-  INSTALL_RPATH "$ORIGIN"
+  INSTALL_RPATH "${GLADYS_RPATH}"
   BUILD_WITH_INSTALL_RPATH TRUE
 )
 
@@ -98,7 +102,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_link_libraries(gladys PRIVATE "-framework CoreGraphics" "-framework CoreFoundation")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # Qt DLLs load from <exe>/lib, set by main() before first use.
   target_link_libraries(gladys PRIVATE user32)
+  target_link_options(gladys PRIVATE
+    /DELAYLOAD:Qt6Core.dll /DELAYLOAD:Qt6Gui.dll /DELAYLOAD:Qt6Qml.dll
+    /DELAYLOAD:Qt6Quick.dll /DELAYLOAD:Qt6QuickControls2.dll /DELAYLOAD:Qt6LabsPlatform.dll
+    /DELAYLOAD:Qt6Widgets.dll /DELAYLOAD:Qt6Network.dll /DELAYLOAD:Qt6Svg.dll
+  )
 endif()
 
 # =============================================================================
@@ -123,6 +133,9 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
       ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
     )
+    target_link_options(gladys PRIVATE
+      /DELAYLOAD:sherpa-onnx-c-api.dll /DELAYLOAD:sherpa-onnx-cxx-api.dll
+    )
   else()
     target_link_directories(gladys PRIVATE ${SHERPA_ONNX_LIB_DIR})
     target_link_libraries(gladys PRIVATE sherpa-onnx-c-api sherpa-onnx-cxx-api onnxruntime)
@@ -139,9 +152,7 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   else()
     file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
-  foreach(LIB ${SHERPA_RUNTIME_LIBS})
-    configure_file(${LIB} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
-  endforeach()
+  install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
 endif()
@@ -149,4 +160,25 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
-install(TARGETS gladys RUNTIME DESTINATION bin)
+install(TARGETS gladys RUNTIME DESTINATION .)
+
+set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
+file(GENERATE OUTPUT ${deploy_script} CONTENT "
+set(QT_DEPLOY_BIN_DIR \"lib\")
+set(QT_DEPLOY_LIB_DIR \"lib\")
+set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
+set(QT_DEPLOY_QML_DIR \"qml\")
+include(\"${QT_DEPLOY_SUPPORT}\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:gladys>\")
+")
+install(SCRIPT ${deploy_script})
+foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)
+  if(IS_DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin})
+    install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin} DESTINATION plugins)
+  endif()
+endforeach()
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/lib/ DESTINATION lib
+  FILES_MATCHING PATTERN "libQt6*.so*" PATTERN "libicu*.so*")
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/QtQuick DESTINATION qml)
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/Qt/labs DESTINATION qml/Qt)
+install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/qt.conf\" \"[Paths]\\nPlugins = plugins\\nQml2Imports = qml\\n\")")

@@ -40,7 +40,7 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 ```
 
 1. Press the hotkey — the mic overlay opens and audio is captured.
-2. Speech is recognized in real time by sherpa-onnx.
+2. Speech is buffered while recording and transcribed by sherpa-onnx on stop.
 3. On stop, the raw text is sent to the local `llama-server` for formatting (casing, punctuation, dictionary).
 4. The result is copied to the clipboard and pasted with `Ctrl+Shift+V` (plain text).
 
@@ -84,7 +84,7 @@ If the LLM fails, the raw transcription is pasted, so no dictation is lost.
 
 | Component | Model | Purpose |
 |---|---|---|
-| STT | `sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06` | Spanish streaming speech recognition |
+| STT | `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8` | Multilingual offline speech recognition |
 | LLM | `Llama-3.2-1B-Instruct-Q4_K_M.gguf` | Transcription formatting |
 
 ---
