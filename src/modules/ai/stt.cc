@@ -4,26 +4,22 @@
 
 #include <cmath>
 #include <cstring>
-#include <vector>
 
 #include "../log/log.hpp"
 #include "../setting/setting.hpp"
 
 static const int SAMPLE_RATE = 16000;
 static const int LEVEL_BARS = 30;
+static const size_t MAX_SAMPLES = SAMPLE_RATE * 60; // 60 s cap per utterance
 
 STT::STT()
-    : m_is_context_ready(false), m_is_device_ready(false),
-      m_recognizer(nullptr), m_stream(nullptr) {
+    : m_is_context_ready(false), m_is_device_ready(false), m_recognizer(nullptr) {
   memset(&m_context, 0, sizeof(m_context));
   memset(&m_device, 0, sizeof(m_device));
 }
 
 STT::~STT() {
   qCInfo(lcStt) << "stopped";
-  if (m_stream) {
-    SherpaOnnxDestroyOnlineStream(m_stream);
-  }
   if (m_is_device_ready) {
     ma_device_uninit(&m_device);
   }
@@ -31,14 +27,14 @@ STT::~STT() {
     ma_context_uninit(&m_context);
   }
   if (m_recognizer) {
-    SherpaOnnxDestroyOnlineRecognizer(m_recognizer);
+    SherpaOnnxDestroyOfflineRecognizer(m_recognizer);
   }
 }
 
 bool STT::init(const std::string &model_dir) {
-  std::string encoder = model_dir + "/encoder.onnx";
-  std::string decoder = model_dir + "/decoder.onnx";
-  std::string joiner = model_dir + "/joiner.onnx";
+  std::string encoder = model_dir + "/encoder.int8.onnx";
+  std::string decoder = model_dir + "/decoder.int8.onnx";
+  std::string joiner = model_dir + "/joiner.int8.onnx";
   std::string tokens = model_dir + "/tokens.txt";
 
   for (const std::string *path : {&encoder, &decoder, &joiner, &tokens}) {
@@ -48,19 +44,20 @@ bool STT::init(const std::string &model_dir) {
     }
   }
 
-  SherpaOnnxOnlineRecognizerConfig config;
+  SherpaOnnxOfflineRecognizerConfig config;
   memset(&config, 0, sizeof(config));
   config.model_config.transducer.encoder = encoder.c_str();
   config.model_config.transducer.decoder = decoder.c_str();
   config.model_config.transducer.joiner = joiner.c_str();
   config.model_config.tokens = tokens.c_str();
+  config.model_config.model_type = "nemo_transducer";
   config.model_config.num_threads = 1;
   config.model_config.provider = "cpu";
   config.decoding_method = "greedy_search";
   config.feat_config.sample_rate = SAMPLE_RATE;
   config.feat_config.feature_dim = 80;
 
-  m_recognizer = SherpaOnnxCreateOnlineRecognizer(&config);
+  m_recognizer = SherpaOnnxCreateOfflineRecognizer(&config);
   if (!m_recognizer) {
     qCCritical(lcStt) << "failed to create recognizer";
     return false;
@@ -120,16 +117,10 @@ void STT::start_recording() {
     return;
   }
 
-  // Create the stream before the device starts, so the callback never races it.
-  m_stream = SherpaOnnxCreateOnlineStream(m_recognizer);
-  if (!m_stream) {
-    qCCritical(lcStt) << "failed to create stream";
-    return;
-  }
+  m_buffer.clear();
+  m_buffer.reserve(MAX_SAMPLES);
   if (ma_device_start(&m_device) != MA_SUCCESS) {
     qCCritical(lcStt) << "failed to start capture device";
-    SherpaOnnxDestroyOnlineStream(m_stream);
-    m_stream = nullptr;
     return;
   }
   qCInfo(lcStt) << "audio recognition started";
@@ -140,26 +131,32 @@ void STT::stop_recording() {
     return;
   }
   ma_device_stop(
-      &m_device); // joins the audio callback before we touch m_stream
+      &m_device); // joins the audio callback before we touch m_buffer
   qCInfo(lcStt) << "audio recognition stopped";
-  if (!m_stream) {
+  if (m_buffer.empty()) {
     return;
   }
 
-  SherpaOnnxOnlineStreamInputFinished(m_stream);
-  while (SherpaOnnxIsOnlineStreamReady(m_recognizer, m_stream)) {
-    SherpaOnnxDecodeOnlineStream(m_recognizer, m_stream);
+  const SherpaOnnxOfflineStream *stream =
+      SherpaOnnxCreateOfflineStream(m_recognizer);
+  if (!stream) {
+    qCCritical(lcStt) << "failed to create stream";
+    m_buffer.clear();
+    return;
   }
-  const SherpaOnnxOnlineRecognizerResult *result =
-      SherpaOnnxGetOnlineStreamResult(m_recognizer, m_stream);
-  if (result && result->text[0] != '\0') {
-    qCInfo(lcStt) << "transcription output:" << result->text;
-    emit FINAL_TEXT_READY(QString::fromUtf8(result->text));
+  SherpaOnnxAcceptWaveformOffline(stream, SAMPLE_RATE, m_buffer.data(),
+                                  static_cast<int32_t>(m_buffer.size()));
+  SherpaOnnxDecodeOfflineStream(m_recognizer, stream);
+  const SherpaOnnxOfflineRecognizerResult *result =
+      SherpaOnnxGetOfflineStreamResult(stream);
+  QString text = result ? QString::fromUtf8(result->text).trimmed() : QString();
+  if (!text.isEmpty()) {
+    qCInfo(lcStt) << "transcription output:" << text;
+    emit FINAL_TEXT_READY(text);
   }
-  SherpaOnnxDestroyOnlineRecognizerResult(result);
-
-  SherpaOnnxDestroyOnlineStream(m_stream);
-  m_stream = nullptr;
+  SherpaOnnxDestroyOfflineRecognizerResult(result);
+  SherpaOnnxDestroyOfflineStream(stream);
+  m_buffer.clear();
 }
 
 void STT::reconfigure_audio_source(const QString &source) {
@@ -182,14 +179,12 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                         ma_uint32 frameCount) {
   Q_UNUSED(pOutput);
   STT *self = static_cast<STT *>(pDevice->pUserData);
-  if (!self->m_stream) {
-    return;
-  }
 
   const int16_t *pcm = static_cast<const int16_t *>(pInput);
-  std::vector<float> samples(frameCount);
-  for (ma_uint32 i = 0; i < frameCount; ++i) {
-    samples[i] = static_cast<float>(pcm[i]) / 32768.0f;
+  const size_t room = MAX_SAMPLES - self->m_buffer.size();
+  const size_t kept = qMin(static_cast<size_t>(frameCount), room);
+  for (size_t i = 0; i < kept; ++i) {
+    self->m_buffer.push_back(static_cast<float>(pcm[i]) / 32768.0f);
   }
 
   // Audio levels for the wave bars, smoothed against the previous frame
@@ -214,11 +209,5 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   if (self->m_audio_timer.hasExpired(33)) { // ~30fps
     self->m_audio_timer.restart();
     emit self->AUDIO_LEVEL_UPDATED(self->m_audio_levels);
-  }
-
-  SherpaOnnxOnlineStreamAcceptWaveform(self->m_stream, SAMPLE_RATE,
-                                       samples.data(), frameCount);
-  if (SherpaOnnxIsOnlineStreamReady(self->m_recognizer, self->m_stream)) {
-    SherpaOnnxDecodeOnlineStream(self->m_recognizer, self->m_stream);
   }
 }

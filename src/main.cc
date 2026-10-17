@@ -84,10 +84,10 @@ int main(int argc, char *argv[]) {
   STT *stt = new STT();
   bool stt_ready = false;
   QThread *loader = QThread::create([&]() {
-    stt_ready = stt->init(
-        (QCoreApplication::applicationDirPath() +
-         "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
-            .toStdString());
+    stt_ready =
+        stt->init((QCoreApplication::applicationDirPath() +
+                   "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8")
+                      .toStdString());
   });
   QEventLoop loading;
   QObject::connect(loader, &QThread::finished, &loading, &QEventLoop::quit);

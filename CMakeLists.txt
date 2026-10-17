@@ -9,7 +9,6 @@ qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
 
 # =============================================================================
 # Architecture
@@ -140,7 +139,7 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
     file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
   foreach(LIB ${SHERPA_RUNTIME_LIBS})
-    configure_file(${LIB} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
+    configure_file(${LIB} ${CMAKE_SOURCE_DIR}/dist/ COPYONLY)
   endforeach()
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
@@ -149,4 +148,9 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
+set_target_properties(gladys PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/dist
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/dist)
+
 install(TARGETS gladys RUNTIME DESTINATION bin)

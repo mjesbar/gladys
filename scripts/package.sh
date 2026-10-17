@@ -44,16 +44,12 @@ case "$OS" in
 esac
 
 # ---- Clean dist/ for release ----
-rm -rf dist/c-api
 find dist -type f \( -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' -o -name '*.zip' \) -delete
-if [ "$OS" != linux ] && [ "$OS" != macos ]; then rm -f dist/gladys; fi
-if [ "$OS" != windows ]; then rm -f dist/gladys.exe; fi
 
 # ---- Stage and archive ----
 STAGE=release/gladys-v$VERSION
 mkdir -p "$STAGE"
 rsync -a \
-  --exclude=cuda \
   --exclude='*.h' \
   --exclude='*.hpp' \
   --exclude='*.sh' \
