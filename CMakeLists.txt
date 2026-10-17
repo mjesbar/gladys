@@ -83,8 +83,13 @@ set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
 
 target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::LabsPlatform Qt6::Widgets Qt6::Network Qt6::Svg)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(GLADYS_RPATH "@executable_path/lib")
+else()
+  set(GLADYS_RPATH "$ORIGIN;$ORIGIN/lib")
+endif()
 set_target_properties(gladys PROPERTIES
-  INSTALL_RPATH "$ORIGIN"
+  INSTALL_RPATH "${GLADYS_RPATH}"
   BUILD_WITH_INSTALL_RPATH TRUE
 )
 
@@ -148,9 +153,25 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
-set_target_properties(gladys PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist
-  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/dist
-  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/dist)
+install(TARGETS gladys RUNTIME DESTINATION .)
 
-install(TARGETS gladys RUNTIME DESTINATION bin)
+set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
+file(GENERATE OUTPUT ${deploy_script} CONTENT "
+set(QT_DEPLOY_BIN_DIR \".\")
+set(QT_DEPLOY_LIB_DIR \"lib\")
+set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
+set(QT_DEPLOY_QML_DIR \"qml\")
+include(\"${QT_DEPLOY_SUPPORT}\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${QT_DEPLOY_BIN_DIR}/$<TARGET_FILE_NAME:gladys>\")
+")
+install(SCRIPT ${deploy_script})
+foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)
+  if(IS_DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin})
+    install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin} DESTINATION plugins)
+  endif()
+endforeach()
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/lib/ DESTINATION lib
+  FILES_MATCHING PATTERN "libQt6*.so*" PATTERN "libicu*.so*")
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/QtQuick DESTINATION qml)
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/Qt/labs DESTINATION qml/Qt)
+install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/qt.conf\" \"[Paths]\\nPlugins = plugins\\nQml2Imports = qml\\n\")")

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Package Gladys with Qt runtime and models into release/.
+# Package dist/ (built by scripts/build.sh) with models into release/.
 # Usage: scripts/package.sh <linux|macos|windows> <arch> <version>
-# Requires QT_ROOT_DIR pointing to the Qt install used to build.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -9,39 +8,13 @@ cd "$(dirname "$0")/.."
 OS=${1:?usage: package.sh <linux|macos|windows> <arch> <version>}
 ARCH=${2:?missing arch}
 VERSION=${3:?missing version}
-: "${QT_ROOT_DIR:?Set QT_ROOT_DIR to your Qt install dir}"
-
-scripts/fetch-deps.sh
-
-# ---- Qt runtime ----
-# QML is compiled into the binary; only the QML plugin libraries are deployed
-# (QtQuick, Controls Basic, Qt Labs Platform tray).
-copy_qt_plugins() {
-  for plugin in platforms imageformats styles tls iconengines; do
-    if [ -d "$QT_ROOT_DIR/plugins/$plugin" ]; then cp -r "$QT_ROOT_DIR/plugins/$plugin" dist/; fi
-  done
-  mkdir -p dist/qml/QtQuick dist/qml/Qt
-  cp -r "$QT_ROOT_DIR/qml/QtQuick/." dist/qml/QtQuick/
-  cp -r "$QT_ROOT_DIR/qml/Qt/labs" dist/qml/Qt/
-}
 
 case "$OS" in
-  linux)
-    find "$QT_ROOT_DIR/lib" -name '*.so*' -exec cp -P {} dist/ \;
-    copy_qt_plugins
-    ;;
-  macos)
-    for fw in Core Gui Qml Quick QuickControls2 LabsPlatform Widgets Network Svg; do
-      cp -R "$QT_ROOT_DIR/lib/Qt$fw.framework" dist/
-    done
-    copy_qt_plugins
-    ;;
-  windows)
-    cp "$QT_ROOT_DIR"/bin/*.dll dist/
-    copy_qt_plugins
-    ;;
+  linux|macos|windows) ;;
   *) echo "Unknown OS: $OS" >&2; exit 1 ;;
 esac
+
+scripts/fetch-deps.sh
 
 # ---- Clean dist/ for release ----
 find dist -type f \( -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' -o -name '*.zip' \) -delete
