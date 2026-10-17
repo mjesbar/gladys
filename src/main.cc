@@ -24,8 +24,9 @@
 #include "modules/ui/tray.hpp"
 #include "modules/ui/x11_shadow.hpp"
 
-constexpr int STEP_DELAY_MS =
-    200; // pause between pipeline steps to avoid glitches
+constexpr int STT_TO_LLM_DELAY_MS = 10;
+constexpr int LLM_TO_COPY_DELAY_MS = 10;
+constexpr int COPY_TO_PASTE_DELAY_MS = 250;
 
 #ifndef _WIN32
 #include <csignal>
@@ -169,16 +170,18 @@ int main(int argc, char *argv[]) {
                    &AudioBars::update_levels);
   QObject::connect(
       stt, &STT::FINAL_TEXT_READY, llm, [llm](const QString &text) {
-        QTimer::singleShot(STEP_DELAY_MS, llm,
+        QTimer::singleShot(STT_TO_LLM_DELAY_MS, llm,
                            [llm, text]() { llm->format_transcription(text); });
       });
-  QObject::connect(llm, &LLM::FORMATTED_TEXT_READY, &app,
-                   [paste](const QString &text) {
-                     Paste::copy_to_clipboard(text);
-                     QTimer::singleShot(STEP_DELAY_MS, paste, [paste]() {
-                       QMetaObject::invokeMethod(paste, &Paste::send_paste);
-                     });
-                   });
+  QObject::connect(
+      llm, &LLM::FORMATTED_TEXT_READY, &app, [paste](const QString &text) {
+        QTimer::singleShot(LLM_TO_COPY_DELAY_MS, paste, [paste, text]() {
+          Paste::copy_to_clipboard(text);
+          QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, paste, [paste]() {
+            QMetaObject::invokeMethod(paste, &Paste::send_paste);
+          });
+        });
+      });
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt,
                    &STT::reconfigure_audio_source);
 
