@@ -1,6 +1,6 @@
 // Settings Bridge - Exposes the Setting module to the Settings QML window.
 
-#include "settings_bridge.hpp"
+#include "settings.hpp"
 
 #include "../setting/setting.hpp"
 

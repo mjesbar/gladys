@@ -20,7 +20,8 @@
 #include "modules/log/log.hpp"
 #include "modules/setting/setting.hpp"
 #include "modules/ui/audio_bars.hpp"
-#include "modules/ui/settings_bridge.hpp"
+#include "modules/ui/settings.hpp"
+#include "modules/ui/tray.hpp"
 #include "modules/ui/x11_shadow.hpp"
 
 constexpr int STEP_DELAY_MS =
@@ -142,6 +143,12 @@ int main(int argc, char *argv[]) {
   remove_x11_shadow(overlay_window->winId());
   overlay_window
       ->requestActivate(); // workaround: focus once so the hotkey is handled
+
+  // Created after the overlay so the tray never appears during splash.
+  Tray *tray = new Tray(&app);
+  QObject::connect(tray, &Tray::SETTINGS_REQUESTED, overlay, [overlay]() {
+    QMetaObject::invokeMethod(overlay, "openSettings");
+  });
 
   bool recording = false;
   QObject::connect(toggle, &Toggle::KEY_PRESSED, &app, [&]() {

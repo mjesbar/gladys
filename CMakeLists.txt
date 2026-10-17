@@ -35,7 +35,8 @@ qt_add_executable(gladys WIN32
   src/modules/setting/setting.cc
   src/modules/ui/x11_shadow.cc
   src/modules/ui/audio_bars.cc
-  src/modules/ui/settings_bridge.cc
+  src/modules/ui/settings.cc
+  src/modules/ui/tray.cc
 )
 
 set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
@@ -45,7 +46,6 @@ qt_add_qml_module(gladys
   QML_FILES
     src/qml/components/Theme.qml
     src/qml/components/Mic.qml
-    src/qml/components/Tray.qml
     src/qml/components/Card.qml
     src/qml/components/IconButton.qml
     src/qml/components/ThemedCheckBox.qml

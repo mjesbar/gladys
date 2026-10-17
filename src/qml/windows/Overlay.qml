@@ -45,7 +45,4 @@ Window {
         source: "Settings.qml"
     }
 
-    Tray {
-        onSettingsRequested: overlay.openSettings()
-    }
 }
