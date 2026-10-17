@@ -40,9 +40,6 @@ jobs:
       - name: Show dist/ structure
         run: tree -ash dist/
 
-      - name: Fetch models
-        run: scripts/fetch-deps.sh
-        shell: bash
 
 
   # ----------------------------------------------------------------
@@ -71,9 +68,6 @@ jobs:
       - name: Show dist/ structure
         run: tree /f /a dist\
 
-      - name: Fetch models
-        run: scripts/fetch-deps.sh
-        shell: bash
 
 
   # ----------------------------------------------------------------
@@ -104,7 +98,4 @@ jobs:
       - name: Show dist/ structure
         run: tree -ash dist/
 
-      - name: Fetch models
-        run: scripts/fetch-deps.sh
-        shell: bash
 
