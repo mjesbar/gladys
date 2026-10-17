@@ -24,7 +24,7 @@ endif()
 # =============================================================================
 # Executable: gladys
 # =============================================================================
-qt_add_executable(gladys WIN32
+qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/modules/log/log.cc
   src/modules/ai/stt.cc
@@ -89,6 +89,7 @@ else()
   set(GLADYS_RPATH "$ORIGIN;$ORIGIN/lib")
 endif()
 set_target_properties(gladys PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   INSTALL_RPATH "${GLADYS_RPATH}"
   BUILD_WITH_INSTALL_RPATH TRUE
 )
@@ -102,13 +103,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_link_libraries(gladys PRIVATE "-framework CoreGraphics" "-framework CoreFoundation")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  # Qt DLLs load from <exe>/lib, set by main() before first use.
   target_link_libraries(gladys PRIVATE user32)
-  target_link_options(gladys PRIVATE
-    /DELAYLOAD:Qt6Core.dll /DELAYLOAD:Qt6Gui.dll /DELAYLOAD:Qt6Qml.dll
-    /DELAYLOAD:Qt6Quick.dll /DELAYLOAD:Qt6QuickControls2.dll /DELAYLOAD:Qt6LabsPlatform.dll
-    /DELAYLOAD:Qt6Widgets.dll /DELAYLOAD:Qt6Network.dll /DELAYLOAD:Qt6Svg.dll
-  )
 endif()
 
 # =============================================================================
@@ -152,7 +147,11 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   else()
     file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
-  install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
+  if(WIN32)
+    install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION .)
+  else()
+    install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
+  endif()
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
 endif()
@@ -160,16 +159,28 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
-install(TARGETS gladys RUNTIME DESTINATION .)
+install(TARGETS gladys RUNTIME DESTINATION . BUNDLE DESTINATION .)
 
+if(WIN32)
+  set(qt_deploy_bin_dir ".")
+else()
+  set(qt_deploy_bin_dir "lib")
+endif()
+if(APPLE)
+  set(deploy_app "gladys.app")
+else()
+  set(deploy_app "gladys${CMAKE_EXECUTABLE_SUFFIX}")
+endif()
 set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
-file(GENERATE OUTPUT ${deploy_script} CONTENT "
-set(QT_DEPLOY_BIN_DIR \"lib\")
+# QT_DEPLOY_SUPPORT is per-config ($<CONFIG>); resolve it at install time instead
+string(REPLACE "$<CONFIG>" "\${CMAKE_INSTALL_CONFIG_NAME}" qt_deploy_support "${QT_DEPLOY_SUPPORT}")
+file(WRITE ${deploy_script} "
+set(QT_DEPLOY_BIN_DIR \"${qt_deploy_bin_dir}\")
 set(QT_DEPLOY_LIB_DIR \"lib\")
 set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
 set(QT_DEPLOY_QML_DIR \"qml\")
-include(\"${QT_DEPLOY_SUPPORT}\")
-qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:gladys>\")
+include(\"${qt_deploy_support}\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${deploy_app}\")
 ")
 install(SCRIPT ${deploy_script})
 foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)

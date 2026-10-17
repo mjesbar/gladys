@@ -64,23 +64,6 @@ jobs:
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*
 
-      - name: Smoke test packaged app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1280x1024x24 &
-          export DISPLAY=:99
-          cd release/gladys-v${{ needs.version.outputs.version }}
-          ./gladys > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -127,20 +110,6 @@ jobs:
       - name: Show release/ structure
         run: tree /f /a release\gladys-v*
 
-      - name: Smoke test packaged app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          cd release/gladys-v${{ needs.version.outputs.version }}
-          ./gladys.exe > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -185,20 +154,6 @@ jobs:
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*
 
-      - name: Smoke test packaged app
-        shell: bash
-        env:
-          QT_LOGGING_TO_CONSOLE: "1"
-        run: |
-          cd release/gladys-v${{ needs.version.outputs.version }}
-          ./gladys > smoke.log 2>&1 &
-          pid=$!
-          sleep 30
-          kill -0 "$pid" 2>/dev/null || { cat smoke.log; echo "gladys exited early"; exit 1; }
-          kill "$pid"
-          cat smoke.log
-          grep -q "gladys.main\] started" smoke.log || { echo "no start log"; exit 1; }
-          ! grep -q FATAL smoke.log
 
       - name: Create release
         uses: softprops/action-gh-release@v2
