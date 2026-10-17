@@ -24,7 +24,7 @@ endif()
 # =============================================================================
 # Executable: gladys
 # =============================================================================
-qt_add_executable(gladys WIN32
+qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/modules/log/log.cc
   src/modules/ai/stt.cc
@@ -161,16 +161,21 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
-install(TARGETS gladys RUNTIME DESTINATION .)
+install(TARGETS gladys RUNTIME DESTINATION . BUNDLE DESTINATION .)
 
+if(APPLE)
+  set(deploy_app "gladys.app")
+else()
+  set(deploy_app "gladys${CMAKE_EXECUTABLE_SUFFIX}")
+endif()
 set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
-file(GENERATE OUTPUT ${deploy_script} CONTENT "
+file(WRITE ${deploy_script} "
 set(QT_DEPLOY_BIN_DIR \"lib\")
 set(QT_DEPLOY_LIB_DIR \"lib\")
 set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
 set(QT_DEPLOY_QML_DIR \"qml\")
 include(\"${QT_DEPLOY_SUPPORT}\")
-qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/gladys${CMAKE_EXECUTABLE_SUFFIX}\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${deploy_app}\")
 ")
 install(SCRIPT ${deploy_script})
 foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)
