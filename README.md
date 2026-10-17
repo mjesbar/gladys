@@ -2,7 +2,9 @@
   <img src="src/assets/icons/icon.svg" alt="Gladys" width="200" height="200">
 </p>
 
-# Gladys
+<p align="center">
+  <img src="src/assets/icons/title.svg" alt="Gladys" height="72">
+</p>
 
 **Fully local, cross-platform dictation tool.**  
 Speak, and your words appear where you need them — no cloud, no API keys, no AI agent services.
