@@ -4,7 +4,7 @@ project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 # =============================================================================
 # Qt6 (standard project setup: AUTOMOC/AUTOUIC/AUTORCC + C++17)
 # =============================================================================
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 LabsPlatform Widgets Network Svg)
 qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,16 +33,32 @@ qt_add_executable(gladys WIN32
   src/modules/key/toggle.cc
   src/modules/key/paste.cc
   src/modules/setting/setting.cc
-  src/modules/ui/app_window.cc
-  src/modules/ui/mic.cc
-  src/modules/ui/setting_window.cc
-  src/modules/ui/splash_window.cc
+  src/modules/ui/x11_shadow.cc
+  src/modules/ui/audio_bars.cc
+  src/modules/ui/settings.cc
+  src/modules/ui/tray.cc
+)
+
+set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+qt_add_qml_module(gladys
+  URI Gladys
+  VERSION 1.0
+  QML_FILES
+    src/qml/components/Theme.qml
+    src/qml/components/Mic.qml
+    src/qml/components/Card.qml
+    src/qml/components/IconButton.qml
+    src/qml/components/ThemedCheckBox.qml
+    src/qml/components/Field.qml
+    src/qml/windows/Overlay.qml
+    src/qml/windows/Splash.qml
+    src/qml/windows/Settings.qml
 )
 
 qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/fonts/RobotoSlab-Regular.ttf
   src/assets/fonts/RobotoSlab-Bold.ttf
-  src/assets/styles/style.qss
+  src/assets/icons/spinner.svg
   src/assets/icons/icon.svg
   src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg
@@ -66,7 +82,7 @@ set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
 )
 # target_compile_definitions(gladys PRIVATE MA_DEBUG_OUTPUT)
 
-target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Svg)
+target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::LabsPlatform Qt6::Widgets Qt6::Network Qt6::Svg)
 
 set_target_properties(gladys PROPERTIES
   INSTALL_RPATH "$ORIGIN"

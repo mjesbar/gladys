@@ -1,11 +1,15 @@
 // Toggle Module - Global hotkey (Ctrl+Alt+P) detection.
-// Cross-platform: X11 (Linux), CGEventTap (macOS), SetWindowsHookEx (Windows).
+// Cross-platform: evdev /dev/input (Linux), CGEventTap (macOS), SetWindowsHookEx (Windows).
 
 #ifndef KEY_TOGGLE_HPP
 #define KEY_TOGGLE_HPP
 
 #include <QObject>
 #include <QTimer>
+
+#ifdef __linux__
+#include <vector>
+#endif
 
 #ifdef __APPLE__
 #include <CoreGraphics/CoreGraphics.h>
@@ -32,9 +36,14 @@ signals:
 
 private:
   QTimer *m_poll_timer;
-  void *m_display; // Display* (X11)
   unsigned int m_keycode;
   unsigned int m_modifiers;
+
+#ifdef __linux__
+  std::vector<int> m_fds; // keyboard devices in /dev/input
+  bool m_ctrl_down;
+  bool m_alt_down;
+#endif
 
 #ifdef __APPLE__
   void *m_event_tap;      // CFMachPortRef (opaque)
