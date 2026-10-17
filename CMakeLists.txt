@@ -57,7 +57,9 @@ qt_add_qml_module(gladys
 qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/fonts/RobotoSlab-Regular.ttf
   src/assets/fonts/RobotoSlab-Bold.ttf
+  src/assets/fonts/Molle-Regular.ttf
   src/assets/icons/spinner.svg
+  src/assets/icons/title.svg
   src/assets/icons/icon.svg
   src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg

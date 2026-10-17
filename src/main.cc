@@ -60,6 +60,7 @@ static bool set_dll_directory() {
 static void load_fonts() {
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Bold.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/Molle-Regular.ttf");
 }
 
 int main(int argc, char *argv[]) {
