@@ -5,8 +5,13 @@
 #include "../log/log.hpp"
 
 #ifdef __linux__
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
+#include <fcntl.h>
+#include <linux/input.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#include <cstring>
+#include <string>
 #endif
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -17,8 +22,8 @@ static Toggle *g_toggle = nullptr; // hook callback has no user data
 #endif
 
 Toggle::Toggle(QObject *parent)
-    : QObject(parent), m_poll_timer(new QTimer(this)), m_display(nullptr),
-      m_keycode(0), m_modifiers(0) {
+    : QObject(parent), m_poll_timer(new QTimer(this)), m_keycode(0),
+      m_modifiers(0) {
   m_poll_timer->setInterval(33); // ~30fps, enough for hotkey detection
   connect(m_poll_timer, &QTimer::timeout, this, &Toggle::process_events);
 #ifdef __APPLE__
@@ -33,8 +38,8 @@ Toggle::Toggle(QObject *parent)
 Toggle::~Toggle() {
   qCInfo(lcToggle) << "stopped";
 #ifdef __linux__
-  if (m_display) {
-    XCloseDisplay(static_cast<Display *>(m_display));
+  for (int fd : m_fds) {
+    close(fd);
   }
 #endif
 #ifdef __APPLE__
@@ -59,56 +64,67 @@ Toggle::~Toggle() {
 void Toggle::start_polling() { m_poll_timer->start(); }
 
 // ---------------------------------------------------------------------------
-// Linux (X11)
+// Linux (evdev /dev/input)
 // ---------------------------------------------------------------------------
 
 #ifdef __linux__
 
+// A device is a keyboard if it reports every key of the hotkey.
+static bool is_keyboard(int fd) {
+  unsigned char keys[KEY_MAX / 8 + 1];
+  std::memset(keys, 0, sizeof keys);
+  if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof keys), keys) < 0) {
+    return false;
+  }
+  for (int code : {KEY_P, KEY_LEFTCTRL, KEY_LEFTALT}) {
+    if (!((keys[code / 8] >> (code % 8)) & 1)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Toggle::init() {
-  Display *d = XOpenDisplay(nullptr);
-  if (!d) {
-    qCCritical(lcToggle) << "unable to open X display";
+  for (int i = 0; i < 64; ++i) {
+    std::string path = "/dev/input/event" + std::to_string(i);
+    int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0) {
+      continue;
+    }
+    if (is_keyboard(fd)) {
+      m_fds.push_back(fd);
+    } else {
+      close(fd);
+    }
+  }
+  if (m_fds.empty()) {
+    qCCritical(lcToggle) << "no readable keyboard in /dev/input "
+                            "(add user to the input group)";
     return false;
   }
-  m_display = d;
-
-  m_keycode = XKeysymToKeycode(d, XK_P);
-  if (!m_keycode) {
-    qCCritical(lcToggle) << "key P not mapped";
-    return false;
-  }
-  m_modifiers = ControlMask | Mod1Mask;
-
-  Window root = DefaultRootWindow(d);
-  XSelectInput(d, root, KeyPressMask | KeyReleaseMask);
-  // Grab with NumLock (Mod2) and CapsLock (Lock) variants too
-  const unsigned int variants[] = {0, Mod2Mask, LockMask, Mod2Mask | LockMask};
-  for (unsigned int extra : variants) {
-    XGrabKey(d, m_keycode, m_modifiers | extra, root, True, GrabModeAsync,
-             GrabModeAsync);
-  }
-  XFlush(d);
-  qCInfo(lcToggle) << "started, hotkey registered";
+  m_ctrl_down = false;
+  m_alt_down = false;
+  qCInfo(lcToggle) << "started, hotkey registered on" << m_fds.size()
+                   << "keyboard(s)";
   return true;
 }
 
 void Toggle::process_events() {
-  if (!m_display) {
-    return;
-  }
-  Display *d = static_cast<Display *>(m_display);
-  const unsigned int relevant = ShiftMask | LockMask | ControlMask | Mod1Mask |
-                                Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask;
-  XEvent event;
-  while (XPending(d)) {
-    XNextEvent(d, &event);
-    if (event.type != KeyPress) {
-      continue;
-    }
-    unsigned int mods = event.xkey.state & relevant;
-    if (event.xkey.keycode == m_keycode && (mods & m_modifiers) == m_modifiers) {
-      qCInfo(lcToggle) << "hotkey pressed";
-      emit KEY_PRESSED();
+  input_event ev;
+  for (int fd : m_fds) {
+    while (read(fd, &ev, sizeof ev) == sizeof ev) {
+      if (ev.type != EV_KEY) {
+        continue;
+      }
+      if (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL) {
+        m_ctrl_down = ev.value != 0;
+      } else if (ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT) {
+        m_alt_down = ev.value != 0;
+      } else if (ev.code == KEY_P && ev.value == 1 && m_ctrl_down &&
+                 m_alt_down) {
+        qCInfo(lcToggle) << "hotkey pressed";
+        emit KEY_PRESSED();
+      }
     }
   }
 }

@@ -3,12 +3,15 @@
 
 #include <QApplication>
 #include <QEventLoop>
-#include <QFile>
+#include <QFont>
 #include <QFontDatabase>
 #include <QMetaObject>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QSocketNotifier>
 #include <QThread>
 #include <QTimer>
+#include <QWindow>
 
 #include "modules/ai/llm.hpp"
 #include "modules/ai/stt.hpp"
@@ -16,11 +19,14 @@
 #include "modules/key/toggle.hpp"
 #include "modules/log/log.hpp"
 #include "modules/setting/setting.hpp"
-#include "modules/ui/app_window.hpp"
-#include "modules/ui/splash_window.hpp"
+#include "modules/ui/audio_bars.hpp"
+#include "modules/ui/settings.hpp"
+#include "modules/ui/tray.hpp"
+#include "modules/ui/x11_shadow.hpp"
 
-constexpr int STEP_DELAY_MS =
-    200; // pause between pipeline steps to avoid glitches
+constexpr int STT_TO_LLM_DELAY_MS = 10;
+constexpr int LLM_TO_COPY_DELAY_MS = 10;
+constexpr int COPY_TO_PASTE_DELAY_MS = 250;
 
 #ifndef _WIN32
 #include <csignal>
@@ -35,20 +41,32 @@ static void on_signal(int) {
 }
 #endif
 
-// Loads the embedded fonts and the global QSS theme (src/assets).
-static void load_theme(QApplication &app) {
+#ifdef _WIN32
+#include <windows.h>
+
+#include <string>
+
+// Adds <exe dir>/lib to the DLL search path. Must run before any Qt or sherpa call.
+static bool set_dll_directory() {
+  wchar_t path[MAX_PATH];
+  if (GetModuleFileNameW(nullptr, path, MAX_PATH) == 0) return false;
+  std::wstring dir(path);
+  dir.resize(dir.find_last_of(L'\\'));
+  return SetDllDirectoryW((dir + L"\\lib").c_str()) != FALSE;
+}
+#endif
+
+// Loads the embedded fonts (src/assets).
+static void load_fonts() {
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Bold.ttf");
-
-  QFile qss(":/styles/style.qss");
-  if (!qss.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    qCWarning(lcMain) << "theme not found, using default style:" << qss.errorString();
-    return;
-  }
-  app.setStyleSheet(QString::fromUtf8(qss.readAll()));
+  QFontDatabase::addApplicationFont(":/fonts/Molle-Regular.ttf");
 }
 
 int main(int argc, char *argv[]) {
+#ifdef _WIN32
+  if (!set_dll_directory()) return 1;
+#endif
 #ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
 #endif
@@ -58,22 +76,37 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
   app.setQuitOnLastWindowClosed(false);
-  load_theme(app);
+  load_fonts();
+  QFont ui_font("Roboto Slab");
+  ui_font.setPixelSize(13);
+  app.setFont(ui_font);
   qCInfo(lcMain) << "started";
-
-  SplashWindow splash;
-  splash.fade_in();
 
   Setting *setting = Setting::instance();
 
-  // Model load is blocking: run it off the GUI thread so the splash keeps spinning.
+  // QML engine lives for the whole run: splash, overlay and settings share it.
+  AudioBars audio_bars;
+  SettingsBridge settings_bridge;
+  QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty("audioBars", &audio_bars);
+  engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
+
+  engine.loadFromModule("Gladys", "Splash");
+  if (engine.rootObjects().isEmpty()) {
+    qCCritical(lcMain) << "failed to load splash";
+    return 1;
+  }
+  QObject *splash = engine.rootObjects().first();
+
+  // Model load is blocking: run it off the GUI thread so the splash keeps
+  // spinning.
   STT *stt = new STT();
   bool stt_ready = false;
   QThread *loader = QThread::create([&]() {
-    stt_ready = stt->init(
-        (QCoreApplication::applicationDirPath() +
-         "/sherpaonnx/sherpa-onnx-streaming-zipformer-es-kroko-2025-08-06")
-            .toStdString());
+    stt_ready =
+        stt->init((QCoreApplication::applicationDirPath() +
+                   "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8")
+                      .toStdString());
   });
   QEventLoop loading;
   QObject::connect(loader, &QThread::finished, &loading, &QEventLoop::quit);
@@ -111,18 +144,34 @@ int main(int argc, char *argv[]) {
   paste_thread->start();
 
   QEventLoop fading;
-  QObject::connect(&splash, &SplashWindow::FADE_OUT_FINISHED, &fading,
-                   &QEventLoop::quit);
-  splash.fade_out();
+  QObject::connect(splash, SIGNAL(fadeOutFinished()), &fading, SLOT(quit()));
+  QMetaObject::invokeMethod(splash, "fadeOut");
   fading.exec();
+  splash->deleteLater();
 
-  AppWindow window;
-  window.show();
-  window.remove_shadow();
-  window.reveal();
+  engine.loadFromModule("Gladys", "Overlay");
+  if (engine.rootObjects().isEmpty()) {
+    qCCritical(lcMain) << "failed to load overlay";
+    return 1;
+  }
+  QObject *overlay = engine.rootObjects().last();
+  auto *overlay_window = qobject_cast<QWindow *>(overlay);
+  if (!overlay_window) {
+    qCCritical(lcMain) << "overlay root is not a window";
+    return 1;
+  }
+  remove_x11_shadow(overlay_window->winId());
+  overlay_window
+      ->requestActivate(); // workaround: focus once so the hotkey is handled
+
+  // Created after the overlay so the tray never appears during splash.
+  Tray *tray = new Tray(&app);
+  QObject::connect(tray, &Tray::SETTINGS_REQUESTED, overlay, [overlay]() {
+    QMetaObject::invokeMethod(overlay, "openSettings");
+  });
 
   bool recording = false;
-  QObject::connect(toggle, &Toggle::KEY_PRESSED, &window, [&]() {
+  QObject::connect(toggle, &Toggle::KEY_PRESSED, &app, [&]() {
     recording = !recording;
     if (recording) {
       qCInfo(lcToggle) << "window open";
@@ -131,24 +180,27 @@ int main(int argc, char *argv[]) {
       qCInfo(lcToggle) << "window close";
       QMetaObject::invokeMethod(stt, &STT::stop_recording);
     }
-    window.toggle_visibility();
+    overlay->setProperty("expanded", recording);
+    overlay_window->requestActivate();
   });
 
   // ASR -> LLM -> Text Copy -> Text Paste
-  QObject::connect(stt, &STT::AUDIO_LEVEL_UPDATED, window.mic(),
-                   &Mic::update_audio_levels);
+  QObject::connect(stt, &STT::AUDIO_LEVEL_UPDATED, &audio_bars,
+                   &AudioBars::update_levels);
   QObject::connect(
       stt, &STT::FINAL_TEXT_READY, llm, [llm](const QString &text) {
-        QTimer::singleShot(STEP_DELAY_MS, llm,
+        QTimer::singleShot(STT_TO_LLM_DELAY_MS, llm,
                            [llm, text]() { llm->format_transcription(text); });
       });
-  QObject::connect(llm, &LLM::FORMATTED_TEXT_READY, &window,
-                   [paste](const QString &text) {
-                     Paste::copy_to_clipboard(text);
-                     QTimer::singleShot(STEP_DELAY_MS, paste, [paste]() {
-                       QMetaObject::invokeMethod(paste, &Paste::send_paste);
-                     });
-                   });
+  QObject::connect(
+      llm, &LLM::FORMATTED_TEXT_READY, &app, [paste](const QString &text) {
+        QTimer::singleShot(LLM_TO_COPY_DELAY_MS, paste, [paste, text]() {
+          Paste::copy_to_clipboard(text);
+          QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, paste, [paste]() {
+            QMetaObject::invokeMethod(paste, &Paste::send_paste);
+          });
+        });
+      });
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt,
                    &STT::reconfigure_audio_source);
 

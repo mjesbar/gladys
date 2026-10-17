@@ -4,12 +4,11 @@ project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 # =============================================================================
 # Qt6 (standard project setup: AUTOMOC/AUTOUIC/AUTORCC + C++17)
 # =============================================================================
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network Svg)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 LabsPlatform Widgets Network Svg)
 qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
 
 # =============================================================================
 # Architecture
@@ -25,7 +24,7 @@ endif()
 # =============================================================================
 # Executable: gladys
 # =============================================================================
-qt_add_executable(gladys WIN32
+qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/modules/log/log.cc
   src/modules/ai/stt.cc
@@ -33,16 +32,34 @@ qt_add_executable(gladys WIN32
   src/modules/key/toggle.cc
   src/modules/key/paste.cc
   src/modules/setting/setting.cc
-  src/modules/ui/app_window.cc
-  src/modules/ui/mic.cc
-  src/modules/ui/setting_window.cc
-  src/modules/ui/splash_window.cc
+  src/modules/ui/x11_shadow.cc
+  src/modules/ui/audio_bars.cc
+  src/modules/ui/settings.cc
+  src/modules/ui/tray.cc
+)
+
+set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+qt_add_qml_module(gladys
+  URI Gladys
+  VERSION 1.0
+  QML_FILES
+    src/qml/components/Theme.qml
+    src/qml/components/Mic.qml
+    src/qml/components/Card.qml
+    src/qml/components/IconButton.qml
+    src/qml/components/ThemedCheckBox.qml
+    src/qml/components/Field.qml
+    src/qml/windows/Overlay.qml
+    src/qml/windows/Splash.qml
+    src/qml/windows/Settings.qml
 )
 
 qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/fonts/RobotoSlab-Regular.ttf
   src/assets/fonts/RobotoSlab-Bold.ttf
-  src/assets/styles/style.qss
+  src/assets/fonts/Molle-Regular.ttf
+  src/assets/icons/spinner.svg
+  src/assets/icons/title.svg
   src/assets/icons/icon.svg
   src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg
@@ -66,10 +83,16 @@ set_source_files_properties(src/modules/ai/stt.cc PROPERTIES
 )
 # target_compile_definitions(gladys PRIVATE MA_DEBUG_OUTPUT)
 
-target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Network Qt6::Svg)
+target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::LabsPlatform Qt6::Widgets Qt6::Network Qt6::Svg)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(GLADYS_RPATH "@executable_path/lib")
+else()
+  set(GLADYS_RPATH "$ORIGIN;$ORIGIN/lib")
+endif()
 set_target_properties(gladys PROPERTIES
-  INSTALL_RPATH "$ORIGIN"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  INSTALL_RPATH "${GLADYS_RPATH}"
   BUILD_WITH_INSTALL_RPATH TRUE
 )
 
@@ -107,6 +130,9 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
       ${SHERPA_ONNX_LIB_DIR}/sherpa-onnx-cxx-api.lib
       ${SHERPA_ONNX_LIB_DIR}/onnxruntime.lib
     )
+    target_link_options(gladys PRIVATE
+      /DELAYLOAD:sherpa-onnx-c-api.dll /DELAYLOAD:sherpa-onnx-cxx-api.dll
+    )
   else()
     target_link_directories(gladys PRIVATE ${SHERPA_ONNX_LIB_DIR})
     target_link_libraries(gladys PRIVATE sherpa-onnx-c-api sherpa-onnx-cxx-api onnxruntime)
@@ -123,9 +149,11 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
   else()
     file(GLOB SHERPA_RUNTIME_LIBS ${SHERPA_ONNX_LIB_DIR}/*.dll)
   endif()
-  foreach(LIB ${SHERPA_RUNTIME_LIBS})
-    configure_file(${LIB} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
-  endforeach()
+  if(WIN32)
+    install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION .)
+  else()
+    install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
+  endif()
 else()
   message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
 endif()
@@ -133,4 +161,37 @@ endif()
 # =============================================================================
 # Install
 # =============================================================================
-install(TARGETS gladys RUNTIME DESTINATION bin)
+install(TARGETS gladys RUNTIME DESTINATION . BUNDLE DESTINATION .)
+
+if(WIN32)
+  set(qt_deploy_bin_dir ".")
+else()
+  set(qt_deploy_bin_dir "lib")
+endif()
+if(APPLE)
+  set(deploy_app "gladys.app")
+else()
+  set(deploy_app "gladys${CMAKE_EXECUTABLE_SUFFIX}")
+endif()
+set(deploy_script "${CMAKE_CURRENT_BINARY_DIR}/deploy_gladys.cmake")
+# QT_DEPLOY_SUPPORT is per-config ($<CONFIG>); resolve it at install time instead
+string(REPLACE "$<CONFIG>" "\${CMAKE_INSTALL_CONFIG_NAME}" qt_deploy_support "${QT_DEPLOY_SUPPORT}")
+file(WRITE ${deploy_script} "
+set(QT_DEPLOY_BIN_DIR \"${qt_deploy_bin_dir}\")
+set(QT_DEPLOY_LIB_DIR \"lib\")
+set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
+set(QT_DEPLOY_QML_DIR \"qml\")
+include(\"${qt_deploy_support}\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/${deploy_app}\")
+")
+install(SCRIPT ${deploy_script})
+foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)
+  if(IS_DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin})
+    install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_PLUGINS}/${plugin} DESTINATION plugins)
+  endif()
+endforeach()
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/lib/ DESTINATION lib
+  FILES_MATCHING PATTERN "libQt6*.so*" PATTERN "libicu*.so*")
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/QtQuick DESTINATION qml)
+install(DIRECTORY ${QT6_INSTALL_PREFIX}/${QT6_INSTALL_QML}/Qt/labs DESTINATION qml/Qt)
+install(CODE "file(WRITE \"\${CMAKE_INSTALL_PREFIX}/qt.conf\" \"[Paths]\\nPlugins = plugins\\nQml2Imports = qml\\n\")")

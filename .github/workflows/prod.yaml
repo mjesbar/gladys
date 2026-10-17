@@ -64,6 +64,7 @@ jobs:
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*
 
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -109,6 +110,7 @@ jobs:
       - name: Show release/ structure
         run: tree /f /a release\gladys-v*
 
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -151,6 +153,7 @@ jobs:
 
       - name: Show release/ structure
         run: tree -a -L 3 release/gladys-v*
+
 
       - name: Create release
         uses: softprops/action-gh-release@v2
