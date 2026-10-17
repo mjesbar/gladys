@@ -89,6 +89,7 @@ else()
   set(GLADYS_RPATH "$ORIGIN;$ORIGIN/lib")
 endif()
 set_target_properties(gladys PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
   INSTALL_RPATH "${GLADYS_RPATH}"
   BUILD_WITH_INSTALL_RPATH TRUE
 )
@@ -169,7 +170,7 @@ set(QT_DEPLOY_LIB_DIR \"lib\")
 set(QT_DEPLOY_PLUGINS_DIR \"plugins\")
 set(QT_DEPLOY_QML_DIR \"qml\")
 include(\"${QT_DEPLOY_SUPPORT}\")
-qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/$<TARGET_FILE_NAME:gladys>\")
+qt_deploy_runtime_dependencies(EXECUTABLE \"\${CMAKE_INSTALL_PREFIX}/gladys${CMAKE_EXECUTABLE_SUFFIX}\")
 ")
 install(SCRIPT ${deploy_script})
 foreach(plugin platforms imageformats styles tls iconengines xcbglintegrations)

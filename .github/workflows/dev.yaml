@@ -40,6 +40,10 @@ jobs:
       - name: Show dist/ structure
         run: tree -ash dist/
 
+      - name: Fetch models
+        run: scripts/fetch-deps.sh
+        shell: bash
+
       - name: Smoke test built app
         shell: bash
         env:
@@ -84,6 +88,10 @@ jobs:
       - name: Show dist/ structure
         run: tree /f /a dist\
 
+      - name: Fetch models
+        run: scripts/fetch-deps.sh
+        shell: bash
+
       - name: Smoke test built app
         shell: bash
         env:
@@ -126,6 +134,10 @@ jobs:
 
       - name: Show dist/ structure
         run: tree -ash dist/
+
+      - name: Fetch models
+        run: scripts/fetch-deps.sh
+        shell: bash
 
       - name: Smoke test built app
         shell: bash
