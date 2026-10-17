@@ -14,10 +14,15 @@ VERSION=${3:?missing version}
 scripts/fetch-deps.sh
 
 # ---- Qt runtime ----
+# QML is compiled into the binary; only the QML plugin libraries are deployed
+# (QtQuick, Controls Basic, Qt Labs Platform tray).
 copy_qt_plugins() {
   for plugin in platforms imageformats styles tls iconengines; do
     if [ -d "$QT_ROOT_DIR/plugins/$plugin" ]; then cp -r "$QT_ROOT_DIR/plugins/$plugin" dist/; fi
   done
+  mkdir -p dist/qml/QtQuick dist/qml/Qt
+  cp -r "$QT_ROOT_DIR/qml/QtQuick/." dist/qml/QtQuick/
+  cp -r "$QT_ROOT_DIR/qml/Qt/labs" dist/qml/Qt/
 }
 
 case "$OS" in
@@ -26,7 +31,7 @@ case "$OS" in
     copy_qt_plugins
     ;;
   macos)
-    for fw in Core Gui Widgets Network Svg; do
+    for fw in Core Gui Qml Quick QuickControls2 LabsPlatform Widgets Network Svg; do
       cp -R "$QT_ROOT_DIR/lib/Qt$fw.framework" dist/
     done
     copy_qt_plugins
