@@ -42,6 +42,8 @@ static QString build_prompt(const QString& text) {
     "no commentary.\n"
     "- Keep the fidelity of the intention within the sentence, so avoid complex "
     "rephrasing, reorganizations or restructurations.\n"
+    "- Do not modify personal names. Keep them exactly as spoken.\n"
+    "- Do not repeat a word or phrase unless it was repeated in the speech.\n"
     "---\n"
     "CONFIGURATION\n"
     "- Style: " +
