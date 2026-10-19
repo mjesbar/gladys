@@ -44,15 +44,32 @@ static void on_signal(int) {
 #ifdef _WIN32
 #include <windows.h>
 
+#include <cstdio>
 #include <string>
 
-// Adds <exe dir>/lib to the DLL search path. Must run before any Qt or sherpa call.
+// Adds <exe dir>/lib to the DLL search path. Must run before any Qt or sherpa
+// call.
 static bool set_dll_directory() {
   wchar_t path[MAX_PATH];
-  if (GetModuleFileNameW(nullptr, path, MAX_PATH) == 0) return false;
+  if (GetModuleFileNameW(nullptr, path, MAX_PATH) == 0)
+    return false;
   std::wstring dir(path);
   dir.resize(dir.find_last_of(L'\\'));
   return SetDllDirectoryW((dir + L"\\lib").c_str()) != FALSE;
+}
+
+// Logs go to the parent terminal when started from one; double-click has none.
+static void attach_parent_console() {
+  if (!AttachConsole(ATTACH_PARENT_PROCESS))
+    return;
+  FILE *f = nullptr;
+  freopen_s(&f, "CONOUT$", "w", stdout);
+  freopen_s(&f, "CONOUT$", "w", stderr);
+  HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+  DWORD mode = 0;
+  if (GetConsoleMode(out, &mode)) {
+    SetConsoleMode(out, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+  }
 }
 #endif
 
@@ -65,7 +82,9 @@ static void load_fonts() {
 
 int main(int argc, char *argv[]) {
 #ifdef _WIN32
-  if (!set_dll_directory()) return 1;
+  if (!set_dll_directory())
+    return 1;
+  attach_parent_console();
 #endif
 #ifdef __linux__
   qputenv("QT_QPA_PLATFORM", "xcb");
@@ -161,8 +180,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   remove_x11_shadow(overlay_window->winId());
+#ifndef _WIN32 // Windows: the global hook needs no focus; activating steals it
   overlay_window
       ->requestActivate(); // workaround: focus once so the hotkey is handled
+#endif
 
   // Created after the overlay so the tray never appears during splash.
   Tray *tray = new Tray(&app);
@@ -181,7 +202,9 @@ int main(int argc, char *argv[]) {
       QMetaObject::invokeMethod(stt, &STT::stop_recording);
     }
     overlay->setProperty("expanded", recording);
+#ifndef _WIN32
     overlay_window->requestActivate();
+#endif
   });
 
   // ASR -> LLM -> Text Copy -> Text Paste
@@ -193,8 +216,9 @@ int main(int argc, char *argv[]) {
                            [llm, text]() { llm->format_transcription(text); });
       });
   QObject::connect(
-      llm, &LLM::FORMATTED_TEXT_READY, &app, [paste](const QString &text) {
-        QTimer::singleShot(LLM_TO_COPY_DELAY_MS, paste, [paste, text]() {
+      llm, &LLM::FORMATTED_TEXT_READY, &app, [paste, &app](const QString &text) {
+        // Context is the GUI thread: the clipboard must be touched there.
+        QTimer::singleShot(LLM_TO_COPY_DELAY_MS, &app, [paste, text]() {
           Paste::copy_to_clipboard(text);
           QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, paste, [paste]() {
             QMetaObject::invokeMethod(paste, &Paste::send_paste);
