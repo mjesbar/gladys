@@ -11,21 +11,21 @@ class AudioBars : public QObject {
   Q_OBJECT
   Q_PROPERTY(QList<qreal> heights READ heights NOTIFY HEIGHTS_CHANGED)
 
-public:
+ public:
   static constexpr int BAR_COUNT = 20;
 
-  explicit AudioBars(QObject *parent = nullptr);
+  explicit AudioBars(QObject* parent = nullptr);
 
   QList<qreal> heights() const;
 
-public slots:
-  void update_levels(const QVector<double> &levels);
+ public slots:
+  void update_levels(const QVector<double>& levels);
 
-signals:
+ signals:
   void HEIGHTS_CHANGED();
 
-private:
-  QList<qreal> m_heights; // pixel heights at full (open) scale
+ private:
+  QList<qreal> m_heights;  // pixel heights at full (open) scale
 };
 
-#endif // UI_AUDIO_BARS_HPP
+#endif  // UI_AUDIO_BARS_HPP

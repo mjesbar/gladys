@@ -4,31 +4,29 @@
 
 #include "../setting/setting.hpp"
 
-SettingsBridge::SettingsBridge(QObject *parent) : QObject(parent) {}
+SettingsBridge::SettingsBridge(QObject* parent) : QObject(parent) {}
 
-QStringList SettingsBridge::input_sources() const {
-  return Setting::available_input_sources();
-}
+QStringList SettingsBridge::input_sources() const { return Setting::available_input_sources(); }
 
 QVariantMap SettingsBridge::load() const {
-  Setting *s = Setting::instance();
+  Setting* s = Setting::instance();
   QVariantMap dictionary;
   const auto dict = s->dictionary();
   for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
     dictionary.insert(it.key(), it.value());
   }
   return {
-      {"inputSource", s->input_source()},
-      {"markdown", s->markdown_mode()},
-      {"accents", s->allow_accents()},
-      {"punctuation", s->allow_punctuation()},
-      {"dictionary", dictionary},
+    {"inputSource", s->input_source()},
+    {"markdown", s->markdown_mode()},
+    {"accents", s->allow_accents()},
+    {"punctuation", s->allow_punctuation()},
+    {"dictionary", dictionary},
   };
 }
 
 // Unknown input sources are ignored; blank dictionary keys are dropped.
-void SettingsBridge::apply(const QVariantMap &values) {
-  Setting *s = Setting::instance();
+void SettingsBridge::apply(const QVariantMap& values) {
+  Setting* s = Setting::instance();
 
   const QString source = values.value("inputSource").toString();
   if (Setting::available_input_sources().contains(source)) {

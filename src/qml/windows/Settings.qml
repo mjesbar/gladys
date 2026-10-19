@@ -25,9 +25,12 @@ Window {
     palette.highlight: Theme.hover
     palette.highlightedText: Theme.text
 
-    onVisibleChanged: if (visible) load()
+    onVisibleChanged: if (visible)
+        load()
 
-    ListModel { id: aliasModel }
+    ListModel {
+        id: aliasModel
+    }
 
     function load() {
         const s = settingsBridge.load();
@@ -35,7 +38,10 @@ Window {
         inputCombo.currentIndex = index >= 0 ? index : 0;
         aliasModel.clear();
         for (const from of Object.keys(s.dictionary)) {
-            aliasModel.append({ from: from, to: s.dictionary[from] });
+            aliasModel.append({
+                from: from,
+                to: s.dictionary[from]
+            });
         }
         markdownCheck.checked = s.markdown;
         accentCheck.checked = s.accents;
@@ -47,7 +53,10 @@ Window {
         if (from === "") {
             return;
         }
-        aliasModel.append({ from: from, to: toField.text.trim() });
+        aliasModel.append({
+            from: from,
+            to: toField.text.trim()
+        });
         fromField.clear();
         toField.clear();
         fromField.forceActiveFocus();
@@ -205,9 +214,18 @@ Window {
                 width: parent.width
                 title: qsTr("Style")
 
-                ThemedCheckBox { id: markdownCheck; text: qsTr("Markdown mode") }
-                ThemedCheckBox { id: accentCheck; text: qsTr("Allow accents") }
-                ThemedCheckBox { id: punctuationCheck; text: qsTr("Allow punctuation") }
+                ThemedCheckBox {
+                    id: markdownCheck
+                    text: qsTr("Markdown mode")
+                }
+                ThemedCheckBox {
+                    id: accentCheck
+                    text: qsTr("Allow accents")
+                }
+                ThemedCheckBox {
+                    id: punctuationCheck
+                    text: qsTr("Allow punctuation")
+                }
             }
 
             Button {

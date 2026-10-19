@@ -12,16 +12,16 @@ class QSystemTrayIcon;
 class Tray : public QObject {
   Q_OBJECT
 
-public:
-  explicit Tray(QObject *parent = nullptr);
+ public:
+  explicit Tray(QObject* parent = nullptr);
   ~Tray() override;
 
-signals:
+ signals:
   void SETTINGS_REQUESTED();
 
-private:
-  QSystemTrayIcon *m_icon;
+ private:
+  QSystemTrayIcon* m_icon;
   std::unique_ptr<QMenu> m_menu;
 };
 
-#endif // UI_TRAY_HPP
+#endif  // UI_TRAY_HPP

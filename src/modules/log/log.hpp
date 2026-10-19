@@ -13,6 +13,6 @@ Q_DECLARE_LOGGING_CATEGORY(lcPaste)
 Q_DECLARE_LOGGING_CATEGORY(lcSetting)
 Q_DECLARE_LOGGING_CATEGORY(lcUi)
 
-void log_setup(); // timestamped, colored output; call once at startup
+void log_setup();  // timestamped, colored output; call once at startup
 
-#endif // LIB_LOG_HPP
+#endif  // LIB_LOG_HPP

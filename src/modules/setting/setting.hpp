@@ -12,8 +12,8 @@
 class Setting : public QObject {
   Q_OBJECT
 
-public:
-  static Setting *instance();
+ public:
+  static Setting* instance();
 
   void save();
 
@@ -23,27 +23,27 @@ public:
   bool allow_accents() const;
   bool allow_punctuation() const;
 
-  void set_input_source(const QString &v);
-  void set_dictionary(const QMap<QString, QString> &d);
+  void set_input_source(const QString& v);
+  void set_dictionary(const QMap<QString, QString>& d);
   void set_markdown_mode(bool v);
   void set_allow_accents(bool v);
   void set_allow_punctuation(bool v);
 
   static QStringList available_input_sources();
 
-signals:
-  void SETTINGS_CHANGED(const QString &input_source);
+ signals:
+  void SETTINGS_CHANGED(const QString& input_source);
 
-private:
-  explicit Setting(QObject *parent = nullptr);
+ private:
+  explicit Setting(QObject* parent = nullptr);
   void load();
 
-  static Setting *s_instance;
-  QString m_input_source = "default"; // capture device name or "default"
-  QMap<QString, QString> m_dictionary; // original word -> replacement
+  static Setting* s_instance;
+  QString m_input_source = "default";   // capture device name or "default"
+  QMap<QString, QString> m_dictionary;  // original word -> replacement
   bool m_markdown_mode = false;
   bool m_allow_accents = true;
   bool m_allow_punctuation = true;
 };
 
-#endif // SETTING_HPP
+#endif  // SETTING_HPP

@@ -8,4 +8,4 @@
 // Clears _KDE_NET_WM_SHADOW on the window. No-op outside X11.
 void remove_x11_shadow(quintptr window_id);
 
-#endif // UI_X11_SHADOW_HPP
+#endif  // UI_X11_SHADOW_HPP

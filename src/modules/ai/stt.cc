@@ -10,10 +10,9 @@
 
 static const int SAMPLE_RATE = 16000;
 static const int LEVEL_BARS = 30;
-static const size_t MAX_SAMPLES = SAMPLE_RATE * 60; // 60 s cap per utterance
+static const size_t MAX_SAMPLES = SAMPLE_RATE * 60;  // 60 s cap per utterance
 
-STT::STT()
-    : m_is_context_ready(false), m_is_device_ready(false), m_recognizer(nullptr) {
+STT::STT() : m_is_context_ready(false), m_is_device_ready(false), m_recognizer(nullptr) {
   memset(&m_context, 0, sizeof(m_context));
   memset(&m_device, 0, sizeof(m_device));
 }
@@ -31,13 +30,13 @@ STT::~STT() {
   }
 }
 
-bool STT::init(const std::string &model_dir) {
+bool STT::init(const std::string& model_dir) {
   std::string encoder = model_dir + "/encoder.int8.onnx";
   std::string decoder = model_dir + "/decoder.int8.onnx";
   std::string joiner = model_dir + "/joiner.int8.onnx";
   std::string tokens = model_dir + "/tokens.txt";
 
-  for (const std::string *path : {&encoder, &decoder, &joiner, &tokens}) {
+  for (const std::string* path : {&encoder, &decoder, &joiner, &tokens}) {
     if (!SherpaOnnxFileExists(path->c_str())) {
       qCCritical(lcStt) << "model file not found:" << path->c_str();
       return false;
@@ -74,7 +73,7 @@ bool STT::init(const std::string &model_dir) {
 
 // Selects the capture device by name ("default" = system default) and
 // (re)initializes the device. Must not be called while the device is running.
-bool STT::open_device(const QString &source) {
+bool STT::open_device(const QString& source) {
   if (m_is_device_ready) {
     ma_device_uninit(&m_device);
     m_is_device_ready = false;
@@ -89,10 +88,9 @@ bool STT::open_device(const QString &source) {
   m_config.capture.pDeviceID = NULL;
 
   if (source != QStringLiteral("default")) {
-    ma_device_info *pInfos;
+    ma_device_info* pInfos;
     ma_uint32 count;
-    if (ma_context_get_devices(&m_context, NULL, NULL, &pInfos, &count) ==
-        MA_SUCCESS) {
+    if (ma_context_get_devices(&m_context, NULL, NULL, &pInfos, &count) == MA_SUCCESS) {
       for (ma_uint32 i = 0; i < count; ++i) {
         if (QString::fromUtf8(pInfos[i].name) == source) {
           m_device_id = pInfos[i].id;
@@ -130,25 +128,22 @@ void STT::stop_recording() {
   if (!m_is_device_ready || !ma_device_is_started(&m_device)) {
     return;
   }
-  ma_device_stop(
-      &m_device); // joins the audio callback before we touch m_buffer
+  ma_device_stop(&m_device);  // joins the audio callback before we touch m_buffer
   qCInfo(lcStt) << "audio recognition stopped";
   if (m_buffer.empty()) {
     return;
   }
 
-  const SherpaOnnxOfflineStream *stream =
-      SherpaOnnxCreateOfflineStream(m_recognizer);
+  const SherpaOnnxOfflineStream* stream = SherpaOnnxCreateOfflineStream(m_recognizer);
   if (!stream) {
     qCCritical(lcStt) << "failed to create stream";
     m_buffer.clear();
     return;
   }
-  SherpaOnnxAcceptWaveformOffline(stream, SAMPLE_RATE, m_buffer.data(),
-                                  static_cast<int32_t>(m_buffer.size()));
+  SherpaOnnxAcceptWaveformOffline(
+    stream, SAMPLE_RATE, m_buffer.data(), static_cast<int32_t>(m_buffer.size()));
   SherpaOnnxDecodeOfflineStream(m_recognizer, stream);
-  const SherpaOnnxOfflineRecognizerResult *result =
-      SherpaOnnxGetOfflineStreamResult(stream);
+  const SherpaOnnxOfflineRecognizerResult* result = SherpaOnnxGetOfflineStreamResult(stream);
   QString text = result ? QString::fromUtf8(result->text).trimmed() : QString();
   if (!text.isEmpty()) {
     qCInfo(lcStt) << "transcription output:" << text;
@@ -159,7 +154,7 @@ void STT::stop_recording() {
   m_buffer.clear();
 }
 
-void STT::reconfigure_audio_source(const QString &source) {
+void STT::reconfigure_audio_source(const QString& source) {
   if (!m_is_context_ready) {
     return;
   }
@@ -175,12 +170,12 @@ void STT::reconfigure_audio_source(const QString &source) {
   }
 }
 
-void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                        ma_uint32 frameCount) {
+void STT::data_callback(
+  ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
   Q_UNUSED(pOutput);
-  STT *self = static_cast<STT *>(pDevice->pUserData);
+  STT* self = static_cast<STT*>(pDevice->pUserData);
 
-  const int16_t *pcm = static_cast<const int16_t *>(pInput);
+  const int16_t* pcm = static_cast<const int16_t*>(pInput);
   const size_t room = MAX_SAMPLES - self->m_buffer.size();
   const size_t kept = qMin(static_cast<size_t>(frameCount), room);
   for (size_t i = 0; i < kept; ++i) {
@@ -197,8 +192,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   }
   if (self->m_audio_levels_prev.size() == LEVEL_BARS) {
     for (int i = 0; i < LEVEL_BARS; ++i) {
-      self->m_audio_levels[i] =
-          self->m_audio_levels_prev[i] * 0.7 + self->m_audio_levels[i] * 0.3;
+      self->m_audio_levels[i] = self->m_audio_levels_prev[i] * 0.7 + self->m_audio_levels[i] * 0.3;
     }
   }
   self->m_audio_levels_prev = self->m_audio_levels;
@@ -206,7 +200,7 @@ void STT::data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
   if (!self->m_audio_timer.isValid()) {
     self->m_audio_timer.start();
   }
-  if (self->m_audio_timer.hasExpired(33)) { // ~30fps
+  if (self->m_audio_timer.hasExpired(33)) {  // ~30fps
     self->m_audio_timer.restart();
     emit self->AUDIO_LEVEL_UPDATED(self->m_audio_levels);
   }

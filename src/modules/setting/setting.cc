@@ -9,16 +9,16 @@
 // Miniaudio header only (implementation is in stt.cc)
 #include "miniaudio/miniaudio.h"
 
-Setting *Setting::s_instance = nullptr;
+Setting* Setting::s_instance = nullptr;
 
-Setting *Setting::instance() {
+Setting* Setting::instance() {
   if (!s_instance) {
     s_instance = new Setting();
   }
   return s_instance;
 }
 
-Setting::Setting(QObject *parent) : QObject(parent) { load(); }
+Setting::Setting(QObject* parent) : QObject(parent) { load(); }
 
 void Setting::load() {
   QSettings s("gladys", "gladys");
@@ -70,10 +70,9 @@ QStringList Setting::available_input_sources() {
     return sources;
   }
 
-  ma_device_info *pCaptureInfos;
+  ma_device_info* pCaptureInfos;
   ma_uint32 captureCount;
-  if (ma_context_get_devices(&context, NULL, NULL, &pCaptureInfos,
-                             &captureCount) == MA_SUCCESS) {
+  if (ma_context_get_devices(&context, NULL, NULL, &pCaptureInfos, &captureCount) == MA_SUCCESS) {
     for (ma_uint32 i = 0; i < captureCount; ++i) {
       sources << QString::fromUtf8(pCaptureInfos[i].name);
     }
@@ -89,8 +88,8 @@ bool Setting::markdown_mode() const { return m_markdown_mode; }
 bool Setting::allow_accents() const { return m_allow_accents; }
 bool Setting::allow_punctuation() const { return m_allow_punctuation; }
 
-void Setting::set_input_source(const QString &v) { m_input_source = v; }
-void Setting::set_dictionary(const QMap<QString, QString> &d) { m_dictionary = d; }
+void Setting::set_input_source(const QString& v) { m_input_source = v; }
+void Setting::set_dictionary(const QMap<QString, QString>& d) { m_dictionary = d; }
 void Setting::set_markdown_mode(bool v) { m_markdown_mode = v; }
 void Setting::set_allow_accents(bool v) { m_allow_accents = v; }
 void Setting::set_allow_punctuation(bool v) { m_allow_punctuation = v; }
