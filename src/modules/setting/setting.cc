@@ -37,8 +37,10 @@ void Setting::load() {
   s.endArray();
 
   m_markdown_mode = s.value("style/markdownMode", false).toBool();
-  m_allow_accents = s.value("style/allowAccents", true).toBool();
-  m_allow_punctuation = s.value("style/allowPunctuation", true).toBool();
+  m_style = s.value("style/tone", "Casual").toString();
+  if (!available_styles().contains(m_style)) {
+    m_style = "Casual";
+  }
 }
 
 void Setting::save() {
@@ -55,11 +57,12 @@ void Setting::save() {
   s.endArray();
 
   s.setValue("style/markdownMode", m_markdown_mode);
-  s.setValue("style/allowAccents", m_allow_accents);
-  s.setValue("style/allowPunctuation", m_allow_punctuation);
+  s.setValue("style/tone", m_style);
 
   emit SETTINGS_CHANGED(m_input_source);
 }
+
+QStringList Setting::available_styles() { return {"Casual", "Formal", "Email"}; }
 
 QStringList Setting::available_input_sources() {
   QStringList sources;
@@ -85,11 +88,9 @@ QStringList Setting::available_input_sources() {
 QString Setting::input_source() const { return m_input_source; }
 QMap<QString, QString> Setting::dictionary() const { return m_dictionary; }
 bool Setting::markdown_mode() const { return m_markdown_mode; }
-bool Setting::allow_accents() const { return m_allow_accents; }
-bool Setting::allow_punctuation() const { return m_allow_punctuation; }
+QString Setting::style() const { return m_style; }
 
 void Setting::set_input_source(const QString& v) { m_input_source = v; }
 void Setting::set_dictionary(const QMap<QString, QString>& d) { m_dictionary = d; }
 void Setting::set_markdown_mode(bool v) { m_markdown_mode = v; }
-void Setting::set_allow_accents(bool v) { m_allow_accents = v; }
-void Setting::set_allow_punctuation(bool v) { m_allow_punctuation = v; }
+void Setting::set_style(const QString& v) { m_style = v; }

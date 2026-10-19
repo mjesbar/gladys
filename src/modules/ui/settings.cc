@@ -8,6 +8,8 @@ SettingsBridge::SettingsBridge(QObject* parent) : QObject(parent) {}
 
 QStringList SettingsBridge::input_sources() const { return Setting::available_input_sources(); }
 
+QStringList SettingsBridge::styles() const { return Setting::available_styles(); }
+
 QVariantMap SettingsBridge::load() const {
   Setting* s = Setting::instance();
   QVariantMap dictionary;
@@ -18,8 +20,7 @@ QVariantMap SettingsBridge::load() const {
   return {
     {"inputSource", s->input_source()},
     {"markdown", s->markdown_mode()},
-    {"accents", s->allow_accents()},
-    {"punctuation", s->allow_punctuation()},
+    {"style", s->style()},
     {"dictionary", dictionary},
   };
 }
@@ -33,6 +34,11 @@ void SettingsBridge::apply(const QVariantMap& values) {
     s->set_input_source(source);
   }
 
+  const QString style = values.value("style").toString();
+  if (Setting::available_styles().contains(style)) {
+    s->set_style(style);
+  }
+
   QMap<QString, QString> dictionary;
   const QVariantMap entries = values.value("dictionary").toMap();
   for (auto it = entries.cbegin(); it != entries.cend(); ++it) {
@@ -44,7 +50,5 @@ void SettingsBridge::apply(const QVariantMap& values) {
   s->set_dictionary(dictionary);
 
   s->set_markdown_mode(values.value("markdown").toBool());
-  s->set_allow_accents(values.value("accents").toBool());
-  s->set_allow_punctuation(values.value("punctuation").toBool());
   s->save();
 }

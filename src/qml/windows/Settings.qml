@@ -43,9 +43,8 @@ Window {
                 to: s.dictionary[from]
             });
         }
-        markdownCheck.checked = s.markdown;
-        accentCheck.checked = s.accents;
-        punctuationCheck.checked = s.punctuation;
+        markdownCombo.currentIndex = s.markdown ? 0 : 1;
+        styleCombo.currentIndex = Math.max(0, styleCombo.find(s.style));
     }
 
     function addAlias() {
@@ -70,9 +69,8 @@ Window {
         }
         settingsBridge.apply({
             inputSource: inputCombo.currentText,
-            markdown: markdownCheck.checked,
-            accents: accentCheck.checked,
-            punctuation: punctuationCheck.checked,
+            style: styleCombo.currentText,
+            markdown: markdownCombo.currentIndex === 0,
             dictionary: dictionary
         });
     }
@@ -214,17 +212,109 @@ Window {
                 width: parent.width
                 title: qsTr("Style")
 
-                ThemedCheckBox {
-                    id: markdownCheck
-                    text: qsTr("Markdown mode")
+                Row {
+                    id: styleRow
+
+                    width: parent.width
+                    spacing: 12
+
+                    Text {
+                        id: styleLabel
+
+                        width: 80
+                        height: 40
+                        text: qsTr("Style")
+                        color: Theme.text
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    ComboBox {
+                        id: styleCombo
+
+                        width: styleRow.width - styleLabel.width - styleRow.spacing
+                        leftPadding: 16
+                        rightPadding: 16
+                        model: settingsBridge.styles
+                        background: Rectangle {
+                            implicitHeight: 40
+                            radius: 20
+                            color: Theme.surface
+                            border.color: styleCombo.activeFocus ? Theme.accent : Theme.border
+                        }
+                        popup.background: Rectangle {
+                            radius: 12
+                            color: Theme.surface
+                            border.color: Theme.border
+                        }
+                        delegate: ItemDelegate {
+                            required property int index
+                            required property string modelData
+
+                            width: styleCombo.width
+                            highlighted: styleCombo.highlightedIndex === index
+                            contentItem: Text {
+                                text: modelData
+                                color: Theme.text
+                                font: styleCombo.font
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            background: Rectangle {
+                                radius: 12
+                                color: highlighted ? Theme.hover : "transparent"
+                            }
+                        }
+                    }
                 }
-                ThemedCheckBox {
-                    id: accentCheck
-                    text: qsTr("Allow accents")
-                }
-                ThemedCheckBox {
-                    id: punctuationCheck
-                    text: qsTr("Allow punctuation")
+                Row {
+                    id: markdownRow
+
+                    width: parent.width
+                    spacing: 12
+
+                    Text {
+                        id: markdownLabel
+
+                        width: 80
+                        height: 40
+                        text: qsTr("Markdown")
+                        color: Theme.text
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    ComboBox {
+                        id: markdownCombo
+
+                        width: markdownRow.width - markdownLabel.width - markdownRow.spacing
+                        leftPadding: 16
+                        rightPadding: 16
+                        model: [qsTr("Yes"), qsTr("No")]
+                        background: Rectangle {
+                            implicitHeight: 40
+                            radius: 20
+                            color: Theme.surface
+                            border.color: markdownCombo.activeFocus ? Theme.accent : Theme.border
+                        }
+                        popup.background: Rectangle {
+                            radius: 12
+                            color: Theme.surface
+                            border.color: Theme.border
+                        }
+                        delegate: ItemDelegate {
+                            required property int index
+                            required property string modelData
+
+                            width: markdownCombo.width
+                            highlighted: markdownCombo.highlightedIndex === index
+                            contentItem: Text {
+                                text: modelData
+                                color: Theme.text
+                                font: markdownCombo.font
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            background: Rectangle {
+                                radius: 12
+                                color: highlighted ? Theme.hover : "transparent"
+                            }
+                        }
+                    }
                 }
             }
 

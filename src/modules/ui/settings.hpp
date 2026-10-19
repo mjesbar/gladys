@@ -10,11 +10,13 @@
 class SettingsBridge : public QObject {
   Q_OBJECT
   Q_PROPERTY(QStringList inputSources READ input_sources CONSTANT)
+  Q_PROPERTY(QStringList styles READ styles CONSTANT)
 
  public:
   explicit SettingsBridge(QObject* parent = nullptr);
 
   QStringList input_sources() const;
+  QStringList styles() const;
 
   Q_INVOKABLE QVariantMap load() const;
   Q_INVOKABLE void apply(const QVariantMap& values);
