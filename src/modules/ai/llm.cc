@@ -3,6 +3,8 @@
 
 #include "llm.hpp"
 
+#include <qt6/QtCore/qcoreapplication.h>
+
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -215,6 +217,7 @@ bool LLM::start() {
   }
 
   QString dir = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
+  QString model = dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf";
   QString program = dir + "/" + LLAMA_SERVER_BINARY;
   if (!QFileInfo::exists(program)) {
     qCCritical(lcLlm) << "llama-server not found at:" << program;
@@ -222,16 +225,15 @@ bool LLM::start() {
   }
 
   m_server.setProgram(program);
-  m_server.setArguments(QStringList()
-    << "-m" << dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf" << "--ctx-size"
-    << "8192"
-    << "--temperature" << "0.25"
-    << "--top-k" << "20"
-    << "--reasoning" << "off"
-    << "--reasoning-budget" << "0"
-    << "--n-gpu-layers" << "99"
-    << "-ngl" << "99"
-    << "--port" << "8080");
+  m_server.setArguments(QStringList() << "--model" << model << "--ctx-size" << "4096"
+                                      << "--temperature" << "0.6"
+                                      << "--reasoning" << "off"
+                                      << "--reasoning-budget" << "0"
+                                      << "--n-gpu-layers" << "16"
+                                      << "--flash-attn" << "on"
+                                      << "--cache-type-k" << "q4_0"
+                                      << "--repeat-penalty" << "1.15"
+                                      << "--port" << "8080");
 
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH", dir + ":" + env.value("LD_LIBRARY_PATH"));
