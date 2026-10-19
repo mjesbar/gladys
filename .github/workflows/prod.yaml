@@ -37,8 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install X11 dev
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+      - name: Install X11 dev and FUSE
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libfuse2t64
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
@@ -62,7 +62,7 @@ jobs:
         run: scripts/package.sh linux x64 ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
-        run: tree -a -L 3 release/gladys-v*
+        run: tree -a release/
 
 
       - name: Create release
@@ -100,15 +100,15 @@ jobs:
       - name: Show dist/ structure
         run: tree /f dist\
 
-      - name: Install rsync & zip
-        run: choco install rsync zip --no-progress -y
+      - name: Install zip
+        run: choco install zip --no-progress -y
 
       - name: Package release
         run: scripts/package.sh windows x64 ${{ needs.version.outputs.version }}
         shell: bash
 
       - name: Show release/ structure
-        run: tree /f /a release\gladys-v*
+        run: tree /f /a release\
 
 
       - name: Create release
@@ -152,7 +152,7 @@ jobs:
         run: scripts/package.sh macos arm64 ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
-        run: tree -a -L 3 release/gladys-v*
+        run: tree -a release/
 
 
       - name: Create release
