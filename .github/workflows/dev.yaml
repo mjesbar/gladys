@@ -21,8 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install X11 dev
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+      - name: Install X11 dev and FUSE
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libfuse2t64
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
