@@ -16,21 +16,12 @@ esac
 
 scripts/fetch-deps.sh
 
-# ---- Clean dist/ for release ----
-find dist -type f \( -name '*.tar.gz' -o -name '*.tar.bz2' -o -name '*.tar.xz' -o -name '*.zip' \) -delete
+mkdir -p release
+EXCLUDE=(-x '*.h' '*.hpp' '*.sh' '*miniaudio*')
 
-# ---- Stage and archive ----
-STAGE=release/gladys-v$VERSION
-mkdir -p "$STAGE"
-rsync -a \
-  --exclude='*.h' \
-  --exclude='*.hpp' \
-  --exclude='*.sh' \
-  --exclude=miniaudio \
-  dist/ "$STAGE/"
-
+# ---- Archive dist/ ----
 case "$OS" in
-  linux)   tar -C release -czf "release/gladys-linux-$ARCH-$VERSION.tar.gz" "gladys-v$VERSION" ;;
-  macos)   (cd release && zip -r "gladys-macos-$ARCH-$VERSION.zip" "gladys-v$VERSION") ;;
-  windows) (cd release && zip -r "gladys-win-$ARCH-$VERSION.zip" "gladys-v$VERSION") ;;
+  linux)   tar -C dist --exclude='*.h' --exclude='*.hpp' --exclude='*.sh' --exclude='*miniaudio*' -czf "release/gladys-linux-$ARCH-$VERSION.tar.gz" . ;;
+  macos)   (cd dist && zip -qry "../release/gladys-macos-$ARCH-$VERSION.zip" . "${EXCLUDE[@]}") ;;
+  windows) (cd dist && zip -qr "../release/gladys-win-$ARCH-$VERSION.zip" . "${EXCLUDE[@]}") ;;
 esac
