@@ -25,7 +25,7 @@
 
 static const char* SERVER_URL = "http://127.0.0.1:8080/v1/chat/completions";
 
-static QString build_prompt(const QString& text) {
+static QString build_system_prompt() {
   Setting* s = Setting::instance();
   const QString style = s->style();
   const bool markdown = s->markdown_mode();
@@ -194,9 +194,6 @@ static QString build_prompt(const QString& text) {
       "\" exactly as written. Meaning: " + it.value() + ".\n";
   }
 
-  instructions += "---\nTASK\nFormat the input according to the instructions & examples above.\n";
-  instructions += "input: " + text + "\noutput: ";
-
   return instructions;
 }
 
@@ -292,13 +289,17 @@ void LLM::format_transcription(const QString& text) {
 
   qCInfo(lcLlm) << "request:" << text.length() << "chars:" << text;
 
-  QJsonObject message;
-  message["role"] = "user";
-  message["content"] = build_prompt(text);
+  QJsonObject system;
+  system["role"] = "system";
+  system["content"] = build_system_prompt();
+
+  QJsonObject user;
+  user["role"] = "user";
+  user["content"] = "TASK\nFormat the input according to the instructions & examples above.\n"
+                    "input: " + text + "\noutput: ";
 
   QJsonObject json;
-  json["messages"] = QJsonArray({message});
-  json["temperature"] = 0.0;
+  json["messages"] = QJsonArray({system, user});
 
   QNetworkRequest request{QUrl(SERVER_URL)};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
