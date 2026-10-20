@@ -190,7 +190,8 @@ static QString build_prompt(const QString& text) {
 
   const auto dict = s->dictionary();
   for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
-    instructions += "- Replace the word \"" + it.key() + "\" with \"" + it.value() + "\".\n";
+    instructions += "- Keep the rare word \"" + it.key() +
+      "\" exactly as written. Meaning: " + it.value() + ".\n";
   }
 
   instructions += "---\nTASK\ninput: " + text + "\noutput: ";
@@ -209,6 +210,15 @@ static QString parse_content(const QByteArray& body) {
     return QString();
   }
   return choices[0].toObject()["message"].toObject()["content"].toString();
+}
+
+// Literal, deterministic replacements applied to the LLM output.
+static QString apply_snippets(QString text) {
+  const auto snippets = Setting::instance()->snippets();
+  for (auto it = snippets.cbegin(); it != snippets.cend(); ++it) {
+    text.replace(it.key(), it.value());
+  }
+  return text;
 }
 
 LLM::LLM(QObject* parent) : QObject(parent), m_is_running(false) {}
@@ -230,13 +240,15 @@ bool LLM::start() {
 
   m_server.setProgram(program);
   m_server.setArguments(QStringList() << "--model" << model << "--ctx-size" << "4096"
-                                      << "--temperature" << "0.6"
+                                      << "--temperature" << "0.7"
+                                      << "--top-p" << "0.9"
                                       << "--reasoning" << "off"
                                       << "--reasoning-budget" << "0"
                                       << "--n-gpu-layers" << "16"
                                       << "--flash-attn" << "on"
                                       << "--cache-type-k" << "q4_0"
                                       << "--repeat-penalty" << "1.15"
+                                      << "--repeat-last-n" << "256"
                                       << "--port" << "8080");
 
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -295,7 +307,7 @@ void LLM::format_transcription(const QString& text) {
     reply->deleteLater();
     QString result;
     if (reply->error() == QNetworkReply::NoError) {
-      result = parse_content(reply->readAll());
+      result = apply_snippets(parse_content(reply->readAll()));
     } else {
       qCCritical(lcLlm) << "request failed:" << reply->errorString();
     }

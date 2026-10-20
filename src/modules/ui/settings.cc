@@ -10,22 +10,38 @@ QStringList SettingsBridge::input_sources() const { return Setting::available_in
 
 QStringList SettingsBridge::styles() const { return Setting::available_styles(); }
 
+static QVariantMap to_variant(const QMap<QString, QString>& pairs) {
+  QVariantMap map;
+  for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
+    map.insert(it.key(), it.value());
+  }
+  return map;
+}
+
+// Blank keys are dropped.
+static QMap<QString, QString> to_pairs(const QVariantMap& map) {
+  QMap<QString, QString> pairs;
+  for (auto it = map.cbegin(); it != map.cend(); ++it) {
+    const QString from = it.key().trimmed();
+    if (!from.isEmpty()) {
+      pairs.insert(from, it.value().toString().trimmed());
+    }
+  }
+  return pairs;
+}
+
 QVariantMap SettingsBridge::load() const {
   Setting* s = Setting::instance();
-  QVariantMap dictionary;
-  const auto dict = s->dictionary();
-  for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
-    dictionary.insert(it.key(), it.value());
-  }
   return {
     {"inputSource", s->input_source()},
     {"markdown", s->markdown_mode()},
     {"style", s->style()},
-    {"dictionary", dictionary},
+    {"dictionary", to_variant(s->dictionary())},
+    {"snippets", to_variant(s->snippets())},
   };
 }
 
-// Unknown input sources are ignored; blank dictionary keys are dropped.
+// Unknown input sources and styles are ignored.
 void SettingsBridge::apply(const QVariantMap& values) {
   Setting* s = Setting::instance();
 
@@ -39,16 +55,8 @@ void SettingsBridge::apply(const QVariantMap& values) {
     s->set_style(style);
   }
 
-  QMap<QString, QString> dictionary;
-  const QVariantMap entries = values.value("dictionary").toMap();
-  for (auto it = entries.cbegin(); it != entries.cend(); ++it) {
-    const QString from = it.key().trimmed();
-    if (!from.isEmpty()) {
-      dictionary.insert(from, it.value().toString().trimmed());
-    }
-  }
-  s->set_dictionary(dictionary);
-
+  s->set_dictionary(to_pairs(values.value("dictionary").toMap()));
+  s->set_snippets(to_pairs(values.value("snippets").toMap()));
   s->set_markdown_mode(values.value("markdown").toBool());
   s->save();
 }

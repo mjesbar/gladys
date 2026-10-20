@@ -19,11 +19,13 @@ class Setting : public QObject {
 
   QString input_source() const;
   QMap<QString, QString> dictionary() const;
+  QMap<QString, QString> snippets() const;
   bool markdown_mode() const;
   QString style() const;
 
   void set_input_source(const QString& v);
   void set_dictionary(const QMap<QString, QString>& d);
+  void set_snippets(const QMap<QString, QString>& d);
   void set_markdown_mode(bool v);
   void set_style(const QString& v);
 
@@ -39,7 +41,8 @@ class Setting : public QObject {
 
   static Setting* s_instance;
   QString m_input_source = "default";   // capture device name or "default"
-  QMap<QString, QString> m_dictionary;  // original word -> replacement
+  QMap<QString, QString> m_dictionary;  // rare word -> brief description
+  QMap<QString, QString> m_snippets;    // literal text -> replacement (post-LLM)
   bool m_markdown_mode = false;
   QString m_style = "Casual";          // Casual | Formal | Email
 };
