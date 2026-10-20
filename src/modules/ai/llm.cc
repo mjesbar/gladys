@@ -44,6 +44,8 @@ static QString build_prompt(const QString& text) {
     "rephrasing, reorganizations or restructurations.\n"
     "- Do not modify personal names. Keep them exactly as spoken.\n"
     "- Do not repeat a word or phrase unless it was repeated in the speech.\n"
+    "- Remove consecutive duplicated words caused by speech stutter, e.g. \"this one "
+    "on on the table\" -> \"this one on the table\".\n"
     "---\n"
     "CONFIGURATION\n"
     "- Style: " +
