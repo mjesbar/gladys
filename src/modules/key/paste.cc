@@ -9,12 +9,13 @@
 #include "../log/log.hpp"
 
 #ifdef __linux__
-#include <cerrno>
-#include <cstring>
 #include <fcntl.h>
 #include <linux/uinput.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
 #endif
 
 #ifdef __APPLE__
@@ -40,7 +41,7 @@
 #define KEY_V 47
 #endif
 
-Paste::Paste(QObject *parent)
+Paste::Paste(QObject* parent)
     : QObject(parent)
 #ifdef __linux__
       ,
@@ -113,13 +114,13 @@ void Paste::send_key(unsigned int code, bool press) {
   write(m_fd, &ev, sizeof(ev));
 }
 
-void Paste::copy_to_clipboard(const QString &text) {
+void Paste::copy_to_clipboard(const QString& text) {
   QProcess proc;
   proc.start("wl-copy", {text});
   proc.waitForFinished(1000);
 }
 
-#endif // __linux__
+#endif  // __linux__
 
 // ---------------------------------------------------------------------------
 // macOS (CGEvent)
@@ -132,17 +133,17 @@ void Paste::init() { qCInfo(lcPaste) << "started"; }
 void Paste::send_key(unsigned int code, bool press) {
   CGKeyCode keyCode;
   switch (code) {
-  case KEY_LEFTCTRL:
-    keyCode = 0x3B; // kVK_Control
-    break;
-  case KEY_LEFTSHIFT:
-    keyCode = 0x38; // kVK_Shift
-    break;
-  case KEY_V:
-    keyCode = 0x09; // kVK_ANSI_V
-    break;
-  default:
-    return;
+    case KEY_LEFTCTRL:
+      keyCode = 0x3B;  // kVK_Control
+      break;
+    case KEY_LEFTSHIFT:
+      keyCode = 0x38;  // kVK_Shift
+      break;
+    case KEY_V:
+      keyCode = 0x09;  // kVK_ANSI_V
+      break;
+    default:
+      return;
   }
   CGEventRef event = CGEventCreateKeyboardEvent(NULL, keyCode, press);
   if (!event) {
@@ -152,11 +153,9 @@ void Paste::send_key(unsigned int code, bool press) {
   CFRelease(event);
 }
 
-void Paste::copy_to_clipboard(const QString &text) {
-  QApplication::clipboard()->setText(text);
-}
+void Paste::copy_to_clipboard(const QString& text) { QApplication::clipboard()->setText(text); }
 
-#endif // __APPLE__
+#endif  // __APPLE__
 
 // ---------------------------------------------------------------------------
 // Windows (SendInput)
@@ -169,17 +168,17 @@ void Paste::init() { qCInfo(lcPaste) << "started"; }
 void Paste::send_key(unsigned int code, bool press) {
   WORD vk;
   switch (code) {
-  case KEY_LEFTCTRL:
-    vk = VK_CONTROL;
-    break;
-  case KEY_LEFTSHIFT:
-    vk = VK_SHIFT;
-    break;
-  case KEY_V:
-    vk = 'V';
-    break;
-  default:
-    return;
+    case KEY_LEFTCTRL:
+      vk = VK_CONTROL;
+      break;
+    case KEY_LEFTSHIFT:
+      vk = VK_SHIFT;
+      break;
+    case KEY_V:
+      vk = 'V';
+      break;
+    default:
+      return;
   }
   INPUT ip = {};
   ip.type = INPUT_KEYBOARD;
@@ -190,11 +189,9 @@ void Paste::send_key(unsigned int code, bool press) {
   SendInput(1, &ip, sizeof(ip));
 }
 
-void Paste::copy_to_clipboard(const QString &text) {
-  QApplication::clipboard()->setText(text);
-}
+void Paste::copy_to_clipboard(const QString& text) { QApplication::clipboard()->setText(text); }
 
-#endif // _WIN32
+#endif  // _WIN32
 
 // ---------------------------------------------------------------------------
 // Shared sequence: Ctrl+Shift+V

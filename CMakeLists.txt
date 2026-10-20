@@ -33,6 +33,15 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/ui/tray.cc
 )
 
+# App icon per OS: Windows exe resource (.ico), macOS bundle (.icns), Linux window icon set at runtime from icon.svg
+if(WIN32)
+  target_sources(gladys PRIVATE src/assets/icons/icon.rc)
+elseif(APPLE)
+  set_source_files_properties(src/assets/icons/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+  target_sources(gladys PRIVATE src/assets/icons/icon.icns)
+  set_target_properties(gladys PROPERTIES MACOSX_BUNDLE_ICON_FILE "icon.icns")
+endif()
+
 # QML module and its files; Theme is a singleton
 set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 qt_add_qml_module(gladys

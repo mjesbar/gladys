@@ -15,11 +15,17 @@ Item {
     // Average bar height normalized to the tallest bar (48 px, see audio_bars.cc).
     readonly property real audioLevel: {
         let sum = 0;
-        for (const h of audioBars.heights) sum += h;
+        for (const h of audioBars.heights)
+            sum += h;
         return Math.min(sum / (audioBars.heights.length * 48), 1);
     }
 
-    Behavior on progress { NumberAnimation { duration: 300; easing.type: Easing.InOutQuad } }
+    Behavior on progress {
+        NumberAnimation {
+            duration: 300
+            easing.type: Easing.InOutQuad
+        }
+    }
 
     // Halo behind the mic: flat translucent disc, no runtime blur. Pulses with audio.
     Rectangle {
@@ -72,7 +78,15 @@ Item {
         border.color: mic.expanded ? "#FF0000" : "#7A7A7A"
         border.width: 2
 
-        Behavior on color { ColorAnimation { duration: 300 } }
-        Behavior on border.color { ColorAnimation { duration: 300 } }
+        Behavior on color {
+            ColorAnimation {
+                duration: 300
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 300
+            }
+        }
     }
 }

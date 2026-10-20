@@ -18,13 +18,12 @@
 #endif
 
 #ifdef _WIN32
-static Toggle *g_toggle = nullptr; // hook callback has no user data
+static Toggle* g_toggle = nullptr;  // hook callback has no user data
 #endif
 
-Toggle::Toggle(QObject *parent)
-    : QObject(parent), m_poll_timer(new QTimer(this)), m_keycode(0),
-      m_modifiers(0) {
-  m_poll_timer->setInterval(33); // ~30fps, enough for hotkey detection
+Toggle::Toggle(QObject* parent)
+    : QObject(parent), m_poll_timer(new QTimer(this)), m_keycode(0), m_modifiers(0) {
+  m_poll_timer->setInterval(33);  // ~30fps, enough for hotkey detection
   connect(m_poll_timer, &QTimer::timeout, this, &Toggle::process_events);
 #ifdef __APPLE__
   m_event_tap = nullptr;
@@ -104,8 +103,7 @@ bool Toggle::init() {
   }
   m_ctrl_down = false;
   m_alt_down = false;
-  qCInfo(lcToggle) << "started, hotkey registered on" << m_fds.size()
-                   << "keyboard(s)";
+  qCInfo(lcToggle) << "started, hotkey registered on" << m_fds.size() << "keyboard(s)";
   return true;
 }
 
@@ -120,8 +118,7 @@ void Toggle::process_events() {
         m_ctrl_down = ev.value != 0;
       } else if (ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT) {
         m_alt_down = ev.value != 0;
-      } else if (ev.code == KEY_P && ev.value == 1 && m_ctrl_down &&
-                 m_alt_down) {
+      } else if (ev.code == KEY_P && ev.value == 1 && m_ctrl_down && m_alt_down) {
         qCInfo(lcToggle) << "hotkey pressed";
         emit KEY_PRESSED();
       }
@@ -129,7 +126,7 @@ void Toggle::process_events() {
   }
 }
 
-#endif // __linux__
+#endif  // __linux__
 
 // ---------------------------------------------------------------------------
 // macOS (CGEventTap)
@@ -138,13 +135,16 @@ void Toggle::process_events() {
 #ifdef __APPLE__
 
 bool Toggle::init() {
-  m_keycode = 0x23; // kVK_ANSI_P
+  m_keycode = 0x23;  // kVK_ANSI_P
   m_modifiers = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate;
 
   CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown);
-  CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap, kCGHeadInsertEventTap,
-                                       kCGEventTapOptionDefault, eventMask,
-                                       event_tap_callback, this);
+  CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap,
+    kCGHeadInsertEventTap,
+    kCGEventTapOptionDefault,
+    eventMask,
+    event_tap_callback,
+    this);
   if (!tap) {
     qCCritical(lcToggle) << "CGEventTapCreate failed. "
                             "Grant Accessibility permission in System Preferences.";
@@ -152,8 +152,7 @@ bool Toggle::init() {
   }
   m_event_tap = tap;
 
-  CFRunLoopSourceRef source =
-      CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
+  CFRunLoopSourceRef source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0);
   if (!source) {
     qCCritical(lcToggle) << "failed to create run loop source";
     return false;
@@ -168,24 +167,23 @@ void Toggle::process_events() {
   // macOS is callback-driven (CGEventTap); no polling needed.
 }
 
-CGEventRef Toggle::event_tap_callback(CGEventTapProxy proxy, CGEventType type,
-                                      CGEventRef event, void *userInfo) {
+CGEventRef Toggle::event_tap_callback(
+  CGEventTapProxy proxy, CGEventType type, CGEventRef event, void* userInfo) {
   (void)proxy;
   if (type == kCGEventKeyDown) {
-    Toggle *self = static_cast<Toggle *>(userInfo);
-    CGKeyCode keyCode = static_cast<CGKeyCode>(
-        CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
+    Toggle* self = static_cast<Toggle*>(userInfo);
+    CGKeyCode keyCode =
+      static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
     CGEventFlags flags = CGEventGetFlags(event);
-    if (keyCode == self->m_keycode &&
-        (flags & self->m_modifiers) == self->m_modifiers) {
+    if (keyCode == self->m_keycode && (flags & self->m_modifiers) == self->m_modifiers) {
       qCInfo(lcToggle) << "hotkey pressed";
       emit self->KEY_PRESSED();
     }
   }
-  return event; // pass through
+  return event;  // pass through
 }
 
-#endif // __APPLE__
+#endif  // __APPLE__
 
 // ---------------------------------------------------------------------------
 // Windows (SetWindowsHookEx)
@@ -198,8 +196,7 @@ bool Toggle::init() {
   m_modifiers = MOD_CONTROL | MOD_ALT;
   g_toggle = this;
 
-  HHOOK hook = SetWindowsHookEx(WH_KEYBOARD_LL, low_level_keyboard_proc,
-                                GetModuleHandle(NULL), 0);
+  HHOOK hook = SetWindowsHookEx(WH_KEYBOARD_LL, low_level_keyboard_proc, GetModuleHandle(NULL), 0);
   if (!hook) {
     qCCritical(lcToggle) << "SetWindowsHookEx failed (error" << GetLastError()
                          << "). Run as Administrator.";
@@ -219,10 +216,9 @@ void Toggle::process_events() {
   }
 }
 
-LRESULT CALLBACK Toggle::low_level_keyboard_proc(int nCode, WPARAM wParam,
-                                                 LPARAM lParam) {
+LRESULT CALLBACK Toggle::low_level_keyboard_proc(int nCode, WPARAM wParam, LPARAM lParam) {
   if (nCode == HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
-    KBDLLHOOKSTRUCT *p = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
+    KBDLLHOOKSTRUCT* p = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
     bool ctrl = GetAsyncKeyState(VK_CONTROL) & 0x8000;
     bool alt = GetAsyncKeyState(VK_MENU) & 0x8000;
     if (p->vkCode == 'P' && ctrl && alt && g_toggle) {
@@ -233,4 +229,4 @@ LRESULT CALLBACK Toggle::low_level_keyboard_proc(int nCode, WPARAM wParam,
   return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-#endif // _WIN32
+#endif  // _WIN32

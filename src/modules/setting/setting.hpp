@@ -12,38 +12,39 @@
 class Setting : public QObject {
   Q_OBJECT
 
-public:
-  static Setting *instance();
+ public:
+  static Setting* instance();
 
   void save();
 
   QString input_source() const;
   QMap<QString, QString> dictionary() const;
+  QMap<QString, QString> snippets() const;
   bool markdown_mode() const;
-  bool allow_accents() const;
-  bool allow_punctuation() const;
+  QString style() const;
 
-  void set_input_source(const QString &v);
-  void set_dictionary(const QMap<QString, QString> &d);
+  void set_input_source(const QString& v);
+  void set_dictionary(const QMap<QString, QString>& d);
+  void set_snippets(const QMap<QString, QString>& d);
   void set_markdown_mode(bool v);
-  void set_allow_accents(bool v);
-  void set_allow_punctuation(bool v);
+  void set_style(const QString& v);
 
   static QStringList available_input_sources();
+  static QStringList available_styles();
 
-signals:
-  void SETTINGS_CHANGED(const QString &input_source);
+ signals:
+  void SETTINGS_CHANGED(const QString& input_source);
 
-private:
-  explicit Setting(QObject *parent = nullptr);
+ private:
+  explicit Setting(QObject* parent = nullptr);
   void load();
 
-  static Setting *s_instance;
-  QString m_input_source = "default"; // capture device name or "default"
-  QMap<QString, QString> m_dictionary; // original word -> replacement
+  static Setting* s_instance;
+  QString m_input_source = "default";   // capture device name or "default"
+  QMap<QString, QString> m_dictionary;  // rare word -> brief description
+  QMap<QString, QString> m_snippets;    // literal text -> replacement (post-LLM)
   bool m_markdown_mode = false;
-  bool m_allow_accents = true;
-  bool m_allow_punctuation = true;
+  QString m_style = "Casual";          // Casual | Formal | Email
 };
 
-#endif // SETTING_HPP
+#endif  // SETTING_HPP
