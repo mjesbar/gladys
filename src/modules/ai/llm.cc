@@ -295,11 +295,15 @@ void LLM::format_transcription(const QString& text) {
 
   QJsonObject user;
   user["role"] = "user";
-  user["content"] = "TASK\nFormat the input according to the instructions & examples above.\n"
-                    "input: " + text + "\noutput: ";
+  user["content"] =
+    "TASK\nFormat the input according to the instructions & examples above.\n"
+    "input: " +
+    text + "\noutput: ";
 
   QJsonObject json;
   json["messages"] = QJsonArray({system, user});
+  json["stop"] = QJsonArray({"\ninput:", "\n\n", "\n \n"});
+  json["max_tokens"] = static_cast<int>(text.length() + 10);
 
   QNetworkRequest request{QUrl(SERVER_URL)};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
