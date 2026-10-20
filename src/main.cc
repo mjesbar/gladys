@@ -5,6 +5,7 @@
 #include <QEventLoop>
 #include <QFont>
 #include <QFontDatabase>
+#include <QIcon>
 #include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -92,6 +93,7 @@ int main(int argc, char* argv[]) {
 
   QApplication app(argc, argv);
   app.setApplicationName("Gladys");
+  app.setWindowIcon(QIcon(":/icons/icon.svg"));
   app.setQuitOnLastWindowClosed(false);
   load_fonts();
   QFont ui_font("Roboto Slab");
