@@ -7,13 +7,13 @@
 // ANSI colors per level: DEBUG grey, INFO green, WARN yellow, ERROR red, FATAL magenta
 void log_setup() {
   qSetMessagePattern(
-      "%{time yyyy-MM-dd hh:mm:ss.zzz} "
-      "%{if-debug}\033[90mDEBUG%{endif}"
-      "%{if-info}\033[32mINFO%{endif}"
-      "%{if-warning}\033[33mWARN%{endif}"
-      "%{if-critical}\033[31mERROR%{endif}"
-      "%{if-fatal}\033[35mFATAL%{endif}"
-      "\033[0m [%{category}] %{message}");
+    "%{time yyyy-MM-dd hh:mm:ss.zzz} "
+    "%{if-debug}\033[90mDEBUG%{endif}"
+    "%{if-info}\033[32mINFO%{endif}"
+    "%{if-warning}\033[33mWARN%{endif}"
+    "%{if-critical}\033[31mERROR%{endif}"
+    "%{if-fatal}\033[35mFATAL%{endif}"
+    "\033[0m [%{category}] %{message}");
 }
 
 Q_LOGGING_CATEGORY(lcMain, "gladys.main")

@@ -11,23 +11,23 @@
 class LLM : public QObject {
   Q_OBJECT
 
-public:
-  explicit LLM(QObject *parent = nullptr);
+ public:
+  explicit LLM(QObject* parent = nullptr);
   ~LLM() override;
 
   bool start();
   void stop();
 
-public slots:
-  void format_transcription(const QString &text);
+ public slots:
+  void format_transcription(const QString& text);
 
-signals:
-  void FORMATTED_TEXT_READY(const QString &text);
+ signals:
+  void FORMATTED_TEXT_READY(const QString& text);
 
-private:
+ private:
   QProcess m_server;
   QNetworkAccessManager m_network;
   bool m_is_running;
 };
 
-#endif // LLM_H
+#endif  // LLM_H

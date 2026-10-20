@@ -13,9 +13,7 @@ Window {
     width: 119
     height: 130
     color: "transparent"
-    flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-           | Qt.NoDropShadowWindowHint
-           | (Qt.platform.os === "windows" ? Qt.WindowDoesNotAcceptFocus : 0)
+    flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint | (Qt.platform.os === "windows" ? Qt.WindowDoesNotAcceptFocus : 0)
     // Centered on the screen the window is on (desktopAvailable* spans all screens).
     x: Screen.virtualX + (Screen.width - width) / 2
     y: Screen.desktopAvailableHeight - navBarPadding + 1 - height
@@ -45,5 +43,4 @@ Window {
         active: false
         source: "Settings.qml"
     }
-
 }

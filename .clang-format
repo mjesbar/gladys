@@ -1,0 +1,19 @@
+BasedOnStyle: Google
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ContinuationIndentWidth: 2
+ColumnLimit: 100
+BinPackArguments: false
+BinPackParameters: OnePerLine
+AlignOperands: DontAlign
+AlignAfterOpenBracket: DontAlign
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true

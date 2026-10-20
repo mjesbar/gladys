@@ -9,13 +9,12 @@ static const int EDGE_MAX_HEIGHT = 20;
 static const int CENTER_MIN_HEIGHT = 10;
 static const int CENTER_MAX_HEIGHT = 48;
 
-AudioBars::AudioBars(QObject *parent)
-    : QObject(parent), m_heights(BAR_COUNT, 0.0) {}
+AudioBars::AudioBars(QObject* parent) : QObject(parent), m_heights(BAR_COUNT, 0.0) {}
 
 QList<qreal> AudioBars::heights() const { return m_heights; }
 
 // Bell curve: tallest bars at the center. Level is eased (quad in) per bar.
-void AudioBars::update_levels(const QVector<double> &levels) {
+void AudioBars::update_levels(const QVector<double>& levels) {
   if (levels.isEmpty()) {
     m_heights.fill(0.0);
   } else {

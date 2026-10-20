@@ -6,7 +6,7 @@ import QtQuick.Window
 Window {
     id: splash
 
-    signal fadeOutFinished()
+    signal fadeOutFinished
 
     width: 260
     height: 240
