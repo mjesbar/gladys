@@ -3,8 +3,6 @@
 
 #include "llm.hpp"
 
-#include <qt6/QtCore/qcoreapplication.h>
-
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QJsonArray>
