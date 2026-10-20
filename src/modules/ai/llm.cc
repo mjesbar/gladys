@@ -194,7 +194,8 @@ static QString build_prompt(const QString& text) {
       "\" exactly as written. Meaning: " + it.value() + ".\n";
   }
 
-  instructions += "---\nTASK\ninput: " + text + "\noutput: ";
+  instructions += "---\nTASK\nFormat the input according to the instructions & examples above.\n";
+  instructions += "input: " + text + "\noutput: ";
 
   return instructions;
 }
@@ -248,7 +249,7 @@ bool LLM::start() {
                                       << "--flash-attn" << "on"
                                       << "--cache-type-k" << "q4_0"
                                       << "--repeat-penalty" << "1.15"
-                                      << "--repeat-last-n" << "256"
+                                      << "--repeat-last-n" << "16"
                                       << "--port" << "8080");
 
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();

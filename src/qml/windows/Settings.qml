@@ -174,12 +174,19 @@ Window {
         }
     }
 
-    Item {
+    Flickable {
         anchors.fill: parent
+        contentHeight: content.height + 64
+        clip: true
+
+        ScrollBar.vertical: ScrollBar {}
 
         Column {
-            anchors.fill: parent
-            anchors.margins: 32
+            id: content
+
+            x: 32
+            y: 32
+            width: parent.width - 64
             spacing: 16
 
             Card {
