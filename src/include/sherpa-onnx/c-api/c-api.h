@@ -63,7 +63,7 @@
  * - `audio-tagging-c-api.c` for audio tagging
  * - `add-punctuation-c-api.c` and `add-punctuation-online-c-api.c` for
  *   punctuation
- * - `offline-sepaker-diarization-c-api.c` for diarization
+ * - `offline-speaker-diarization-c-api.c` for diarization
  * - `speech-enhancement-gtcrn-c-api.c` and
  *   `online-speech-enhancement-gtcrn-c-api.c` for speech enhancement
  */
@@ -94,11 +94,11 @@ extern "C" {
 #define SHERPA_ONNX_EXPORT
 #define SHERPA_ONNX_IMPORT
 #endif
-#else // WIN32
+#else  // WIN32
 #define SHERPA_ONNX_EXPORT __attribute__((visibility("default")))
 
 #define SHERPA_ONNX_IMPORT SHERPA_ONNX_EXPORT
-#endif // WIN32
+#endif  // WIN32
 
 #if defined(SHERPA_ONNX_BUILD_MAIN_LIB)
 #define SHERPA_ONNX_API SHERPA_ONNX_EXPORT
@@ -149,6 +149,16 @@ SHERPA_ONNX_API const char *SherpaOnnxGetGitSha1();
  * @return Build date string, for example `"Fri Jun 20 11:22:52 2025"`.
  */
 SHERPA_ONNX_API const char *SherpaOnnxGetGitDate();
+
+/**
+ * @brief Return the onnxruntime version string used by the library.
+ *
+ * The returned pointer refers to statically allocated memory owned by the
+ * library. Do not free it and do not modify it.
+ *
+ * @return Onnxruntime version string, for example `"1.22.0"`.
+ */
+SHERPA_ONNX_API const char *SherpaOnnxGetOnnxruntimeVersionStr();
 
 /**
  * @brief Check whether a file exists.
@@ -290,6 +300,14 @@ typedef struct SherpaOnnxOnlineCtcFstDecoderConfig {
   int32_t max_active;
 } SherpaOnnxOnlineCtcFstDecoderConfig;
 
+/** @brief Configuration for HLG/FST-based offline CTC decoding. */
+typedef struct SherpaOnnxOfflineCtcFstDecoderConfig {
+  /** Path to the decoding graph. */
+  const char *graph;
+  /** Decoder max-active setting. 0 means 3000. */
+  int32_t max_active;
+} SherpaOnnxOfflineCtcFstDecoderConfig;
+
 /** @brief Configuration for homophone replacement. */
 typedef struct SherpaOnnxHomophoneReplacerConfig {
   /** Unused legacy field kept for ABI compatibility. */
@@ -333,6 +351,7 @@ typedef struct SherpaOnnxHomophoneReplacerConfig {
  *
  * config.decoding_method = "greedy_search";
  * @endcode
+ * @see SherpaOnnxCreateOnlineRecognizer
  */
 typedef struct SherpaOnnxOnlineRecognizerConfig {
   /** Feature extraction settings. */
@@ -387,6 +406,7 @@ typedef struct SherpaOnnxOnlineRecognizerConfig {
  * All pointers in this struct are owned by the result object returned from
  * SherpaOnnxGetOnlineStreamResult() and become invalid after
  * SherpaOnnxDestroyOnlineRecognizerResult() is called.
+ * @see SherpaOnnxGetOnlineStreamResult
  */
 typedef struct SherpaOnnxOnlineRecognizerResult {
   /** Recognized text accumulated so far. */
@@ -457,6 +477,7 @@ typedef struct SherpaOnnxOnlineStream SherpaOnnxOnlineStream;
  * const SherpaOnnxOnlineRecognizer *recognizer =
  *     SherpaOnnxCreateOnlineRecognizer(&config);
  * @endcode
+ * @see SherpaOnnxOnlineRecognizerConfig, SherpaOnnxDestroyOnlineRecognizer
  */
 SHERPA_ONNX_API const SherpaOnnxOnlineRecognizer *
 SherpaOnnxCreateOnlineRecognizer(
@@ -471,9 +492,10 @@ SherpaOnnxCreateOnlineRecognizer(
  * SherpaOnnxDestroyOnlineRecognizer(recognizer);
  * recognizer = NULL;
  * @endcode
+ * @see SherpaOnnxCreateOnlineRecognizer
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOnlineRecognizer(const SherpaOnnxOnlineRecognizer *recognizer);
+SHERPA_ONNX_API void SherpaOnnxDestroyOnlineRecognizer(
+    const SherpaOnnxOnlineRecognizer *recognizer);
 
 /**
  * @brief Create a streaming ASR state object.
@@ -491,9 +513,10 @@ SherpaOnnxDestroyOnlineRecognizer(const SherpaOnnxOnlineRecognizer *recognizer);
  * const SherpaOnnxOnlineStream *stream =
  *     SherpaOnnxCreateOnlineStream(recognizer);
  * @endcode
+ * @see SherpaOnnxDestroyOnlineStream
  */
-SHERPA_ONNX_API const SherpaOnnxOnlineStream *
-SherpaOnnxCreateOnlineStream(const SherpaOnnxOnlineRecognizer *recognizer);
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *SherpaOnnxCreateOnlineStream(
+    const SherpaOnnxOnlineRecognizer *recognizer);
 
 /**
  * @brief Create a streaming ASR state object with per-stream hotwords.
@@ -523,9 +546,10 @@ SherpaOnnxCreateOnlineStreamWithHotwords(
  * SherpaOnnxDestroyOnlineStream(stream);
  * stream = NULL;
  * @endcode
+ * @see SherpaOnnxCreateOnlineStream
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOnlineStream(const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxDestroyOnlineStream(
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Append audio samples to a streaming ASR stream.
@@ -545,11 +569,11 @@ SherpaOnnxDestroyOnlineStream(const SherpaOnnxOnlineStream *stream);
  * SherpaOnnxOnlineStreamAcceptWaveform(stream, wave->sample_rate,
  *                                      wave->samples + start, chunk_size);
  * @endcode
+ * @see SherpaOnnxCreateOnlineStream, SherpaOnnxDecodeOnlineStream
  */
-SHERPA_ONNX_API void
-SherpaOnnxOnlineStreamAcceptWaveform(const SherpaOnnxOnlineStream *stream,
-                                     int32_t sample_rate, const float *samples,
-                                     int32_t n);
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamAcceptWaveform(
+    const SherpaOnnxOnlineStream *stream, int32_t sample_rate,
+    const float *samples, int32_t n);
 
 /**
  * @brief Check whether a streaming ASR stream is ready to decode.
@@ -582,10 +606,11 @@ SherpaOnnxIsOnlineStreamReady(const SherpaOnnxOnlineRecognizer *recognizer,
  *   SherpaOnnxDecodeOnlineStream(recognizer, stream);
  * }
  * @endcode
+ * @see SherpaOnnxIsOnlineStreamReady, SherpaOnnxGetOnlineStreamResult
  */
-SHERPA_ONNX_API void
-SherpaOnnxDecodeOnlineStream(const SherpaOnnxOnlineRecognizer *recognizer,
-                             const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxDecodeOnlineStream(
+    const SherpaOnnxOnlineRecognizer *recognizer,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Decode multiple streaming ASR streams in parallel.
@@ -624,6 +649,7 @@ SHERPA_ONNX_API void SherpaOnnxDecodeMultipleOnlineStreams(
  * // are available.
  * SherpaOnnxDestroyOnlineRecognizerResult(r);
  * @endcode
+ * @see SherpaOnnxDestroyOnlineRecognizerResult
  */
 SHERPA_ONNX_API const SherpaOnnxOnlineRecognizerResult *
 SherpaOnnxGetOnlineStreamResult(const SherpaOnnxOnlineRecognizer *recognizer,
@@ -638,6 +664,7 @@ SherpaOnnxGetOnlineStreamResult(const SherpaOnnxOnlineRecognizer *recognizer,
  * SherpaOnnxDestroyOnlineRecognizerResult(r);
  * r = NULL;
  * @endcode
+ * @see SherpaOnnxGetOnlineStreamResult
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOnlineRecognizerResult(
     const SherpaOnnxOnlineRecognizerResult *r);
@@ -689,9 +716,9 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOnlineStreamResultJson(const char *s);
  * }
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxOnlineStreamReset(const SherpaOnnxOnlineRecognizer *recognizer,
-                            const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamReset(
+    const SherpaOnnxOnlineRecognizer *recognizer,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Signal end-of-input for a streaming ASR stream.
@@ -704,8 +731,8 @@ SherpaOnnxOnlineStreamReset(const SherpaOnnxOnlineRecognizer *recognizer,
  * SherpaOnnxOnlineStreamInputFinished(stream);
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxOnlineStreamInputFinished(const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamInputFinished(
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Set a per-stream runtime option.
@@ -721,9 +748,8 @@ SherpaOnnxOnlineStreamInputFinished(const SherpaOnnxOnlineStream *stream);
  * SherpaOnnxOnlineStreamSetOption(stream, "is_final", "1");
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxOnlineStreamSetOption(const SherpaOnnxOnlineStream *stream,
-                                const char *key, const char *value);
+SHERPA_ONNX_API void SherpaOnnxOnlineStreamSetOption(
+    const SherpaOnnxOnlineStream *stream, const char *key, const char *value);
 
 /**
  * @brief Get a per-stream runtime option.
@@ -738,9 +764,8 @@ SherpaOnnxOnlineStreamSetOption(const SherpaOnnxOnlineStream *stream,
  * const char *value = SherpaOnnxOnlineStreamGetOption(stream, "is_final");
  * @endcode
  */
-SHERPA_ONNX_API const char *
-SherpaOnnxOnlineStreamGetOption(const SherpaOnnxOnlineStream *stream,
-                                const char *key);
+SHERPA_ONNX_API const char *SherpaOnnxOnlineStreamGetOption(
+    const SherpaOnnxOnlineStream *stream, const char *key);
 
 /**
  * @brief Check whether a per-stream runtime option exists.
@@ -791,8 +816,8 @@ typedef struct SherpaOnnxDisplay SherpaOnnxDisplay;
  * const SherpaOnnxDisplay *display = SherpaOnnxCreateDisplay(50);
  * @endcode
  */
-SHERPA_ONNX_API const SherpaOnnxDisplay *
-SherpaOnnxCreateDisplay(int32_t max_word_per_line);
+SHERPA_ONNX_API const SherpaOnnxDisplay *SherpaOnnxCreateDisplay(
+    int32_t max_word_per_line);
 
 /**
  * @brief Destroy a display helper.
@@ -1154,6 +1179,7 @@ typedef struct SherpaOnnxOfflineModelConfig {
  *     "./sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/tokens.txt";
  * config.model_config.model_type = "nemo_transducer";
  * @endcode
+ * @see SherpaOnnxCreateOfflineRecognizer
  */
 typedef struct SherpaOnnxOfflineRecognizerConfig {
   /** Feature extraction settings. */
@@ -1182,6 +1208,9 @@ typedef struct SherpaOnnxOfflineRecognizerConfig {
 
   /** Optional homophone replacement configuration. */
   SherpaOnnxHomophoneReplacerConfig hr;
+
+  /** Optional CTC+FST decoder configuration. */
+  SherpaOnnxOfflineCtcFstDecoderConfig ctc_fst_decoder_config;
 } SherpaOnnxOfflineRecognizerConfig;
 
 /** @brief Non-streaming recognizer handle. */
@@ -1245,6 +1274,7 @@ typedef struct SherpaOnnxOfflineStream SherpaOnnxOfflineStream;
  *     "./sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/tokens.txt";
  * config.model_config.model_type = "nemo_transducer";
  * @endcode
+ * @see SherpaOnnxOfflineRecognizerConfig, SherpaOnnxDestroyOfflineRecognizer
  */
 SHERPA_ONNX_API const SherpaOnnxOfflineRecognizer *
 SherpaOnnxCreateOfflineRecognizer(
@@ -1273,6 +1303,7 @@ SHERPA_ONNX_API void SherpaOnnxOfflineRecognizerSetConfig(
  * SherpaOnnxDestroyOfflineRecognizer(recognizer);
  * recognizer = NULL;
  * @endcode
+ * @see SherpaOnnxCreateOfflineRecognizer
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizer(
     const SherpaOnnxOfflineRecognizer *recognizer);
@@ -1290,9 +1321,10 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizer(
  * const SherpaOnnxOfflineStream *stream =
  *     SherpaOnnxCreateOfflineStream(recognizer);
  * @endcode
+ * @see SherpaOnnxDestroyOfflineStream, SherpaOnnxAcceptWaveformOffline
  */
-SHERPA_ONNX_API const SherpaOnnxOfflineStream *
-SherpaOnnxCreateOfflineStream(const SherpaOnnxOfflineRecognizer *recognizer);
+SHERPA_ONNX_API const SherpaOnnxOfflineStream *SherpaOnnxCreateOfflineStream(
+    const SherpaOnnxOfflineRecognizer *recognizer);
 
 /**
  * @brief Create a non-streaming ASR input stream with per-stream hotwords.
@@ -1322,9 +1354,10 @@ SherpaOnnxCreateOfflineStreamWithHotwords(
  * SherpaOnnxDestroyOfflineStream(stream);
  * stream = NULL;
  * @endcode
+ * @see SherpaOnnxCreateOfflineStream
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOfflineStream(const SherpaOnnxOfflineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineStream(
+    const SherpaOnnxOfflineStream *stream);
 
 /**
  * @brief Provide the full utterance to an offline ASR stream.
@@ -1350,11 +1383,11 @@ SherpaOnnxDestroyOfflineStream(const SherpaOnnxOfflineStream *stream);
  *                                 wave->samples, wave->num_samples);
  * SherpaOnnxDecodeOfflineStream(recognizer, stream);
  * @endcode
+ * @see SherpaOnnxCreateOfflineStream, SherpaOnnxDecodeOfflineStream
  */
-SHERPA_ONNX_API void
-SherpaOnnxAcceptWaveformOffline(const SherpaOnnxOfflineStream *stream,
-                                int32_t sample_rate, const float *samples,
-                                int32_t n);
+SHERPA_ONNX_API void SherpaOnnxAcceptWaveformOffline(
+    const SherpaOnnxOfflineStream *stream, int32_t sample_rate,
+    const float *samples, int32_t n);
 
 /**
  * @brief Set a per-stream runtime option for offline ASR.
@@ -1367,9 +1400,8 @@ SherpaOnnxAcceptWaveformOffline(const SherpaOnnxOfflineStream *stream,
  * SherpaOnnxOfflineStreamSetOption(stream, "language", "en");
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxOfflineStreamSetOption(const SherpaOnnxOfflineStream *stream,
-                                 const char *key, const char *value);
+SHERPA_ONNX_API void SherpaOnnxOfflineStreamSetOption(
+    const SherpaOnnxOfflineStream *stream, const char *key, const char *value);
 
 /**
  * @brief Get a per-stream runtime option for offline ASR.
@@ -1384,9 +1416,8 @@ SherpaOnnxOfflineStreamSetOption(const SherpaOnnxOfflineStream *stream,
  * const char *value = SherpaOnnxOfflineStreamGetOption(stream, "language");
  * @endcode
  */
-SHERPA_ONNX_API const char *
-SherpaOnnxOfflineStreamGetOption(const SherpaOnnxOfflineStream *stream,
-                                 const char *key);
+SHERPA_ONNX_API const char *SherpaOnnxOfflineStreamGetOption(
+    const SherpaOnnxOfflineStream *stream, const char *key);
 
 /**
  * @brief Check whether a per-stream runtime option exists.
@@ -1414,10 +1445,11 @@ SHERPA_ONNX_API int32_t SherpaOnnxOfflineStreamHasOption(
  * @code
  * SherpaOnnxDecodeOfflineStream(recognizer, stream);
  * @endcode
+ * @see SherpaOnnxAcceptWaveformOffline, SherpaOnnxGetOfflineStreamResult
  */
-SHERPA_ONNX_API void
-SherpaOnnxDecodeOfflineStream(const SherpaOnnxOfflineRecognizer *recognizer,
-                              const SherpaOnnxOfflineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxDecodeOfflineStream(
+    const SherpaOnnxOfflineRecognizer *recognizer,
+    const SherpaOnnxOfflineStream *stream);
 
 /**
  * @brief Run offline ASR on multiple streams in parallel.
@@ -1444,6 +1476,7 @@ SHERPA_ONNX_API void SherpaOnnxDecodeMultipleOfflineStreams(
  * All pointers in this struct are owned by the result object returned from
  * SherpaOnnxGetOfflineStreamResult() and become invalid after
  * SherpaOnnxDestroyOfflineRecognizerResult() is called.
+ * @see SherpaOnnxGetOfflineStreamResult, SherpaOnnxDestroyOfflineRecognizerResult
  */
 typedef struct SherpaOnnxOfflineRecognizerResult {
   /** Recognized text. */
@@ -1526,6 +1559,7 @@ typedef struct SherpaOnnxOfflineRecognizerResult {
  * }
  * SherpaOnnxDestroyOfflineRecognizerResult(r);
  * @endcode
+ * @see SherpaOnnxDestroyOfflineRecognizerResult, SherpaOnnxDecodeOfflineStream
  */
 SHERPA_ONNX_API const SherpaOnnxOfflineRecognizerResult *
 SherpaOnnxGetOfflineStreamResult(const SherpaOnnxOfflineStream *stream);
@@ -1539,6 +1573,7 @@ SherpaOnnxGetOfflineStreamResult(const SherpaOnnxOfflineStream *stream);
  * SherpaOnnxDestroyOfflineRecognizerResult(r);
  * r = NULL;
  * @endcode
+ * @see SherpaOnnxGetOfflineStreamResult
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizerResult(
     const SherpaOnnxOfflineRecognizerResult *r);
@@ -1556,8 +1591,8 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizerResult(
  * SherpaOnnxDestroyOfflineStreamResultJson(json);
  * @endcode
  */
-SHERPA_ONNX_API const char *
-SherpaOnnxGetOfflineStreamResultAsJson(const SherpaOnnxOfflineStream *stream);
+SHERPA_ONNX_API const char *SherpaOnnxGetOfflineStreamResultAsJson(
+    const SherpaOnnxOfflineStream *stream);
 
 /**
  * @brief Free a JSON string returned by
@@ -1579,6 +1614,7 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineStreamResultJson(const char *s);
  * @brief Snapshot of the current keyword spotting result.
  *
  * Free this object with SherpaOnnxDestroyKeywordResult().
+ * @see SherpaOnnxGetKeywordResult
  */
 typedef struct SherpaOnnxKeywordResult {
   /**
@@ -1664,6 +1700,7 @@ typedef struct SherpaOnnxKeywordResult {
  * config.keywords_score = 3.0f;
  * config.keywords_threshold = 0.1f;
  * @endcode
+ * @see SherpaOnnxCreateKeywordSpotter
  */
 typedef struct SherpaOnnxKeywordSpotterConfig {
   /** Feature extraction parameters. */
@@ -1696,17 +1733,19 @@ typedef struct SherpaOnnxKeywordSpotter SherpaOnnxKeywordSpotter;
  * @param config Keyword spotter configuration.
  * @return A newly allocated keyword spotter on success, or NULL on error. Free
  *         it with SherpaOnnxDestroyKeywordSpotter().
+ * @see SherpaOnnxKeywordSpotterConfig, SherpaOnnxDestroyKeywordSpotter
  */
-SHERPA_ONNX_API const SherpaOnnxKeywordSpotter *
-SherpaOnnxCreateKeywordSpotter(const SherpaOnnxKeywordSpotterConfig *config);
+SHERPA_ONNX_API const SherpaOnnxKeywordSpotter *SherpaOnnxCreateKeywordSpotter(
+    const SherpaOnnxKeywordSpotterConfig *config);
 
 /**
  * @brief Destroy a keyword spotter.
  *
  * @param spotter A pointer returned by SherpaOnnxCreateKeywordSpotter().
+ * @see SherpaOnnxCreateKeywordSpotter
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyKeywordSpotter(const SherpaOnnxKeywordSpotter *spotter);
+SHERPA_ONNX_API void SherpaOnnxDestroyKeywordSpotter(
+    const SherpaOnnxKeywordSpotter *spotter);
 
 /**
  * @brief Create a keyword spotting stream using the spotter's built-in keyword
@@ -1716,8 +1755,8 @@ SherpaOnnxDestroyKeywordSpotter(const SherpaOnnxKeywordSpotter *spotter);
  * @return A newly allocated stream. Free it with
  * SherpaOnnxDestroyOnlineStream().
  */
-SHERPA_ONNX_API const SherpaOnnxOnlineStream *
-SherpaOnnxCreateKeywordStream(const SherpaOnnxKeywordSpotter *spotter);
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *SherpaOnnxCreateKeywordStream(
+    const SherpaOnnxKeywordSpotter *spotter);
 
 /**
  * @brief Create a keyword spotting stream with extra or replacement keywords.
@@ -1761,9 +1800,9 @@ SherpaOnnxIsKeywordStreamReady(const SherpaOnnxKeywordSpotter *spotter,
  * @param stream A pointer returned by SherpaOnnxCreateKeywordStream() or
  *               SherpaOnnxCreateKeywordStreamWithKeywords().
  */
-SHERPA_ONNX_API void
-SherpaOnnxDecodeKeywordStream(const SherpaOnnxKeywordSpotter *spotter,
-                              const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxDecodeKeywordStream(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Reset a keyword stream after a keyword is detected.
@@ -1775,9 +1814,9 @@ SherpaOnnxDecodeKeywordStream(const SherpaOnnxKeywordSpotter *spotter,
  * @param stream A pointer returned by SherpaOnnxCreateKeywordStream() or
  *               SherpaOnnxCreateKeywordStreamWithKeywords().
  */
-SHERPA_ONNX_API void
-SherpaOnnxResetKeywordStream(const SherpaOnnxKeywordSpotter *spotter,
-                             const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API void SherpaOnnxResetKeywordStream(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Decode multiple ready keyword streams in parallel.
@@ -1789,10 +1828,9 @@ SherpaOnnxResetKeywordStream(const SherpaOnnxKeywordSpotter *spotter,
  * @param streams Array of ready streams.
  * @param n Number of elements in @p streams.
  */
-SHERPA_ONNX_API void
-SherpaOnnxDecodeMultipleKeywordStreams(const SherpaOnnxKeywordSpotter *spotter,
-                                       const SherpaOnnxOnlineStream **streams,
-                                       int32_t n);
+SHERPA_ONNX_API void SherpaOnnxDecodeMultipleKeywordStreams(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream **streams, int32_t n);
 
 /**
  * @brief Get the current keyword spotting result for a stream.
@@ -1814,18 +1852,20 @@ SherpaOnnxDecodeMultipleKeywordStreams(const SherpaOnnxKeywordSpotter *spotter,
  * }
  * SherpaOnnxDestroyKeywordResult(r);
  * @endcode
+ * @see SherpaOnnxDestroyKeywordResult
  */
-SHERPA_ONNX_API const SherpaOnnxKeywordResult *
-SherpaOnnxGetKeywordResult(const SherpaOnnxKeywordSpotter *spotter,
-                           const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API const SherpaOnnxKeywordResult *SherpaOnnxGetKeywordResult(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Destroy a keyword result snapshot.
  *
  * @param r A pointer returned by SherpaOnnxGetKeywordResult().
+ * @see SherpaOnnxGetKeywordResult
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyKeywordResult(const SherpaOnnxKeywordResult *r);
+SHERPA_ONNX_API void SherpaOnnxDestroyKeywordResult(
+    const SherpaOnnxKeywordResult *r);
 
 /**
  * @brief Get the current keyword spotting result as JSON.
@@ -1836,9 +1876,9 @@ SherpaOnnxDestroyKeywordResult(const SherpaOnnxKeywordResult *r);
  * @return A newly allocated JSON string. Free it with
  *         SherpaOnnxFreeKeywordResultJson().
  */
-SHERPA_ONNX_API const char *
-SherpaOnnxGetKeywordResultAsJson(const SherpaOnnxKeywordSpotter *spotter,
-                                 const SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API const char *SherpaOnnxGetKeywordResultAsJson(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /**
  * @brief Free a JSON string returned by SherpaOnnxGetKeywordResultAsJson().
@@ -1923,6 +1963,7 @@ typedef struct SherpaOnnxTenVadModelConfig {
  * config.provider = "cpu";
  * config.debug = 0;
  * @endcode
+ * @see SherpaOnnxCreateVoiceActivityDetector
  */
 typedef struct SherpaOnnxVadModelConfig {
   /** Silero VAD configuration. */
@@ -1954,8 +1995,8 @@ typedef struct SherpaOnnxCircularBuffer SherpaOnnxCircularBuffer;
  *     SherpaOnnxCreateCircularBuffer(16000 * 30);
  * @endcode
  */
-SHERPA_ONNX_API const SherpaOnnxCircularBuffer *
-SherpaOnnxCreateCircularBuffer(int32_t capacity);
+SHERPA_ONNX_API const SherpaOnnxCircularBuffer *SherpaOnnxCreateCircularBuffer(
+    int32_t capacity);
 
 /**
  * @brief Destroy a circular buffer.
@@ -1967,8 +2008,8 @@ SherpaOnnxCreateCircularBuffer(int32_t capacity);
  * buffer = NULL;
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyCircularBuffer(const SherpaOnnxCircularBuffer *buffer);
+SHERPA_ONNX_API void SherpaOnnxDestroyCircularBuffer(
+    const SherpaOnnxCircularBuffer *buffer);
 
 /**
  * @brief Append samples to a circular buffer.
@@ -1981,9 +2022,8 @@ SherpaOnnxDestroyCircularBuffer(const SherpaOnnxCircularBuffer *buffer);
  * SherpaOnnxCircularBufferPush(buffer, wave->samples, wave->num_samples);
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxCircularBufferPush(const SherpaOnnxCircularBuffer *buffer,
-                             const float *p, int32_t n);
+SHERPA_ONNX_API void SherpaOnnxCircularBufferPush(
+    const SherpaOnnxCircularBuffer *buffer, const float *p, int32_t n);
 
 /**
  * @brief Copy out a slice of samples from a circular buffer.
@@ -1999,9 +2039,8 @@ SherpaOnnxCircularBufferPush(const SherpaOnnxCircularBuffer *buffer,
  * SherpaOnnxCircularBufferFree(samples);
  * @endcode
  */
-SHERPA_ONNX_API const float *
-SherpaOnnxCircularBufferGet(const SherpaOnnxCircularBuffer *buffer,
-                            int32_t start_index, int32_t n);
+SHERPA_ONNX_API const float *SherpaOnnxCircularBufferGet(
+    const SherpaOnnxCircularBuffer *buffer, int64_t start_index, int32_t n);
 
 /** @brief Free an array returned by SherpaOnnxCircularBufferGet(). */
 SHERPA_ONNX_API void SherpaOnnxCircularBufferFree(const float *p);
@@ -2012,8 +2051,8 @@ SHERPA_ONNX_API void SherpaOnnxCircularBufferFree(const float *p);
  * @param buffer A pointer returned by SherpaOnnxCreateCircularBuffer().
  * @param n Number of samples to remove.
  */
-SHERPA_ONNX_API void
-SherpaOnnxCircularBufferPop(const SherpaOnnxCircularBuffer *buffer, int32_t n);
+SHERPA_ONNX_API void SherpaOnnxCircularBufferPop(
+    const SherpaOnnxCircularBuffer *buffer, int32_t n);
 
 /**
  * @brief Return the number of currently stored samples.
@@ -2033,7 +2072,7 @@ SherpaOnnxCircularBufferSize(const SherpaOnnxCircularBuffer *buffer);
  * @param buffer A pointer returned by SherpaOnnxCreateCircularBuffer().
  * @return The current head index.
  */
-SHERPA_ONNX_API int32_t
+SHERPA_ONNX_API int64_t
 SherpaOnnxCircularBufferHead(const SherpaOnnxCircularBuffer *buffer);
 
 /**
@@ -2041,18 +2080,24 @@ SherpaOnnxCircularBufferHead(const SherpaOnnxCircularBuffer *buffer);
  *
  * @param buffer A pointer returned by SherpaOnnxCreateCircularBuffer().
  */
-SHERPA_ONNX_API void
-SherpaOnnxCircularBufferReset(const SherpaOnnxCircularBuffer *buffer);
+SHERPA_ONNX_API void SherpaOnnxCircularBufferReset(
+    const SherpaOnnxCircularBuffer *buffer);
 
 /**
  * @brief One detected speech segment returned by the VAD.
  *
  * The segment owns @c samples. Free the whole object with
  * SherpaOnnxDestroySpeechSegment().
+ * @see SherpaOnnxVoiceActivityDetectorFront, SherpaOnnxDestroySpeechSegment
  */
 typedef struct SherpaOnnxSpeechSegment {
-  /** Start index, in input samples, of this segment. */
-  int32_t start;
+  /** Start index, in input samples, of this segment.
+   *
+   * It is an absolute position in the input stream and keeps increasing
+   * during the lifetime of a detector, so it is 64-bit. It is -1 if the
+   * segment is not valid.
+   */
+  int64_t start;
   /** Newly allocated mono samples for this segment. */
   float *samples;
   /** Number of samples in @c samples. */
@@ -2087,6 +2132,7 @@ typedef struct SherpaOnnxVoiceActivityDetector SherpaOnnxVoiceActivityDetector;
  * const SherpaOnnxVoiceActivityDetector *vad =
  *     SherpaOnnxCreateVoiceActivityDetector(&config, 30.0f);
  * @endcode
+ * @see SherpaOnnxVadModelConfig, SherpaOnnxDestroyVoiceActivityDetector
  */
 SHERPA_ONNX_API const SherpaOnnxVoiceActivityDetector *
 SherpaOnnxCreateVoiceActivityDetector(const SherpaOnnxVadModelConfig *config,
@@ -2096,6 +2142,7 @@ SherpaOnnxCreateVoiceActivityDetector(const SherpaOnnxVadModelConfig *config,
  * @brief Destroy a voice activity detector.
  *
  * @param p A pointer returned by SherpaOnnxCreateVoiceActivityDetector().
+ * @see SherpaOnnxCreateVoiceActivityDetector
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyVoiceActivityDetector(
     const SherpaOnnxVoiceActivityDetector *p);
@@ -2152,16 +2199,16 @@ SHERPA_ONNX_API int32_t SherpaOnnxVoiceActivityDetectorDetected(
  * SherpaOnnxVoiceActivityDetectorPop(vad);
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxVoiceActivityDetectorPop(const SherpaOnnxVoiceActivityDetector *p);
+SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorPop(
+    const SherpaOnnxVoiceActivityDetector *p);
 
 /**
  * @brief Remove all queued speech segments.
  *
  * @param p A pointer returned by SherpaOnnxCreateVoiceActivityDetector().
  */
-SHERPA_ONNX_API void
-SherpaOnnxVoiceActivityDetectorClear(const SherpaOnnxVoiceActivityDetector *p);
+SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorClear(
+    const SherpaOnnxVoiceActivityDetector *p);
 
 /**
  * @brief Get the first queued speech segment.
@@ -2176,11 +2223,12 @@ SherpaOnnxVoiceActivityDetectorClear(const SherpaOnnxVoiceActivityDetector *p);
  * while (!SherpaOnnxVoiceActivityDetectorEmpty(vad)) {
  *   const SherpaOnnxSpeechSegment *segment =
  *       SherpaOnnxVoiceActivityDetectorFront(vad);
- *   printf("start=%d, samples=%d\n", segment->start, segment->n);
+ *   printf("start=%lld, samples=%d\n", (long long)segment->start, segment->n);
  *   SherpaOnnxDestroySpeechSegment(segment);
  *   SherpaOnnxVoiceActivityDetectorPop(vad);
  * }
  * @endcode
+ * @see SherpaOnnxSpeechSegment, SherpaOnnxDestroySpeechSegment
  */
 SHERPA_ONNX_API const SherpaOnnxSpeechSegment *
 SherpaOnnxVoiceActivityDetectorFront(const SherpaOnnxVoiceActivityDetector *p);
@@ -2190,17 +2238,18 @@ SherpaOnnxVoiceActivityDetectorFront(const SherpaOnnxVoiceActivityDetector *p);
  * SherpaOnnxVoiceActivityDetectorFront().
  *
  * @param p A pointer returned by SherpaOnnxVoiceActivityDetectorFront().
+ * @see SherpaOnnxVoiceActivityDetectorFront
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroySpeechSegment(const SherpaOnnxSpeechSegment *p);
+SHERPA_ONNX_API void SherpaOnnxDestroySpeechSegment(
+    const SherpaOnnxSpeechSegment *p);
 
 /**
  * @brief Reset a voice activity detector so it can process a new stream.
  *
  * @param p A pointer returned by SherpaOnnxCreateVoiceActivityDetector().
  */
-SHERPA_ONNX_API void
-SherpaOnnxVoiceActivityDetectorReset(const SherpaOnnxVoiceActivityDetector *p);
+SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorReset(
+    const SherpaOnnxVoiceActivityDetector *p);
 
 /**
  * @brief Flush buffered tail samples and force final segmentation.
@@ -2213,8 +2262,8 @@ SherpaOnnxVoiceActivityDetectorReset(const SherpaOnnxVoiceActivityDetector *p);
  * SherpaOnnxVoiceActivityDetectorFlush(vad);
  * @endcode
  */
-SHERPA_ONNX_API void
-SherpaOnnxVoiceActivityDetectorFlush(const SherpaOnnxVoiceActivityDetector *p);
+SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorFlush(
+    const SherpaOnnxVoiceActivityDetector *p);
 
 // ============================================================
 // For offline Text-to-Speech (i.e., non-streaming TTS)
@@ -2224,11 +2273,16 @@ SherpaOnnxVoiceActivityDetectorFlush(const SherpaOnnxVoiceActivityDetector *p);
 typedef struct SherpaOnnxOfflineTtsVitsModelConfig {
   /** Path to the VITS ONNX model, for example `./vits-ljs.onnx`. */
   const char *model;
-  /** Path to the lexicon file. Ignored if @c data_dir is provided. */
+  /** Path to the lexicon file. */
   const char *lexicon;
   /** Path to the tokens file. */
   const char *tokens;
-  /** Optional path to espeak-ng-data. */
+  /**
+   * Path to espeak-ng-data.
+   *
+   * @deprecated Ignored since v2.0.0. Pass pre-phonemized input via
+   * SherpaOnnxGenerationConfig.phoneme_codepoints (or .tokens) instead.
+   */
   const char *data_dir;
   /** VITS noise scale. */
   float noise_scale;
@@ -2250,7 +2304,12 @@ typedef struct SherpaOnnxOfflineTtsMatchaModelConfig {
   const char *lexicon;
   /** Path to the tokens file. */
   const char *tokens;
-  /** Optional path to espeak-ng-data. */
+  /**
+   * Path to espeak-ng-data.
+   *
+   * @deprecated Ignored since v2.0.0. Pass pre-phonemized input via
+   * SherpaOnnxGenerationConfig.phoneme_codepoints (or .tokens) instead.
+   */
   const char *data_dir;
   /** Matcha noise scale. */
   float noise_scale;
@@ -2268,7 +2327,12 @@ typedef struct SherpaOnnxOfflineTtsKokoroModelConfig {
   const char *voices;
   /** Path to the tokens file. */
   const char *tokens;
-  /** Optional path to espeak-ng-data. */
+  /**
+   * Path to espeak-ng-data.
+   *
+   * @deprecated Ignored since v2.0.0. Pass pre-phonemized input via
+   * SherpaOnnxGenerationConfig.phoneme_codepoints (or .tokens) instead.
+   */
   const char *data_dir;
   /** Speech rate scale. Values < 1 are slower; values > 1 are faster. */
   float length_scale;
@@ -2288,10 +2352,17 @@ typedef struct SherpaOnnxOfflineTtsKittenModelConfig {
   const char *voices;
   /** Path to the tokens file. */
   const char *tokens;
-  /** Optional path to espeak-ng-data. */
+  /**
+   * Path to espeak-ng-data.
+   *
+   * @deprecated Ignored since v2.0.0. Pass pre-phonemized input via
+   * SherpaOnnxGenerationConfig.phoneme_codepoints (or .tokens) instead.
+   */
   const char *data_dir;
   /** Speech rate scale. Values < 1 are slower; values > 1 are faster. */
   float length_scale;
+  /** Path to the lexicon file. */
+  const char *lexicon;
 } SherpaOnnxOfflineTtsKittenModelConfig;
 
 /** @brief Configuration for a ZipVoice TTS model. */
@@ -2304,7 +2375,12 @@ typedef struct SherpaOnnxOfflineTtsZipvoiceModelConfig {
   const char *decoder;
   /** Path to the vocoder model. */
   const char *vocoder;
-  /** Optional path to espeak-ng-data. */
+  /**
+   * Path to espeak-ng-data.
+   *
+   * @deprecated Ignored since v2.0.0. Pass pre-phonemized input via
+   * SherpaOnnxGenerationConfig.phoneme_codepoints (or .tokens) instead.
+   */
   const char *data_dir;
   /** Path to the lexicon file. */
   const char *lexicon;
@@ -2406,12 +2482,15 @@ typedef struct SherpaOnnxOfflineTtsModelConfig {
  * config.model.kokoro.model = "./kokoro-en-v0_19/model.onnx";
  * config.model.kokoro.voices = "./kokoro-en-v0_19/voices.bin";
  * config.model.kokoro.tokens = "./kokoro-en-v0_19/tokens.txt";
- * config.model.kokoro.data_dir = "./kokoro-en-v0_19/espeak-ng-data";
+ * // Download it from
+ * // https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/lexicon-en-us.txt
+ * config.model.kokoro.lexicon = "./lexicon-en-us.txt";
  * config.model.num_threads = 2;
  * config.model.provider = "cpu";
  * config.model.debug = 0;
  * config.max_num_sentences = 2;
  * @endcode
+ * @see SherpaOnnxCreateOfflineTts
  */
 typedef struct SherpaOnnxOfflineTtsConfig {
   /** TTS model configuration. */
@@ -2431,6 +2510,7 @@ typedef struct SherpaOnnxOfflineTtsConfig {
  *
  * The returned structure owns @c samples. Free the whole object with
  * SherpaOnnxDestroyOfflineTtsGeneratedAudio().
+ * @see SherpaOnnxOfflineTtsGenerateWithConfig, SherpaOnnxDestroyOfflineTtsGeneratedAudio
  */
 typedef struct SherpaOnnxGeneratedAudio {
   /** Generated mono samples in the range [-1, 1]. */
@@ -2494,22 +2574,26 @@ typedef struct SherpaOnnxOfflineTts SherpaOnnxOfflineTts;
  * config.model.kokoro.model = "./kokoro-en-v0_19/model.onnx";
  * config.model.kokoro.voices = "./kokoro-en-v0_19/voices.bin";
  * config.model.kokoro.tokens = "./kokoro-en-v0_19/tokens.txt";
- * config.model.kokoro.data_dir = "./kokoro-en-v0_19/espeak-ng-data";
+ * // Download it from
+ * // https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/lexicon-en-us.txt
+ * config.model.kokoro.lexicon = "./lexicon-en-us.txt";
  * config.model.num_threads = 2;
  *
  * const SherpaOnnxOfflineTts *tts = SherpaOnnxCreateOfflineTts(&config);
  * @endcode
+ * @see SherpaOnnxOfflineTtsConfig, SherpaOnnxDestroyOfflineTts
  */
-SHERPA_ONNX_API const SherpaOnnxOfflineTts *
-SherpaOnnxCreateOfflineTts(const SherpaOnnxOfflineTtsConfig *config);
+SHERPA_ONNX_API const SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTts(
+    const SherpaOnnxOfflineTtsConfig *config);
 
 /**
  * @brief Destroy an offline TTS engine.
  *
  * @param tts A pointer returned by SherpaOnnxCreateOfflineTts().
+ * @see SherpaOnnxCreateOfflineTts
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOfflineTts(const SherpaOnnxOfflineTts *tts);
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTts(
+    const SherpaOnnxOfflineTts *tts);
 
 /**
  * @brief Return the output sample rate of a TTS engine.
@@ -2532,6 +2616,26 @@ SHERPA_ONNX_API int32_t
 SherpaOnnxOfflineTtsNumSpeakers(const SherpaOnnxOfflineTts *tts);
 
 /**
+ * @brief Return the language/voice of the model, e.g., "en-us".
+ *
+ * The returned string is empty if such information is not available. It is
+ * never NULL; free it with SherpaOnnxDestroyOfflineTtsLang().
+ *
+ * @param tts A pointer returned by SherpaOnnxCreateOfflineTts().
+ * @return Language/voice of the model. Free it with
+ *         SherpaOnnxDestroyOfflineTtsLang().
+ */
+SHERPA_ONNX_API const char *
+SherpaOnnxOfflineTtsLang(const SherpaOnnxOfflineTts *tts);
+
+/**
+ * @brief Free a string returned by SherpaOnnxOfflineTtsLang().
+ *
+ * @param s A pointer returned by SherpaOnnxOfflineTtsLang().
+ */
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTtsLang(const char *s);
+
+/**
  * @brief Generate speech from text using the simple sid/speed interface.
  *
  * @deprecated Use SherpaOnnxOfflineTtsGenerateWithConfig() instead.
@@ -2550,6 +2654,7 @@ SherpaOnnxOfflineTtsNumSpeakers(const SherpaOnnxOfflineTts *tts);
  *                     "./generated.wav");
  * SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
  * @endcode
+ * @see SherpaOnnxDestroyOfflineTtsGeneratedAudio, SherpaOnnxGenerationConfig
  */
 SHERPA_ONNX_API SHERPA_ONNX_DEPRECATED(
     "Use SherpaOnnxOfflineTtsGenerateWithConfig() instead") const
@@ -2684,6 +2789,7 @@ SHERPA_ONNX_API SHERPA_ONNX_DEPRECATED(
  * cfg.reference_sample_rate = wave->sample_rate;
  * cfg.extra = "{\"max_reference_audio_len\": 10.0, \"seed\": 42}";
  * @endcode
+ * @see SherpaOnnxOfflineTtsGenerateWithConfig
  */
 typedef struct SherpaOnnxGenerationConfig {
   /** Silence scale between sentences. */
@@ -2704,6 +2810,44 @@ typedef struct SherpaOnnxGenerationConfig {
   int32_t num_steps;
   /** Optional model-specific JSON string with extra key/value pairs. */
   const char *extra;
+
+  /**
+   * Pre-phonemized input as Unicode codepoints.
+   *
+   * Phonemize the text yourself (for instance with piper_phonemize) and pass
+   * the resulting codepoints here. When set, it is used in place of @c text.
+   * Leave as NULL to use @c text with a lexicon.
+   *
+   * Each sentence is one sub-array. All codepoints of all sentences are stored
+   * flattened in this array; see @c phoneme_codepoints_lens for the boundaries.
+   */
+  const int32_t *phoneme_codepoints;
+
+  /** Number of codepoints in each sentence. It has
+   *  @c phoneme_codepoints_num_sentences entries. If not NULL, every entry
+   *  must be > 0. */
+  const int32_t *phoneme_codepoints_lens;
+
+  /** Number of sentences in @c phoneme_codepoints_lens. */
+  int32_t phoneme_codepoints_num_sentences;
+
+  /**
+   * Pre-tokenized input, e.g. Chinese pinyin like "zhong1".
+   *
+   * Each sentence is one sub-array. All token strings of all sentences are
+   * stored flattened in this array; see @c tokens_lens for the boundaries.
+   *
+   * Mutually exclusive with @c phoneme_codepoints: if both are set, a warning
+   * is printed and generation fails.
+   */
+  const char *const *tokens;
+
+  /** Number of tokens in each sentence. It has @c tokens_num_sentences
+   *  entries. If not NULL, every entry must be > 0. */
+  const int32_t *tokens_lens;
+
+  /** Number of sentences in @c tokens_lens. */
+  int32_t tokens_num_sentences;
 } SherpaOnnxGenerationConfig;
 
 /**
@@ -2745,9 +2889,10 @@ SherpaOnnxOfflineTtsGenerateWithConfig(
  *
  * @param p A pointer returned by one of the SherpaOnnxOfflineTtsGenerate*
  *          functions.
+ * @see SherpaOnnxOfflineTtsGenerateWithConfig
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOfflineTtsGeneratedAudio(const SherpaOnnxGeneratedAudio *p);
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTtsGeneratedAudio(
+    const SherpaOnnxGeneratedAudio *p);
 
 /**
  * @brief Write floating-point PCM to a mono 16-bit WAVE file.
@@ -2762,6 +2907,7 @@ SherpaOnnxDestroyOfflineTtsGeneratedAudio(const SherpaOnnxGeneratedAudio *p);
  * SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate,
  *                     "./generated-kokoro-en.wav");
  * @endcode
+ * @see SherpaOnnxReadWave
  */
 SHERPA_ONNX_API int32_t SherpaOnnxWriteWave(const float *samples, int32_t n,
                                             int32_t sample_rate,
@@ -2807,6 +2953,7 @@ SHERPA_ONNX_API int32_t SherpaOnnxWriteWaveMultiChannel(
  * @brief Decoded mono WAVE file content.
  *
  * Free this object with SherpaOnnxFreeWave().
+ * @see SherpaOnnxReadWave, SherpaOnnxFreeWave
  */
 typedef struct SherpaOnnxWave {
   /** Samples normalized to the range [-1, 1]. */
@@ -2832,6 +2979,7 @@ typedef struct SherpaOnnxWave {
  *   SherpaOnnxFreeWave(wave);
  * }
  * @endcode
+ * @see SherpaOnnxFreeWave, SherpaOnnxWave
  */
 SHERPA_ONNX_API const SherpaOnnxWave *SherpaOnnxReadWave(const char *filename);
 
@@ -2843,12 +2991,13 @@ SHERPA_ONNX_API const SherpaOnnxWave *SherpaOnnxReadWave(const char *filename);
  * @return A newly allocated wave object, or NULL on error. Free it with
  *         SherpaOnnxFreeWave().
  */
-SHERPA_ONNX_API const SherpaOnnxWave *
-SherpaOnnxReadWaveFromBinaryData(const char *data, int32_t n);
+SHERPA_ONNX_API const SherpaOnnxWave *SherpaOnnxReadWaveFromBinaryData(
+    const char *data, int32_t n);
 
 /**
  * @brief Destroy a wave object returned by SherpaOnnxReadWave() or
  * SherpaOnnxReadWaveFromBinaryData().
+ * @see SherpaOnnxReadWave
  */
 SHERPA_ONNX_API void SherpaOnnxFreeWave(const SherpaOnnxWave *wave);
 
@@ -2886,8 +3035,8 @@ SherpaOnnxReadWaveMultiChannel(const char *filename);
  *
  * @param wave A pointer returned by SherpaOnnxReadWaveMultiChannel().
  */
-SHERPA_ONNX_API void
-SherpaOnnxFreeMultiChannelWave(const SherpaOnnxMultiChannelWave *wave);
+SHERPA_ONNX_API void SherpaOnnxFreeMultiChannelWave(
+    const SherpaOnnxMultiChannelWave *wave);
 
 // ============================================================
 // For spoken language identification
@@ -2951,6 +3100,7 @@ typedef struct SherpaOnnxSpokenLanguageIdentification
  * @param config Spoken-language identification configuration.
  * @return A newly allocated identifier on success, or NULL on error. Free it
  *         with SherpaOnnxDestroySpokenLanguageIdentification().
+ * @see SherpaOnnxDestroySpokenLanguageIdentification
  */
 SHERPA_ONNX_API const SherpaOnnxSpokenLanguageIdentification *
 SherpaOnnxCreateSpokenLanguageIdentification(
@@ -2961,6 +3111,7 @@ SherpaOnnxCreateSpokenLanguageIdentification(
  *
  * @param slid A pointer returned by
  * SherpaOnnxCreateSpokenLanguageIdentification().
+ * @see SherpaOnnxCreateSpokenLanguageIdentification
  */
 SHERPA_ONNX_API void SherpaOnnxDestroySpokenLanguageIdentification(
     const SherpaOnnxSpokenLanguageIdentification *slid);
@@ -3046,6 +3197,7 @@ SHERPA_ONNX_API void SherpaOnnxDestroySpokenLanguageIdentificationResult(
  * config.num_threads = 1;
  * config.provider = "cpu";
  * @endcode
+ * @see SherpaOnnxCreateSpeakerEmbeddingExtractor
  */
 typedef struct SherpaOnnxSpeakerEmbeddingExtractorConfig {
   /** Speaker embedding model file. */
@@ -3068,6 +3220,7 @@ typedef struct SherpaOnnxSpeakerEmbeddingExtractor
  * @param config Speaker embedding extractor configuration.
  * @return A newly allocated extractor on success, or NULL on error. Free it
  *         with SherpaOnnxDestroySpeakerEmbeddingExtractor().
+ * @see SherpaOnnxSpeakerEmbeddingExtractorConfig, SherpaOnnxDestroySpeakerEmbeddingExtractor
  */
 SHERPA_ONNX_API const SherpaOnnxSpeakerEmbeddingExtractor *
 SherpaOnnxCreateSpeakerEmbeddingExtractor(
@@ -3077,6 +3230,7 @@ SherpaOnnxCreateSpeakerEmbeddingExtractor(
  * @brief Destroy a speaker embedding extractor.
  *
  * @param p A pointer returned by SherpaOnnxCreateSpeakerEmbeddingExtractor().
+ * @see SherpaOnnxCreateSpeakerEmbeddingExtractor
  */
 SHERPA_ONNX_API void SherpaOnnxDestroySpeakerEmbeddingExtractor(
     const SherpaOnnxSpeakerEmbeddingExtractor *p);
@@ -3154,10 +3308,14 @@ SherpaOnnxSpeakerEmbeddingExtractorComputeEmbedding(
  * @param v A pointer returned by
  *          SherpaOnnxSpeakerEmbeddingExtractorComputeEmbedding().
  */
-SHERPA_ONNX_API void
-SherpaOnnxSpeakerEmbeddingExtractorDestroyEmbedding(const float *v);
+SHERPA_ONNX_API void SherpaOnnxSpeakerEmbeddingExtractorDestroyEmbedding(
+    const float *v);
 
-/** @brief Opaque speaker embedding manager handle. */
+/**
+ * @brief Opaque speaker embedding manager handle.
+ *
+ * @see SherpaOnnxCreateSpeakerEmbeddingManager
+ */
 typedef struct SherpaOnnxSpeakerEmbeddingManager
     SherpaOnnxSpeakerEmbeddingManager;
 
@@ -3171,6 +3329,7 @@ typedef struct SherpaOnnxSpeakerEmbeddingManager
  *            SherpaOnnxSpeakerEmbeddingExtractorDim().
  * @return A newly allocated manager. Free it with
  *         SherpaOnnxDestroySpeakerEmbeddingManager().
+ * @see SherpaOnnxDestroySpeakerEmbeddingManager
  */
 SHERPA_ONNX_API const SherpaOnnxSpeakerEmbeddingManager *
 SherpaOnnxCreateSpeakerEmbeddingManager(int32_t dim);
@@ -3179,6 +3338,7 @@ SherpaOnnxCreateSpeakerEmbeddingManager(int32_t dim);
  * @brief Destroy a speaker embedding manager.
  *
  * @param p A pointer returned by SherpaOnnxCreateSpeakerEmbeddingManager().
+ * @see SherpaOnnxCreateSpeakerEmbeddingManager
  */
 SHERPA_ONNX_API void SherpaOnnxDestroySpeakerEmbeddingManager(
     const SherpaOnnxSpeakerEmbeddingManager *p);
@@ -3261,8 +3421,8 @@ SHERPA_ONNX_API const char *SherpaOnnxSpeakerEmbeddingManagerSearch(
  * @param name A pointer returned by
  *             SherpaOnnxSpeakerEmbeddingManagerSearch().
  */
-SHERPA_ONNX_API void
-SherpaOnnxSpeakerEmbeddingManagerFreeSearch(const char *name);
+SHERPA_ONNX_API void SherpaOnnxSpeakerEmbeddingManagerFreeSearch(
+    const char *name);
 
 /**
  * @brief One speaker match returned by the best-matches API.
@@ -3343,6 +3503,15 @@ SHERPA_ONNX_API int32_t SherpaOnnxSpeakerEmbeddingManagerNumSpeakers(
     const SherpaOnnxSpeakerEmbeddingManager *p);
 
 /**
+ * @brief Return the embedding dimension.
+ *
+ * @param p A pointer returned by SherpaOnnxCreateSpeakerEmbeddingManager().
+ * @return Embedding dimension.
+ */
+SHERPA_ONNX_API int32_t SherpaOnnxSpeakerEmbeddingManagerDim(
+    const SherpaOnnxSpeakerEmbeddingManager *p);
+
+/**
  * @brief Return all enrolled speaker names.
  *
  * The returned array is NULL-terminated. If no speakers are enrolled, the
@@ -3363,8 +3532,32 @@ SherpaOnnxSpeakerEmbeddingManagerGetAllSpeakers(
  * @param names A pointer returned by
  * SherpaOnnxSpeakerEmbeddingManagerGetAllSpeakers().
  */
-SHERPA_ONNX_API void
-SherpaOnnxSpeakerEmbeddingManagerFreeAllSpeakers(const char *const *names);
+SHERPA_ONNX_API void SherpaOnnxSpeakerEmbeddingManagerFreeAllSpeakers(
+    const char *const *names);
+
+/**
+ * @brief Return a copy of the embedding of a speaker.
+ *
+ * The returned vector has `SherpaOnnxSpeakerEmbeddingManagerDim(p)` elements.
+ * Free it with SherpaOnnxSpeakerEmbeddingManagerDestroyEmbedding().
+ *
+ * @param p A pointer returned by SherpaOnnxCreateSpeakerEmbeddingManager().
+ * @param name Speaker name.
+ * @return A newly allocated embedding vector. Returns NULL if the speaker does
+ *         not exist.
+ */
+SHERPA_ONNX_API const float *SherpaOnnxSpeakerEmbeddingManagerGetEmbedding(
+    const SherpaOnnxSpeakerEmbeddingManager *p, const char *name);
+
+/**
+ * @brief Free an embedding returned by
+ * SherpaOnnxSpeakerEmbeddingManagerGetEmbedding().
+ *
+ * @param v A pointer returned by
+ *          SherpaOnnxSpeakerEmbeddingManagerGetEmbedding().
+ */
+SHERPA_ONNX_API void SherpaOnnxSpeakerEmbeddingManagerDestroyEmbedding(
+    const float *v);
 
 // ============================================================
 // For audio tagging
@@ -3420,6 +3613,7 @@ typedef struct SherpaOnnxAudioTaggingModelConfig {
  *     "./sherpa-onnx-zipformer-audio-tagging-2024-04-09/class_labels_indices.csv";
  * config.top_k = 5;
  * @endcode
+ * @see SherpaOnnxCreateAudioTagging
  */
 typedef struct SherpaOnnxAudioTaggingConfig {
   /** Acoustic model configuration. */
@@ -3452,17 +3646,19 @@ typedef struct SherpaOnnxAudioTagging SherpaOnnxAudioTagging;
  * @param config Audio-tagging configuration.
  * @return A newly allocated audio tagger on success, or NULL on error. Free it
  *         with SherpaOnnxDestroyAudioTagging().
+ * @see SherpaOnnxAudioTaggingConfig, SherpaOnnxDestroyAudioTagging
  */
-SHERPA_ONNX_API const SherpaOnnxAudioTagging *
-SherpaOnnxCreateAudioTagging(const SherpaOnnxAudioTaggingConfig *config);
+SHERPA_ONNX_API const SherpaOnnxAudioTagging *SherpaOnnxCreateAudioTagging(
+    const SherpaOnnxAudioTaggingConfig *config);
 
 /**
  * @brief Destroy an audio tagger.
  *
  * @param tagger A pointer returned by SherpaOnnxCreateAudioTagging().
+ * @see SherpaOnnxCreateAudioTagging
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyAudioTagging(const SherpaOnnxAudioTagging *tagger);
+SHERPA_ONNX_API void SherpaOnnxDestroyAudioTagging(
+    const SherpaOnnxAudioTagging *tagger);
 
 /**
  * @brief Create an offline stream for audio tagging.
@@ -3507,8 +3703,8 @@ SherpaOnnxAudioTaggingCompute(const SherpaOnnxAudioTagging *tagger,
  *
  * @param p A pointer returned by SherpaOnnxAudioTaggingCompute().
  */
-SHERPA_ONNX_API void
-SherpaOnnxAudioTaggingFreeResults(const SherpaOnnxAudioEvent *const *p);
+SHERPA_ONNX_API void SherpaOnnxAudioTaggingFreeResults(
+    const SherpaOnnxAudioEvent *const *p);
 
 // ============================================================
 // For punctuation
@@ -3554,6 +3750,7 @@ typedef struct SherpaOnnxOfflinePunctuation SherpaOnnxOfflinePunctuation;
  * @param config Offline punctuation configuration.
  * @return A newly allocated punctuation processor on success, or NULL on
  *         error. Free it with SherpaOnnxDestroyOfflinePunctuation().
+ * @see SherpaOnnxDestroyOfflinePunctuation, SherpaOfflinePunctuationAddPunct
  */
 SHERPA_ONNX_API const SherpaOnnxOfflinePunctuation *
 SherpaOnnxCreateOfflinePunctuation(
@@ -3563,9 +3760,10 @@ SherpaOnnxCreateOfflinePunctuation(
  * @brief Destroy an offline punctuation processor.
  *
  * @param punct A pointer returned by SherpaOnnxCreateOfflinePunctuation().
+ * @see SherpaOnnxCreateOfflinePunctuation
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOfflinePunctuation(const SherpaOnnxOfflinePunctuation *punct);
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflinePunctuation(
+    const SherpaOnnxOfflinePunctuation *punct);
 
 /**
  * @brief Add punctuation to a complete input text.
@@ -3574,15 +3772,16 @@ SherpaOnnxDestroyOfflinePunctuation(const SherpaOnnxOfflinePunctuation *punct);
  * @param text Input text without punctuation.
  * @return A newly allocated punctuated string. Free it with
  *         SherpaOfflinePunctuationFreeText().
+ * @see SherpaOfflinePunctuationFreeText
  */
-SHERPA_ONNX_API const char *
-SherpaOfflinePunctuationAddPunct(const SherpaOnnxOfflinePunctuation *punct,
-                                 const char *text);
+SHERPA_ONNX_API const char *SherpaOfflinePunctuationAddPunct(
+    const SherpaOnnxOfflinePunctuation *punct, const char *text);
 
 /**
  * @brief Free a string returned by SherpaOfflinePunctuationAddPunct().
  *
  * @param text A pointer returned by SherpaOfflinePunctuationAddPunct().
+ * @see SherpaOfflinePunctuationAddPunct
  */
 SHERPA_ONNX_API void SherpaOfflinePunctuationFreeText(const char *text);
 
@@ -3674,7 +3873,8 @@ typedef struct SherpaOnnxLinearResampler SherpaOnnxLinearResampler;
 /**
  * @brief Create a linear resampler.
  *
- * A common choice is:
+ * If @p filter_cutoff_hz or @p num_zeros is 0, the following defaults
+ * are used (same convention as alsa-play.cc):
  *
  * @code
  * float min_freq = samp_rate_in_hz < samp_rate_out_hz ? samp_rate_in_hz
@@ -3683,12 +3883,14 @@ typedef struct SherpaOnnxLinearResampler SherpaOnnxLinearResampler;
  * int32_t num_zeros = 6;
  * @endcode
  *
- * @param samp_rate_in_hz Input sample rate in Hz.
- * @param samp_rate_out_hz Output sample rate in Hz.
- * @param filter_cutoff_hz Low-pass cutoff frequency in Hz.
- * @param num_zeros Low-pass filter width control parameter.
- * @return A newly allocated resampler. Free it with
- *         SherpaOnnxDestroyLinearResampler().
+ * @param samp_rate_in_hz Input sample rate in Hz. Must be > 0.
+ * @param samp_rate_out_hz Output sample rate in Hz. Must be > 0.
+ * @param filter_cutoff_hz Low-pass cutoff frequency in Hz. Pass 0 to use
+ *                         the default formula above. Must be >= 0.
+ * @param num_zeros Low-pass filter width control parameter. Pass 0 to use
+ *                  the default value of 6. Must be >= 0.
+ * @return A newly allocated resampler, or nullptr on invalid input. Free it
+ *         with SherpaOnnxDestroyLinearResampler().
  */
 SHERPA_ONNX_API const SherpaOnnxLinearResampler *
 SherpaOnnxCreateLinearResampler(int32_t samp_rate_in_hz,
@@ -3700,16 +3902,16 @@ SherpaOnnxCreateLinearResampler(int32_t samp_rate_in_hz,
  *
  * @param p A pointer returned by SherpaOnnxCreateLinearResampler().
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyLinearResampler(const SherpaOnnxLinearResampler *p);
+SHERPA_ONNX_API void SherpaOnnxDestroyLinearResampler(
+    const SherpaOnnxLinearResampler *p);
 
 /**
  * @brief Reset a linear resampler to its initial state.
  *
  * @param p A pointer returned by SherpaOnnxCreateLinearResampler().
  */
-SHERPA_ONNX_API void
-SherpaOnnxLinearResamplerReset(const SherpaOnnxLinearResampler *p);
+SHERPA_ONNX_API void SherpaOnnxLinearResamplerReset(
+    const SherpaOnnxLinearResampler *p);
 
 /**
  * @brief Output chunk returned by SherpaOnnxLinearResamplerResample().
@@ -3735,18 +3937,17 @@ typedef struct SherpaOnnxResampleOut {
  * @return A newly allocated output chunk. Free it with
  *         SherpaOnnxLinearResamplerResampleFree().
  */
-SHERPA_ONNX_API const SherpaOnnxResampleOut *
-SherpaOnnxLinearResamplerResample(const SherpaOnnxLinearResampler *p,
-                                  const float *input, int32_t input_dim,
-                                  int32_t flush);
+SHERPA_ONNX_API const SherpaOnnxResampleOut *SherpaOnnxLinearResamplerResample(
+    const SherpaOnnxLinearResampler *p, const float *input, int32_t input_dim,
+    int32_t flush);
 
 /**
  * @brief Destroy a resampler output chunk.
  *
  * @param p A pointer returned by SherpaOnnxLinearResamplerResample().
  */
-SHERPA_ONNX_API void
-SherpaOnnxLinearResamplerResampleFree(const SherpaOnnxResampleOut *p);
+SHERPA_ONNX_API void SherpaOnnxLinearResamplerResampleFree(
+    const SherpaOnnxResampleOut *p);
 
 /**
  * @brief Return the resampler input sample rate.
@@ -3773,6 +3974,13 @@ SHERPA_ONNX_API int32_t SherpaOnnxLinearResamplerResampleGetOutputSampleRate(
 typedef struct SherpaOnnxOfflineSpeakerSegmentationPyannoteModelConfig {
   /** Segmentation model filename. */
   const char *model;
+  /**
+   * Sliding-window shift as a fraction of the model window size.
+   *
+   * Must be in (0, 1]. Set to 0 (or a negative value) to use the default of
+   * 0.1.
+   */
+  float window_shift_ratio;
 } SherpaOnnxOfflineSpeakerSegmentationPyannoteModelConfig;
 
 /**
@@ -3805,12 +4013,14 @@ typedef struct SherpaOnnxFastClusteringConfig {
   int32_t num_clusters;
   /** Distance threshold used when the number of speakers is unknown. */
   float threshold;
+  /** When non-zero, per-segment confidence values are computed. */
+  int32_t compute_confidence;
 } SherpaOnnxFastClusteringConfig;
 
 /**
  * @brief Configuration for offline speaker diarization.
  *
- * Example based on `offline-sepaker-diarization-c-api.c`:
+ * Example based on `offline-speaker-diarization-c-api.c`:
  *
  * @code
  * SherpaOnnxOfflineSpeakerDiarizationConfig config;
@@ -3845,6 +4055,7 @@ typedef struct SherpaOnnxOfflineSpeakerDiarization
  * @param config Offline speaker diarization configuration.
  * @return A newly allocated diarizer on success, or NULL on error. Free it
  *         with SherpaOnnxDestroyOfflineSpeakerDiarization().
+ * @see SherpaOnnxDestroyOfflineSpeakerDiarization
  */
 SHERPA_ONNX_API const SherpaOnnxOfflineSpeakerDiarization *
 SherpaOnnxCreateOfflineSpeakerDiarization(
@@ -3854,6 +4065,7 @@ SherpaOnnxCreateOfflineSpeakerDiarization(
  * @brief Destroy an offline speaker diarizer.
  *
  * @param sd A pointer returned by SherpaOnnxCreateOfflineSpeakerDiarization().
+ * @see SherpaOnnxCreateOfflineSpeakerDiarization
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineSpeakerDiarization(
     const SherpaOnnxOfflineSpeakerDiarization *sd);
@@ -3893,6 +4105,12 @@ typedef struct SherpaOnnxOfflineSpeakerDiarizationSegment {
   float end;
   /** Speaker label, typically an integer cluster ID. */
   int32_t speaker;
+  /**
+   * Per-segment confidence in [-1, 1] (higher is more confident), or -2 if
+   * unavailable (compute_confidence disabled, or the score could not be
+   * computed for this segment).
+   */
+  float confidence;
 } SherpaOnnxOfflineSpeakerDiarizationSegment;
 
 /**
@@ -4033,6 +4251,15 @@ typedef struct SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig {
 typedef struct SherpaOnnxOfflineSpeechDenoiserDpdfNetModelConfig {
   /** Model filename. */
   const char *model;
+  /**
+   * Offline attenuation limit in dB.
+   *
+   * Values greater than 0 limit suppression by blending aligned noisy spectra
+   * into the enhanced spectra with a noisy-signal weight of
+   * `10^(-limit_db / 20)`. The maximum finite value is 100. Set to 0 or
+   * infinity to disable the limit.
+   */
+  float attenuation_limit_db;
 } SherpaOnnxOfflineSpeechDenoiserDpdfNetModelConfig;
 
 /**
@@ -4077,6 +4304,7 @@ typedef struct SherpaOnnxOfflineSpeechDenoiser SherpaOnnxOfflineSpeechDenoiser;
  * @param config Offline denoiser configuration.
  * @return A newly allocated denoiser on success, or NULL on error. Free it
  *         with SherpaOnnxDestroyOfflineSpeechDenoiser().
+ * @see SherpaOnnxDestroyOfflineSpeechDenoiser
  */
 SHERPA_ONNX_API const SherpaOnnxOfflineSpeechDenoiser *
 SherpaOnnxCreateOfflineSpeechDenoiser(
@@ -4086,6 +4314,7 @@ SherpaOnnxCreateOfflineSpeechDenoiser(
  * @brief Destroy an offline speech denoiser.
  *
  * @param sd A pointer returned by SherpaOnnxCreateOfflineSpeechDenoiser().
+ * @see SherpaOnnxCreateOfflineSpeechDenoiser
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineSpeechDenoiser(
     const SherpaOnnxOfflineSpeechDenoiser *sd);
@@ -4144,8 +4373,8 @@ SherpaOnnxOfflineSpeechDenoiserRun(const SherpaOnnxOfflineSpeechDenoiser *sd,
  *          SherpaOnnxOnlineSpeechDenoiserRun(), or
  *          SherpaOnnxOnlineSpeechDenoiserFlush().
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyDenoisedAudio(const SherpaOnnxDenoisedAudio *p);
+SHERPA_ONNX_API void SherpaOnnxDestroyDenoisedAudio(
+    const SherpaOnnxDenoisedAudio *p);
 
 // =========================================================================
 // For streaming speech enhancement
@@ -4165,6 +4394,7 @@ typedef struct SherpaOnnxOnlineSpeechDenoiser SherpaOnnxOnlineSpeechDenoiser;
  * @param config Online denoiser configuration.
  * @return A newly allocated denoiser on success, or NULL on error. Free it
  *         with SherpaOnnxDestroyOnlineSpeechDenoiser().
+ * @see SherpaOnnxDestroyOnlineSpeechDenoiser
  */
 SHERPA_ONNX_API const SherpaOnnxOnlineSpeechDenoiser *
 SherpaOnnxCreateOnlineSpeechDenoiser(
@@ -4174,9 +4404,10 @@ SherpaOnnxCreateOnlineSpeechDenoiser(
  * @brief Destroy an online speech denoiser.
  *
  * @param sd A pointer returned by SherpaOnnxCreateOnlineSpeechDenoiser().
+ * @see SherpaOnnxCreateOnlineSpeechDenoiser
  */
-SHERPA_ONNX_API void
-SherpaOnnxDestroyOnlineSpeechDenoiser(const SherpaOnnxOnlineSpeechDenoiser *sd);
+SHERPA_ONNX_API void SherpaOnnxDestroyOnlineSpeechDenoiser(
+    const SherpaOnnxOnlineSpeechDenoiser *sd);
 
 /**
  * @brief Return the expected input sample rate for the online denoiser.
@@ -4233,8 +4464,8 @@ SherpaOnnxOnlineSpeechDenoiserFlush(const SherpaOnnxOnlineSpeechDenoiser *sd);
  *
  * @param sd A pointer returned by SherpaOnnxCreateOnlineSpeechDenoiser().
  */
-SHERPA_ONNX_API void
-SherpaOnnxOnlineSpeechDenoiserReset(const SherpaOnnxOnlineSpeechDenoiser *sd);
+SHERPA_ONNX_API void SherpaOnnxOnlineSpeechDenoiserReset(
+    const SherpaOnnxOnlineSpeechDenoiser *sd);
 
 // =========================================================================
 // Source separation
@@ -4278,6 +4509,7 @@ typedef struct SherpaOnnxOfflineSourceSeparation
  * @param config Source-separation configuration.
  * @return A newly allocated engine on success, or NULL on error. Free it
  *         with SherpaOnnxDestroyOfflineSourceSeparation().
+ * @see SherpaOnnxDestroyOfflineSourceSeparation
  */
 SHERPA_ONNX_API const SherpaOnnxOfflineSourceSeparation *
 SherpaOnnxCreateOfflineSourceSeparation(
@@ -4287,6 +4519,7 @@ SherpaOnnxCreateOfflineSourceSeparation(
  * @brief Destroy a source-separation engine.
  *
  * @param ss A pointer returned by SherpaOnnxCreateOfflineSourceSeparation().
+ * @see SherpaOnnxCreateOfflineSourceSeparation
  */
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineSourceSeparation(
     const SherpaOnnxOfflineSourceSeparation *ss);
@@ -4455,9 +4688,8 @@ SherpaOnnxCreateVoiceActivityDetectorOHOS(
  * @return A newly allocated TTS engine, or NULL on error. Free it with
  *         SherpaOnnxDestroyOfflineTts().
  */
-SHERPA_ONNX_API const SherpaOnnxOfflineTts *
-SherpaOnnxCreateOfflineTtsOHOS(const SherpaOnnxOfflineTtsConfig *config,
-                               NativeResourceManager *mgr);
+SHERPA_ONNX_API const SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTtsOHOS(
+    const SherpaOnnxOfflineTtsConfig *config, NativeResourceManager *mgr);
 
 /**
  * @brief Create an offline punctuation processor on HarmonyOS.
@@ -4552,6 +4784,72 @@ SherpaOnnxCreateOfflineSourceSeparationOHOS(
     NativeResourceManager *mgr);
 #endif
 
+// ============================================================
+// For diacritization
+// ============================================================
+
+/**
+ * @brief Offline diacritization model configuration.
+ */
+typedef struct SherpaOnnxOfflineDiacritizationModelConfig {
+  /** Offline diacritization encoder model file. */
+  const char *catt_encoder;
+  /** Offline diacritization decoder model file. */
+  const char *catt_decoder;
+  /** Number of inference threads. */
+  int32_t num_threads;
+  /** Non-zero to print debug information. */
+  int32_t debug;
+  /** Execution provider such as `"cpu"`. */
+  const char *provider;
+} SherpaOnnxOfflineDiacritizationModelConfig;
+
+/** @brief Configuration for offline diacritization. */
+typedef struct SherpaOnnxOfflineDiacritizationConfig {
+  /** Model configuration. */
+  SherpaOnnxOfflineDiacritizationModelConfig model;
+} SherpaOnnxOfflineDiacritizationConfig;
+
+/** @brief Opaque offline diacritization handle. */
+typedef struct SherpaOnnxOfflineDiacritization SherpaOnnxOfflineDiacritization;
+
+/**
+ * @brief Create an offline diacritization processor.
+ *
+ * @param config Offline diacritization configuration.
+ * @return A newly allocated diacritization processor on success, or NULL on
+ *         error. Free it with SherpaOnnxDestroyOfflineDiacritization().
+ */
+SHERPA_ONNX_API const SherpaOnnxOfflineDiacritization *
+SherpaOnnxCreateOfflineDiacritization(
+    const SherpaOnnxOfflineDiacritizationConfig *config);
+
+/**
+ * @brief Destroy an offline diacritization processor.
+ *
+ * @param diacrt A pointer returned by SherpaOnnxCreateOfflineDiacritization().
+ */
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineDiacritization(
+    const SherpaOnnxOfflineDiacritization *diacrt);
+
+/**
+ * @brief Add diacritics to a complete input text.
+ *
+ * @param diacrt A pointer returned by SherpaOnnxCreateOfflineDiacritization().
+ * @param text Input text without diacritics.
+ * @return A newly allocated diacritized string. Free it with
+ *         SherpaOfflineDiacritizationFreeText().
+ */
+SHERPA_ONNX_API const char *SherpaOfflineDiacritizationAddDiacritics(
+    const SherpaOnnxOfflineDiacritization *diacrt, const char *text);
+
+/**
+ * @brief Free a string returned by SherpaOfflineDiacritizationAddDiacritics().
+ *
+ * @param text A pointer returned by SherpaOfflineDiacritizationAddDiacritics().
+ */
+SHERPA_ONNX_API void SherpaOfflineDiacritizationFreeText(const char *text);
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -4560,4 +4858,4 @@ SherpaOnnxCreateOfflineSourceSeparationOHOS(
 } /* extern "C" */
 #endif
 
-#endif // SHERPA_ONNX_C_API_C_API_H_
+#endif  // SHERPA_ONNX_C_API_C_API_H_
