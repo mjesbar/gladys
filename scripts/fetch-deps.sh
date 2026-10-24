@@ -21,8 +21,11 @@ LLAMACPP_MODEL=Llama-3.2-1B-Instruct-Q4_K_M.gguf
 LLAMACPP_MODEL_URL=https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf?download=true
 SHERPAONNX_MODEL=sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8
 SHERPAONNX_MODEL_URL=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2
-LLAMACPP_DIR="$SPACE/dist/llama.cpp"
-SHERPAONNX_DIR="$SPACE/dist/sherpaonnx"
+# After a macOS build the deps live inside the bundle: reuse them, never re-download.
+DEPS="$SPACE/dist"
+[ -d "$SPACE/dist/gladys.app/Contents/MacOS/sherpaonnx" ] && DEPS="$SPACE/dist/gladys.app/Contents/MacOS"
+LLAMACPP_DIR="$DEPS/llama.cpp"
+SHERPAONNX_DIR="$DEPS/sherpaonnx"
 
 case "$(uname -s)-$ARCH" in
   Linux-x64)    LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-x64.tar.gz ;;

@@ -20,6 +20,11 @@ SPACE=${GLADYS_SPACE:-$HOME/gladys}
 DIST="$SPACE/dist"
 BUILD="$SPACE/build"
 
+# Bring deps back from the bundle (macOS, see below) so the clean step keeps them.
+for dep in sherpaonnx llama.cpp; do
+  [ -d "$DIST/gladys.app/Contents/MacOS/$dep" ] && mv "$DIST/gladys.app/Contents/MacOS/$dep" "$DIST/$dep"
+done
+
 # Clean dist/ but keep the downloaded llama.cpp and sherpaonnx folders.
 [ -d "$DIST" ] && find "$DIST" -mindepth 1 -maxdepth 1 ! -name llama.cpp ! -name sherpaonnx -exec rm -rf {} +
 
@@ -47,6 +52,12 @@ case "$(uname -s)" in
     rm -rf "$DIST/usr" "$DIST/AppRun"
     printf '[Paths]\nPlugins = plugins\nQml2Imports = qml\n' > "$DIST/qt.conf"
     ;;
-  Darwin) "$QT_ROOT_DIR/bin/macdeployqt" "$DIST/gladys.app" -qmldir=src/qml ;;
+  Darwin)
+    "$QT_ROOT_DIR/bin/macdeployqt" "$DIST/gladys.app" -qmldir=src/qml
+    # The app looks for models next to its binary: move them into the bundle.
+    for dep in sherpaonnx llama.cpp; do
+      [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
+    done
+    ;;
   *)      "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
 esac
