@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Download llama.cpp binaries and the llama / sherpa-onnx models into dist/.
+# Download llama.cpp binaries and the llama / sherpa-onnx models into $GLADYS_SPACE/dist/.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+
+SPACE=${GLADYS_SPACE:-$HOME/gladys}
+mkdir -p "$SPACE" && [ -w "$SPACE" ] || { echo "Build space not writable: $SPACE" >&2; exit 1; }
 
 LLAMACPP_VER=llama-b9265
 LLAMACPP_BASE=https://github.com/ggml-org/llama.cpp/releases/download/b9265
@@ -10,8 +13,8 @@ LLAMACPP_MODEL=Llama-3.2-1B-Instruct-Q4_K_M.gguf
 LLAMACPP_MODEL_URL=https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf?download=true
 SHERPAONNX_MODEL=sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8
 SHERPAONNX_MODEL_URL=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2
-LLAMACPP_DIR=dist/llama.cpp
-SHERPAONNX_DIR=dist/sherpaonnx
+LLAMACPP_DIR="$SPACE/dist/llama.cpp"
+SHERPAONNX_DIR="$SPACE/dist/sherpaonnx"
 
 case "$(uname -s)" in
   Linux)  LLAMACPP_FILE=llama-b9265-bin-ubuntu-vulkan-x64.tar.gz ;;

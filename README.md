@@ -101,18 +101,13 @@ If the LLM fails, the raw transcription is pasted, so no dictation is lost.
 | C++ compiler | C++17 |
 | Qt | 6.8+ |
 
-Install Qt with [aqt](https://github.com/miurahr/aqtinstall):
+Install Qt with [aqt](https://github.com/miurahr/aqtinstall) (requires `pip install aqtinstall`):
 
 ```bash
-# Linux x64
-aqt install-qt linux desktop 6.8.3 linux_gcc_64
-
-# Windows x64
-aqt install-qt windows desktop 6.8.3 win64_msvc2022_64
-
-# macOS arm64
-aqt install-qt mac desktop 6.8.3 clang_64
+scripts/qt-install.sh linux     # or: windows / macos
 ```
+
+Installs into the build space and prints the `QT_ROOT_DIR` export line.
 
 Linux only:
 
@@ -127,20 +122,25 @@ sudo apt install libx11-dev wl-clipboard
 git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
-# Fetch llama.cpp binary, GGUF model and sherpa-onnx model into dist/
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64
 scripts/fetch-deps.sh
-
-# Build (CMakePresets.json, Release)
-export QT_ROOT_DIR=/path/to/Qt/6.8.3/gcc_64
 scripts/build.sh
 ```
 
-Output goes to `dist/`.
+Build space (default `$HOME/gladys`, override with `GLADYS_SPACE`):
+
+```txt
+$GLADYS_SPACE/
+├── build/      CMake binary dir
+├── dist/       runtime deps + app
+├── release/    packaged archives
+└── qt-6.8.3/   Qt install (QT_ROOT_DIR)
+```
 
 ### Run
 
 ```bash
-./dist/gladys
+$HOME/gladys/dist/gladys
 ```
 
 ### Linux: enable paste (uinput)
@@ -158,7 +158,7 @@ scripts/linux/uinput.sh deny    # revoke
 scripts/package.sh linux x64 1.0.0   # or: windows x64 / macos arm64 1.0.0
 ```
 
-Artifacts land in `release/`.
+Artifacts land in `$GLADYS_SPACE/release/`.
 
 ---
 
@@ -184,11 +184,12 @@ Artifacts land in `release/`.
 gladys/
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── dist/                    # runtime deps + build output
+├── dist/                    # runtime deps (fetch-deps.sh); build output is in the build space
 ├── scripts/
 │   ├── build.sh
 │   ├── fetch-deps.sh
 │   ├── package.sh
+│   ├── qt-install.sh
 │   ├── linux/uinput.sh
 │   ├── macos/README.md
 │   └── windows/README.md

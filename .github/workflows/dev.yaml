@@ -10,6 +10,7 @@ permissions:
 
 env:
   BUILD_TYPE: Release
+  GLADYS_SPACE: ${{ github.workspace }}
 
 jobs:
   # ----------------------------------------------------------------

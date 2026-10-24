@@ -7,20 +7,23 @@
 | macOS 12+ (arm64) | - |
 | Xcode Command Line Tools | `xcode-select --install` |
 | CMake 3.21+ | `brew install cmake` |
-| Qt 6.8+ | `aqt install-qt mac desktop 6.8.3 clang_64` |
+| Qt 6.8+ | `scripts/qt-install.sh macos` |
 
 ## Build
 
 ```txt
-export QT_ROOT_DIR=/path/to/Qt/6.8.3/macos
-scripts/fetch-deps.sh     # llama.cpp + models -> dist/
-scripts/build.sh          # CMake preset "release" -> dist/gladys
+scripts/qt-install.sh macos              # Qt -> /Users/mjesbar/gladys/qt-6.8.3/macos
+export QT_ROOT_DIR=/Users/mjesbar/gladys/qt-6.8.3/macos
+scripts/fetch-deps.sh                    # llama.cpp + models -> /Users/mjesbar/gladys/dist/
+scripts/build.sh                         # build -> /Users/mjesbar/gladys/build, install -> dist/
 ```
+
+`GLADYS_SPACE` overrides the build space (default `$HOME/gladys`).
 
 ## Run
 
 ```txt
-./dist/gladys
+/Users/mjesbar/gladys/dist/gladys.app
 ```
 
 ## Accessibility permission
