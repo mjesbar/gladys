@@ -1,0 +1,27 @@
+services:
+  windows:
+    image: dockurr/windows
+    container_name: windows
+    privileged: true
+    stop_grace_period: 5s
+    env_file: ../../.env
+    environment:
+      VERSION: "11"
+      CPU_CORES: "4"
+      RAM_SIZE: "8G"
+      DISK_SIZE: "64G"
+      GPU: "Y"
+      VGA: "virtio"
+      ARGUMENTS: "-device usb-host,vendorid=0x08bb,productid=0x29c3"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+      - /dev/bus/usb
+      - /dev/dri
+    ports:
+      - "8006:8006"
+      - "3389:3389/tcp"
+      - "3389:3389/udp"
+    volumes:
+      - ${HOME}/windows:/storage
+      - ${HOME}/Github/mjesbar/gladys:/shared/gladys

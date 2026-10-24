@@ -1,0 +1,33 @@
+services:
+  macos:
+    image: dockurr/macos
+    container_name: macos
+    privileged: true
+    stop_grace_period: 5s
+    environment:
+      VERSION: "14"
+      CPU_MODEL: "Skylake-Client-v4"
+      CPU_CORES: "4"
+      RAM_SIZE: "8G"
+      GPU: "Y"
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+      ARGUMENTS: "-device usb-host,vendorid=0x08bb,productid=0x29c3"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+      - /dev/bus/usb
+      - /dev/dri
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    ports:
+      - "8006:8006"
+      - "2222:22"
+    volumes:
+      - ${HOME}/macos:/storage
+      - ${HOME}/Github/mjesbar/gladys:/shared/gladys
