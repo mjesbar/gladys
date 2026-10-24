@@ -13,6 +13,16 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 ---
 
+## Supported platforms
+
+| Platform | Architecture | Build host |
+|---|---|---|
+| Linux | x64 | Linux x86_64 |
+| Windows | x64 | Windows x86_64 |
+| macOS | arm64 | Apple Silicon (Intel host can build, cannot run) |
+
+---
+
 ## Features
 
 | Feature | Description |

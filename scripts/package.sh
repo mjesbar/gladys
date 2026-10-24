@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Package $GLADYS_SPACE/dist (built by scripts/build.sh) with models into $GLADYS_SPACE/release/.
-# Usage: scripts/package.sh <linux|macos|windows> <arch> <version>
+# Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -9,16 +9,18 @@ SPACE=${GLADYS_SPACE:-$HOME/gladys}
 DIST="$SPACE/dist"
 RELEASE="$SPACE/release"
 
-OS=${1:?usage: package.sh <linux|macos|windows> <arch> <version>}
-ARCH=${2:?missing arch}
-VERSION=${3:?missing version}
+usage() { echo "Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>" >&2; exit 1; }
+[ $# -eq 3 ] || usage
+OS=$1
+ARCH=$2
+VERSION=$3
 
-case "$OS" in
-  linux|macos|windows) ;;
-  *) echo "Unknown OS: $OS" >&2; exit 1 ;;
+case "$OS:$ARCH" in
+  linux:x64|linux:arm64|windows:x64|windows:arm64|macos:x64|macos:arm64) ;;
+  *) usage ;;
 esac
 
-scripts/fetch-deps.sh
+scripts/fetch-deps.sh "$ARCH"
 
 mkdir -p "$RELEASE"
 EXCLUDE=(-x '*.h' '*.hpp' '*.sh' '*miniaudio*')

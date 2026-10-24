@@ -1,4 +1,16 @@
 cmake_minimum_required(VERSION 3.21)
+# Supported targets: linux x64, windows x64, macOS arm64 (ignored elsewhere)
+# Target arch (x64 | arm64), passed by scripts/build.sh; selects the sherpa-onnx lib dir
+set(GLADYS_ARCH "x64" CACHE STRING "Target arch: x64 or arm64")
+if(NOT GLADYS_ARCH MATCHES "^(x64|arm64)$")
+  message(FATAL_ERROR "Unsupported GLADYS_ARCH: ${GLADYS_ARCH}")
+endif()
+if(GLADYS_ARCH STREQUAL "arm64")
+  set(CMAKE_OSX_ARCHITECTURES arm64 CACHE STRING "" FORCE)
+else()
+  set(CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING "" FORCE)
+endif()
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0 CACHE STRING "" FORCE)
 # Project name, version and minimum CMake
 project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 
@@ -9,14 +21,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Map host CPU to x64 or arm (used for the sherpa-onnx library path)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64|arm64")
-  set(GLADYS_ARCH "arm")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  set(GLADYS_ARCH "x64")
-else()
-  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
 
 # Main app target and its C++ sources
 qt_add_executable(gladys WIN32 MACOSX_BUNDLE
@@ -168,7 +172,7 @@ if(EXISTS ${SHERPA_ONNX_LIB_DIR})
     install(FILES ${SHERPA_RUNTIME_LIBS} DESTINATION lib)
   endif()
 else()
-  message(WARNING "sherpa-onnx library not found - speech-to-text will not work")
+  message(FATAL_ERROR "sherpa-onnx library not found: ${SHERPA_ONNX_LIB_DIR}")
 endif()
 
 # Install the app; Qt runtime is bundled afterwards by *deployqt in scripts/build.sh

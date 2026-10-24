@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE and install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/.
-# Usage: scripts/build.sh [--ma-debug]
+# Usage: scripts/build.sh [x64|arm64] [on|off]   (2nd arg: miniaudio debug output)
 # Requires QT_ROOT_DIR (Qt install dir, used by CMake and *deployqt).
 set -euo pipefail
+
+usage() { echo "Usage: scripts/build.sh [x64|arm64] [on|off]" >&2; exit 1; }
+[ $# -le 2 ] || usage
+
+case "$(uname -s)" in Darwin) DEFAULT_ARCH=arm64 ;; *) DEFAULT_ARCH=x64 ;; esac
+ARCH=${1:-$DEFAULT_ARCH}
+MA_DEBUG=${2:-off}
+case "$ARCH" in x64|arm64) ;; *) usage ;; esac
+case "$MA_DEBUG" in on) MA_DEBUG=ON ;; off) MA_DEBUG=OFF ;; *) usage ;; esac
 
 cd "$(dirname "$0")/.."
 
@@ -14,15 +23,7 @@ BUILD="$SPACE/build"
 # Clean dist/ but keep the downloaded llama.cpp and sherpaonnx folders.
 [ -d "$DIST" ] && find "$DIST" -mindepth 1 -maxdepth 1 ! -name llama.cpp ! -name sherpaonnx -exec rm -rf {} +
 
-MA_DEBUG=OFF
-for arg in "$@"; do
-  case "$arg" in
-    --ma-debug) MA_DEBUG=ON ;;
-    *) echo "Unknown option: $arg" >&2; exit 1 ;;
-  esac
-done
-
-cmake --preset release -B "$BUILD" -DGLADYS_MA_DEBUG="$MA_DEBUG"
+cmake --preset release -B "$BUILD" -DGLADYS_ARCH="$ARCH" -DGLADYS_MA_DEBUG="$MA_DEBUG"
 cmake --build "$BUILD" --config Release
 cmake --install "$BUILD" --prefix "$DIST"
 

@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # Download llama.cpp binaries and the llama / sherpa-onnx models into $GLADYS_SPACE/dist/.
+# Usage: scripts/fetch-deps.sh [x64|arm64]
 set -euo pipefail
+
+usage() { echo "Usage: scripts/fetch-deps.sh [x64|arm64]" >&2; exit 1; }
+[ $# -le 1 ] || usage
+
+case "$(uname -s)" in Darwin) DEFAULT_ARCH=arm64 ;; *) DEFAULT_ARCH=x64 ;; esac
+ARCH=${1:-$DEFAULT_ARCH}
+case "$ARCH" in x64|arm64) ;; *) usage ;; esac
 
 cd "$(dirname "$0")/.."
 
@@ -16,23 +24,28 @@ SHERPAONNX_MODEL_URL=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr
 LLAMACPP_DIR="$SPACE/dist/llama.cpp"
 SHERPAONNX_DIR="$SPACE/dist/sherpaonnx"
 
-case "$(uname -s)" in
-  Linux)  LLAMACPP_FILE=llama-b9265-bin-ubuntu-vulkan-x64.tar.gz ;;
-  Darwin) LLAMACPP_FILE=llama-b9265-bin-macos-arm64.tar.gz ;;
-  *)      LLAMACPP_FILE=llama-b9265-bin-win-vulkan-x64.zip ;;
+case "$(uname -s)-$ARCH" in
+  Linux-x64)    LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-x64.tar.gz ;;
+  Linux-arm64)  LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-arm64.tar.gz ;;
+  Darwin-arm64) LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-arm64.tar.gz ;;
+  Darwin-x64)   LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-x64.tar.gz ;;
+  *-x64)        LLAMACPP_FILE=$LLAMACPP_VER-bin-win-vulkan-x64.zip ;;
+  *-arm64)      LLAMACPP_FILE=$LLAMACPP_VER-bin-win-cpu-arm64.zip ;;
 esac
 
 mkdir -p "$LLAMACPP_DIR" "$SHERPAONNX_DIR"
 
-# llama.cpp binary archive + extraction
+# llama.cpp binary archive + extraction (re-extract when the arch changes)
 [ -f "$LLAMACPP_DIR/$LLAMACPP_FILE" ] ||
   curl -fL -o "$LLAMACPP_DIR/$LLAMACPP_FILE" "$LLAMACPP_BASE/$LLAMACPP_FILE"
-if [ ! -d "$LLAMACPP_DIR/$LLAMACPP_VER" ]; then
+if [ "$(cat "$LLAMACPP_DIR/$LLAMACPP_VER/.arch" 2>/dev/null)" != "$ARCH" ]; then
+  rm -rf "$LLAMACPP_DIR/$LLAMACPP_VER"
   mkdir -p "$LLAMACPP_DIR/$LLAMACPP_VER"
   case "$LLAMACPP_FILE" in
     *.zip) unzip -o "$LLAMACPP_DIR/$LLAMACPP_FILE" -d "$LLAMACPP_DIR/$LLAMACPP_VER" ;;
     *)     tar xzf "$LLAMACPP_DIR/$LLAMACPP_FILE" -C "$LLAMACPP_DIR/$LLAMACPP_VER" --strip-components=1 ;;
   esac
+  echo "$ARCH" > "$LLAMACPP_DIR/$LLAMACPP_VER/.arch"
 fi
 
 # llama.cpp GGUF model (created after extraction, so extraction is never skipped)

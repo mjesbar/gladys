@@ -11,6 +11,8 @@
 
 ## Build
 
+The target is always arm64. An Intel host (e.g. dockurr/macos on x86 Linux) can compile and link it, but the binary only runs on Apple Silicon.
+
 ```txt
 scripts/qt-install.sh macos              # Qt -> /Users/mjesbar/gladys/qt-6.8.3/macos
 export QT_ROOT_DIR=/Users/mjesbar/gladys/qt-6.8.3/macos
