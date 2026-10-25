@@ -30,7 +30,7 @@ scripts/build.sh                         # build -> /Users/mjesbar/gladys/build,
 
 ## Accessibility permission
 
-The global hotkey (Cmd+Option+P) uses CGEventTap, which needs Accessibility access:
+The global hotkey (Ctrl+Option+P) uses CGEventTap, which needs Accessibility access:
 
 ```txt
 System Settings > Privacy & Security > Accessibility

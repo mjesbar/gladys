@@ -66,7 +66,7 @@ If the LLM fails, the raw transcription is pasted, so no dictation is lost.
 |---|---|---|
 | Linux | `Ctrl+Alt+P` | X11 `XGrabKey` |
 | Windows | `Ctrl+Alt+P` | `SetWindowsHookEx` (low-level keyboard) |
-| macOS | `Cmd+Option+P` | `CGEventTap` |
+| macOS | `Ctrl+Option+P` | `CGEventTap` |
 
 ---
 
@@ -182,7 +182,7 @@ Artifacts land in `$GLADYS_SPACE/release/`.
 ```
 
 1. Launch Gladys — a splash screen loads the models, then the tray icon appears.
-2. Press `Ctrl+Alt+P` (`Cmd+Option+P` on macOS) to start recording.
+2. Press `Ctrl+Alt+P` (`Ctrl+Option+P` on macOS) to start recording.
 3. Speak; the overlay shows live audio levels.
 4. Press the hotkey again to stop. The formatted text is pasted automatically.
 

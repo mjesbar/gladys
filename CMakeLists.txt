@@ -44,6 +44,8 @@ elseif(APPLE)
   set_source_files_properties(src/assets/icons/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   target_sources(gladys PRIVATE src/assets/icons/icon.icns)
   set_target_properties(gladys PROPERTIES MACOSX_BUNDLE_ICON_FILE "icon.icns")
+  enable_language(OBJCXX)
+  target_sources(gladys PRIVATE src/modules/ui/macos_window.mm)
 endif()
 
 # QML module and its files; Theme is a singleton
