@@ -54,6 +54,8 @@ case "$(uname -s)" in
     ;;
   Darwin)
     "$QT_ROOT_DIR/bin/macdeployqt" "$DIST/gladys.app" -qmldir=src/qml
+    # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
+    /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
     # The app looks for models next to its binary: move them into the bundle.
     for dep in sherpaonnx llama.cpp; do
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
