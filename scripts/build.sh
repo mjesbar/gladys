@@ -60,6 +60,8 @@ case "$(uname -s)" in
     for dep in sherpaonnx llama.cpp; do
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
+    # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
+    codesign --force --deep --sign "gladys-codesign" "$DIST/gladys.app"
     ;;
   *)      "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
 esac

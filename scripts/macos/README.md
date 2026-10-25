@@ -28,18 +28,28 @@ scripts/build.sh                         # build -> /Users/mjesbar/gladys/build,
 /Users/mjesbar/gladys/dist/gladys.app
 ```
 
-## Accessibility permission
+## Permissions
 
-The global hotkey (Ctrl+Option+P) uses CGEventTap, which needs Accessibility access:
+Gladys needs three permissions. macOS does not allow granting them automatically.
+
+| Permission | Used for |
+|---|---|
+| Microphone | Recording the voice (prompted on first use) |
+| Accessibility | Global hotkey (CGEventTap) and pasting text |
+| Input Monitoring | Reading the hotkey keys |
 
 ```txt
-System Settings > Privacy & Security > Accessibility
-  -> add Gladys (or Terminal when launched from a shell)
+System Settings > Privacy & Security
+  -> Accessibility      : add Gladys, enable it
+  -> Input Monitoring   : add Gladys, enable it
   -> restart Gladys
 ```
 
 If the hotkey does nothing, check Console.app for:
 `KeyGrab: CGEventTapCreate failed. Grant Accessibility permission.`
+
+Permissions are tied to the app signature. After a rebuild, macOS may ask again or
+list Gladys as disabled: remove it and add it back.
 
 ## Layout
 
