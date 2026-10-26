@@ -100,7 +100,8 @@ case "$OS" in
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
     # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
-    codesign --force --deep --sign "$IDENTITY" "$DIST/gladys.app"
+    codesign --force --deep --sign "$IDENTITY" --identifier com.gladys.app \
+      -r='designated => anchor apple generic and identifier "com.gladys.app"' "$DIST/gladys.app"
     ;;
   windows) "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
 esac

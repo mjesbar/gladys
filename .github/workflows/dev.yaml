@@ -93,8 +93,6 @@ jobs:
         id: certs
         uses: apple-actions/import-codesign-certs@v7
         with:
-          keychain: ${{ secrets.KEYCHAIN_NAME }}
-          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
           p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
 
