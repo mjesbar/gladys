@@ -1,33 +1,56 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE and install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/.
-# Usage: scripts/build.sh [x64|arm64] [on|off]   (2nd arg: miniaudio debug output)
-# Requires QT_ROOT_DIR (Qt install dir, used by CMake and *deployqt).
+# Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off] [--identity <hash>]
+# Requires QT_ROOT_DIR (Qt install dir). --identity is required with --os macos (codesign identity).
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/build.sh [x64|arm64] [on|off]" >&2;
+  echo "Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off] [--identity <hash>]" >&2;
   exit 1;
 }
 
-[ $# -le 2 ] || usage
-
 case "$(uname -s)" in
-  Darwin) DEFAULT_ARCH=arm64 ;;
-  *) DEFAULT_ARCH=x64 ;;
+  Linux) HOST_OS=linux; DEFAULT_ARCH=x64 ;;
+  Darwin) HOST_OS=macos; DEFAULT_ARCH=arm64 ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS=windows; DEFAULT_ARCH=x64 ;;
+  *) echo "Unsupported host: $(uname -s)" >&2; exit 1 ;;
 esac
 
-ARCH=${1:-$DEFAULT_ARCH}
-MA_DEBUG=${2:-off}
+OS=$HOST_OS
+ARCH=$DEFAULT_ARCH
+MA_DEBUG=off
+IDENTITY=
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || usage
+  case "$1" in
+    --os) OS=$2 ;;
+    --arch) ARCH=$2 ;;
+    --ma-debug) MA_DEBUG=$2 ;;
+    --identity) IDENTITY=$2 ;;
+    *) usage ;;
+  esac
+  shift 2
+done
+
+case "$OS" in
+  linux|macos|windows) ;;
+  *) usage ;;
+esac
 case "$ARCH" in
   x64|arm64) ;;
   *) usage ;;
 esac
-
 case "$MA_DEBUG" in
   on) MA_DEBUG=ON ;;
   off) MA_DEBUG=OFF ;;
   *) usage ;;
 esac
+[ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be built on host $HOST_OS" >&2; exit 1; }
+if [ "$OS" = macos ]; then
+  [ -n "$IDENTITY" ] || usage
+elif [ -n "$IDENTITY" ]; then
+  usage
+fi
 
 cd "$(dirname "$0")/.."
 
@@ -49,8 +72,8 @@ cmake --build "$BUILD" --config Release
 cmake --install "$BUILD" --prefix "$DIST"
 
 # Bundle the Qt runtime into dist/
-case "$(uname -s)" in
-  Linux)
+case "$OS" in
+  linux)
     for tool in linuxdeploy linuxdeploy-plugin-qt; do
       BIN="$QT_ROOT_DIR/bin/$tool-x86_64.AppImage"
       [ -x "$BIN" ] || {
@@ -68,7 +91,7 @@ case "$(uname -s)" in
     rm -rf "$DIST/usr" "$DIST/AppRun"
     printf '[Paths]\nPlugins = plugins\nQml2Imports = qml\n' > "$DIST/qt.conf"
     ;;
-  Darwin)
+  macos)
     "$QT_ROOT_DIR/bin/macdeployqt" "$DIST/gladys.app" -qmldir=src/qml
     # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
     /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
@@ -77,7 +100,7 @@ case "$(uname -s)" in
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
     # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
-    codesign --force --deep --sign "gladys-codesign" "$DIST/gladys.app"
+    codesign --force --deep --sign "$IDENTITY" "$DIST/gladys.app"
     ;;
-  *)      "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
+  windows) "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
 esac

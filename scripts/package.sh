@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Package $GLADYS_SPACE/dist (built by scripts/build.sh) with models into $GLADYS_SPACE/release/.
-# Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>
+# Usage: scripts/package.sh [--os linux|macos|windows] [--arch x64|arm64] --version <v>
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -10,22 +10,39 @@ DIST="$SPACE/dist"
 RELEASE="$SPACE/release"
 
 usage() {
-  echo "Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>" >&2;
+  echo "Usage: scripts/package.sh [--os linux|macos|windows] [--arch x64|arm64] --version <v>" >&2;
   exit 1;
 }
 
-[ $# -eq 3 ] || usage
-
-OS=$1
-ARCH=$2
-VERSION=$3
-
-case "$OS:$ARCH" in
-  linux:x64|linux:arm64|windows:x64|windows:arm64|macos:x64|macos:arm64) ;;
-  *) usage ;;
+case "$(uname -s)" in
+  Linux) HOST_OS=linux; DEFAULT_ARCH=x64 ;;
+  Darwin) HOST_OS=macos; DEFAULT_ARCH=arm64 ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS=windows; DEFAULT_ARCH=x64 ;;
+  *) echo "Unsupported host: $(uname -s)" >&2; exit 1 ;;
 esac
 
-scripts/fetch-deps.sh "$ARCH"
+OS=$HOST_OS
+ARCH=$DEFAULT_ARCH
+VERSION=
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || usage
+  case "$1" in
+    --os) OS=$2 ;;
+    --arch) ARCH=$2 ;;
+    --version) VERSION=$2 ;;
+    *) usage ;;
+  esac
+  shift 2
+done
+
+[ -n "$VERSION" ] || usage
+case "$OS:$ARCH" in
+  linux:x64|windows:x64|macos:arm64) ;;
+  *) usage ;;
+esac
+[ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be packaged on host $HOST_OS" >&2; exit 1; }
+
+scripts/fetch-deps.sh --os "$OS" --arch "$ARCH"
 
 mkdir -p "$RELEASE"
 EXCLUDE=(-x '*.h' '*.hpp' '*.sh' '*miniaudio*')

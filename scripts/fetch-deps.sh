@@ -1,25 +1,41 @@
 #!/usr/bin/env bash
 # Download llama.cpp binaries and the llama / sherpa-onnx models into $GLADYS_SPACE/dist/.
-# Usage: scripts/fetch-deps.sh [x64|arm64]
+# Usage: scripts/fetch-deps.sh [--os linux|macos|windows] [--arch x64|arm64]
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/fetch-deps.sh [x64|arm64]" >&2;
+  echo "Usage: scripts/fetch-deps.sh [--os linux|macos|windows] [--arch x64|arm64]" >&2;
   exit 1;
 }
 
-[ $# -le 1 ] || usage
-
 case "$(uname -s)" in
-  Darwin) DEFAULT_ARCH=arm64 ;;
-  *) DEFAULT_ARCH=x64 ;;
+  Linux) HOST_OS=linux; DEFAULT_ARCH=x64 ;;
+  Darwin) HOST_OS=macos; DEFAULT_ARCH=arm64 ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS=windows; DEFAULT_ARCH=x64 ;;
+  *) echo "Unsupported host: $(uname -s)" >&2; exit 1 ;;
 esac
 
-ARCH=${1:-$DEFAULT_ARCH}
+OS=$HOST_OS
+ARCH=$DEFAULT_ARCH
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || usage
+  case "$1" in
+    --os) OS=$2 ;;
+    --arch) ARCH=$2 ;;
+    *) usage ;;
+  esac
+  shift 2
+done
+
+case "$OS" in
+  linux|macos|windows) ;;
+  *) usage ;;
+esac
 case "$ARCH" in
   x64|arm64) ;;
   *) usage ;;
 esac
+[ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be prepared on host $HOST_OS" >&2; exit 1; }
 
 cd "$(dirname "$0")/.."
 
@@ -40,13 +56,13 @@ DEPS="$SPACE/dist"
 LLAMACPP_DIR="$DEPS/llama.cpp"
 SHERPAONNX_DIR="$DEPS/sherpaonnx"
 
-case "$(uname -s)-$ARCH" in
-  Linux-x64)    LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-x64.tar.gz ;;
-  Linux-arm64)  LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-arm64.tar.gz ;;
-  Darwin-arm64) LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-arm64.tar.gz ;;
-  Darwin-x64)   LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-x64.tar.gz ;;
-  *-x64)        LLAMACPP_FILE=$LLAMACPP_VER-bin-win-vulkan-x64.zip ;;
-  *-arm64)      LLAMACPP_FILE=$LLAMACPP_VER-bin-win-cpu-arm64.zip ;;
+case "$OS-$ARCH" in
+  linux-x64)     LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-x64.tar.gz ;;
+  linux-arm64)   LLAMACPP_FILE=$LLAMACPP_VER-bin-ubuntu-vulkan-arm64.tar.gz ;;
+  macos-arm64)   LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-arm64.tar.gz ;;
+  macos-x64)     LLAMACPP_FILE=$LLAMACPP_VER-bin-macos-x64.tar.gz ;;
+  windows-x64)   LLAMACPP_FILE=$LLAMACPP_VER-bin-win-vulkan-x64.zip ;;
+  windows-arm64) LLAMACPP_FILE=$LLAMACPP_VER-bin-win-cpu-arm64.zip ;;
 esac
 
 mkdir -p "$LLAMACPP_DIR" "$SHERPAONNX_DIR"

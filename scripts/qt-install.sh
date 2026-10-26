@@ -1,22 +1,36 @@
 #!/usr/bin/env bash
 # Install Qt 6.8.3 desktop into $GLADYS_SPACE/qt-6.8.3/ and print the QT_ROOT_DIR export.
-# Usage: scripts/qt-install.sh <linux|macos|windows> [x64|arm64]
+# Usage: scripts/qt-install.sh [--os linux|macos|windows] [--arch x64|arm64]
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/qt-install.sh <linux|macos|windows> [x64|arm64]" >&2;
+  echo "Usage: scripts/qt-install.sh [--os linux|macos|windows] [--arch x64|arm64]" >&2;
   exit 1;
 }
 
-[ $# -ge 1 ] && [ $# -le 2 ] || usage
-
-OS=$1
 case "$(uname -s)" in
-  Darwin) DEFAULT_ARCH=arm64 ;;
-  *) DEFAULT_ARCH=x64 ;;
+  Linux) HOST_OS=linux; DEFAULT_ARCH=x64 ;;
+  Darwin) HOST_OS=macos; DEFAULT_ARCH=arm64 ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS=windows; DEFAULT_ARCH=x64 ;;
+  *) echo "Unsupported host: $(uname -s)" >&2; exit 1 ;;
 esac
 
-ARCH=${2:-$DEFAULT_ARCH}
+OS=$HOST_OS
+ARCH=$DEFAULT_ARCH
+while [ $# -gt 0 ]; do
+  [ $# -ge 2 ] || usage
+  case "$1" in
+    --os) OS=$2 ;;
+    --arch) ARCH=$2 ;;
+    *) usage ;;
+  esac
+  shift 2
+done
+
+case "$OS" in
+  linux|macos|windows) ;;
+  *) usage ;;
+esac
 case "$ARCH" in
   x64|arm64) ;;
   *) usage ;;
@@ -37,10 +51,7 @@ case "$OS-$ARCH" in
   *) echo "Unsupported target: $OS $ARCH" >&2; exit 1 ;;
 esac
 
-case "$OS:$(uname -s)" in
-  linux:Linux|macos:Darwin|windows:MINGW*|windows:MSYS*|windows:CYGWIN*) ;;
-  *) echo "Host $(uname -s) cannot install Qt for $OS" >&2; exit 1 ;;
-esac
+[ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be installed on host $HOST_OS" >&2; exit 1; }
 
 case "$ARCH:$(uname -m)" in
   x64:x86_64|arm64:aarch64|arm64:arm64) ;;
