@@ -140,19 +140,8 @@ jobs:
           dir: ${{ github.workspace }}/Qt
           cache: true
 
-      - name: Import signing certificate
-        id: certs
-        uses: apple-actions/import-codesign-certs@v7
-        with:
-          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-
       - name: Build
-        env:
-          IDENTITIES: ${{ steps.certs.outputs.identities }}
-        run: |
-          HASH=$(jq -r 'first(.[] | select(.name | startswith("Developer ID Application:")) | .hash)' <<<"$IDENTITIES")
-          scripts/build.sh --os macos --arch arm64 --ma-debug off --identity "$HASH"
+        run: scripts/build.sh --os macos --arch arm64 --ma-debug off
 
       - name: Install tree
         run: brew install tree

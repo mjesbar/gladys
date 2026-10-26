@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE and install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/.
 # Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off] [--identity <hash>]
-# Requires QT_ROOT_DIR (Qt install dir). --identity is required with --os macos (codesign identity).
+# Requires QT_ROOT_DIR (Qt install dir). --identity is macOS only; omitted = ad-hoc signature ("-").
 set -euo pipefail
 
 usage() {
@@ -46,11 +46,7 @@ case "$MA_DEBUG" in
   *) usage ;;
 esac
 [ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be built on host $HOST_OS" >&2; exit 1; }
-if [ "$OS" = macos ]; then
-  [ -n "$IDENTITY" ] || usage
-elif [ -n "$IDENTITY" ]; then
-  usage
-fi
+[ "$OS" = macos ] || [ -z "$IDENTITY" ] || usage
 
 cd "$(dirname "$0")/.."
 
@@ -100,7 +96,7 @@ case "$OS" in
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
     # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
-    codesign --force --deep --sign "$IDENTITY" --identifier com.gladys.app \
+    codesign --force --deep --sign "${IDENTITY:--}" --identifier com.gladys.app \
       -r='designated => anchor apple generic and identifier "com.gladys.app"' "$DIST/gladys.app"
     ;;
   windows) "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
