@@ -9,8 +9,13 @@ SPACE=${GLADYS_SPACE:-$HOME/gladys}
 DIST="$SPACE/dist"
 RELEASE="$SPACE/release"
 
-usage() { echo "Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>" >&2; exit 1; }
+usage() {
+  echo "Usage: scripts/package.sh <linux|macos|windows> <x64|arm64> <version>" >&2;
+  exit 1;
+}
+
 [ $# -eq 3 ] || usage
+
 OS=$1
 ARCH=$2
 VERSION=$3

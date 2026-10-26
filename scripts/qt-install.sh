@@ -3,12 +3,24 @@
 # Usage: scripts/qt-install.sh <linux|macos|windows> [x64|arm64]
 set -euo pipefail
 
-usage() { echo "Usage: scripts/qt-install.sh <linux|macos|windows> [x64|arm64]" >&2; exit 1; }
+usage() {
+  echo "Usage: scripts/qt-install.sh <linux|macos|windows> [x64|arm64]" >&2;
+  exit 1;
+}
+
 [ $# -ge 1 ] && [ $# -le 2 ] || usage
+
 OS=$1
-case "$(uname -s)" in Darwin) DEFAULT_ARCH=arm64 ;; *) DEFAULT_ARCH=x64 ;; esac
+case "$(uname -s)" in
+  Darwin) DEFAULT_ARCH=arm64 ;;
+  *) DEFAULT_ARCH=x64 ;;
+esac
+
 ARCH=${2:-$DEFAULT_ARCH}
-case "$ARCH" in x64|arm64) ;; *) usage ;; esac
+case "$ARCH" in
+  x64|arm64) ;;
+  *) usage ;;
+esac
 
 QT_VER=6.8.3
 SPACE=${GLADYS_SPACE:-$HOME/gladys}
@@ -17,10 +29,10 @@ QT_DIR="$SPACE/qt-$QT_VER"
 echo "GLADYS_SPACE selected: $SPACE"
 
 case "$OS-$ARCH" in
-  linux-x64)     HOST=linux;         AQT_ARCH=linux_gcc_64;        DIR=gcc_64 ;;
-  linux-arm64)   HOST=linux_arm64;   AQT_ARCH=linux_gcc_arm64;     DIR=gcc_arm64 ;;
-  macos-*)       HOST=mac;           AQT_ARCH=clang_64;            DIR=macos ;;
-  windows-x64)   HOST=windows;       AQT_ARCH=win64_msvc2022_64;   DIR=msvc2022_64 ;;
+  linux-x64)     HOST=linux;         AQT_ARCH=linux_gcc_64;         DIR=gcc_64 ;;
+  linux-arm64)   HOST=linux_arm64;   AQT_ARCH=linux_gcc_arm64;      DIR=gcc_arm64 ;;
+  macos-*)       HOST=mac;           AQT_ARCH=clang_64;             DIR=macos ;;
+  windows-x64)   HOST=windows;       AQT_ARCH=win64_msvc2022_64;    DIR=msvc2022_64 ;;
   windows-arm64) HOST=windows_arm64; AQT_ARCH=win64_msvc2022_arm64; DIR=msvc2022_arm64 ;;
   *) echo "Unsupported target: $OS $ARCH" >&2; exit 1 ;;
 esac
