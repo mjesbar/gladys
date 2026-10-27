@@ -51,7 +51,7 @@ SHERPAONNX_MODEL_URL=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr
 
 # After a macOS build the deps live inside the bundle: reuse them, never re-download.
 DEPS="$SPACE/dist"
-[ -d "$SPACE/dist/gladys.app/Contents/MacOS/sherpaonnx" ] && DEPS="$SPACE/dist/gladys.app/Contents/MacOS"
+[ -d "$SPACE/dist/gladys.app/Contents/Resources/sherpaonnx" ] && DEPS="$SPACE/dist/gladys.app/Contents/Resources"
 
 LLAMACPP_DIR="$DEPS/llama.cpp"
 SHERPAONNX_DIR="$DEPS/sherpaonnx"

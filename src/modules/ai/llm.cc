@@ -217,6 +217,14 @@ static QString apply_snippets(QString text) {
   return text;
 }
 
+QString llama_cpp_path() {
+#ifdef Q_OS_MACOS
+  return QCoreApplication::applicationDirPath() + "/../Resources";
+#else
+  return QCoreApplication::applicationDirPath();
+#endif
+}
+
 LLM::LLM(QObject* parent) : QObject(parent), m_is_running(false) {}
 
 LLM::~LLM() { stop(); }
@@ -226,7 +234,7 @@ bool LLM::start() {
     return true;
   }
 
-  QString dir = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
+  QString dir = llama_cpp_path() + "/llama.cpp/llama-b9265";
   QString model = dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf";
   QString program = dir + "/" + LLAMA_SERVER_BINARY;
   if (!QFileInfo::exists(program)) {

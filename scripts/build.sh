@@ -57,7 +57,7 @@ BUILD="$SPACE/build"
 
 # Bring deps back from the bundle (macOS, see below) so the clean step keeps them.
 for dep in sherpaonnx llama.cpp; do
-  [ -d "$DIST/gladys.app/Contents/MacOS/$dep" ] && mv "$DIST/gladys.app/Contents/MacOS/$dep" "$DIST/$dep"
+  [ -d "$DIST/gladys.app/Contents/Resources/$dep" ] && mv "$DIST/gladys.app/Contents/Resources/$dep" "$DIST/$dep"
 done
 
 # Clean dist/ but keep the downloaded llama.cpp and sherpaonnx folders.
@@ -107,9 +107,10 @@ case "$OS" in
     echo "[build] macdeployqt bundle Qt OK"
     # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
     /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
-    # The app looks for models next to its binary: move them into the bundle.
+    # Models are data, not code: keep them in Resources so codesign does not treat them as nested code.
+    mkdir -p "$DIST/gladys.app/Contents/Resources"
     for dep in sherpaonnx llama.cpp; do
-      [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
+      [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/Resources/"
     done
     # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
     echo "[build] codesign gladys.app ..."
