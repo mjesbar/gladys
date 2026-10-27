@@ -104,6 +104,6 @@ if [ ! -f "$SHERPA_ARCHIVE" ]; then
 fi
 if [ ! -d "$SHERPAONNX_DIR/$SHERPAONNX_MODEL" ]; then
   echo "[deps] sherpa-onnx $SHERPAONNX_MODEL extract ..."
-  tar xjf "$SHERPA_ARCHIVE" -C "$SHERPAONNX_DIR"
+  (cd "$SHERPAONNX_DIR" && tar xjf "$SHERPAONNX_MODEL.tar.bz2")
   echo "[deps] sherpa-onnx $SHERPAONNX_MODEL extract OK"
 fi
