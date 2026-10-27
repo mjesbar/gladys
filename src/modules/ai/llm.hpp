@@ -8,6 +8,9 @@
 #include <QProcess>
 #include <QString>
 
+// Dir holding sherpaonnx/ and llama.cpp/: Contents/Resources on macOS, binary dir elsewhere.
+QString llama_cpp_path();
+
 class LLM : public QObject {
   Q_OBJECT
 

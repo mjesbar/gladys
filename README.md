@@ -13,6 +13,16 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 ---
 
+## Supported platforms
+
+| Platform | Architecture | Build host |
+|---|---|---|
+| Linux | x64 | Linux x86_64 |
+| Windows | x64 | Windows x86_64 |
+| macOS | arm64 | Apple Silicon (Intel host can build, cannot run) |
+
+---
+
 ## Features
 
 | Feature | Description |
@@ -56,7 +66,7 @@ If the LLM fails, the raw transcription is pasted, so no dictation is lost.
 |---|---|---|
 | Linux | `Ctrl+Alt+P` | X11 `XGrabKey` |
 | Windows | `Ctrl+Alt+P` | `SetWindowsHookEx` (low-level keyboard) |
-| macOS | `Cmd+Option+P` | `CGEventTap` |
+| macOS | `Ctrl+Option+P` | `CGEventTap` |
 
 ---
 
@@ -101,18 +111,13 @@ If the LLM fails, the raw transcription is pasted, so no dictation is lost.
 | C++ compiler | C++17 |
 | Qt | 6.8+ |
 
-Install Qt with [aqt](https://github.com/miurahr/aqtinstall):
+Install Qt with [aqt](https://github.com/miurahr/aqtinstall) (requires `pip install aqtinstall`):
 
 ```bash
-# Linux x64
-aqt install-qt linux desktop 6.8.3 linux_gcc_64
-
-# Windows x64
-aqt install-qt windows desktop 6.8.3 win64_msvc2022_64
-
-# macOS arm64
-aqt install-qt mac desktop 6.8.3 clang_64
+scripts/qt-install.sh linux     # or: windows / macos
 ```
+
+Installs into the build space and prints the `QT_ROOT_DIR` export line.
 
 Linux only:
 
@@ -127,20 +132,25 @@ sudo apt install libx11-dev wl-clipboard
 git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
-# Fetch llama.cpp binary, GGUF model and sherpa-onnx model into dist/
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64
 scripts/fetch-deps.sh
-
-# Build (CMakePresets.json, Release)
-export QT_ROOT_DIR=/path/to/Qt/6.8.3/gcc_64
 scripts/build.sh
 ```
 
-Output goes to `dist/`.
+Build space (default `$HOME/gladys`, override with `GLADYS_SPACE`):
+
+```txt
+$GLADYS_SPACE/
+├── build/      CMake binary dir
+├── dist/       runtime deps + app
+├── release/    packaged archives
+└── qt-6.8.3/   Qt install (QT_ROOT_DIR)
+```
 
 ### Run
 
 ```bash
-./dist/gladys
+$HOME/gladys/dist/gladys
 ```
 
 ### Linux: enable paste (uinput)
@@ -158,7 +168,7 @@ scripts/linux/uinput.sh deny    # revoke
 scripts/package.sh linux x64 1.0.0   # or: windows x64 / macos arm64 1.0.0
 ```
 
-Artifacts land in `release/`.
+Artifacts land in `$GLADYS_SPACE/release/`.
 
 ---
 
@@ -172,7 +182,7 @@ Artifacts land in `release/`.
 ```
 
 1. Launch Gladys — a splash screen loads the models, then the tray icon appears.
-2. Press `Ctrl+Alt+P` (`Cmd+Option+P` on macOS) to start recording.
+2. Press `Ctrl+Alt+P` (`Ctrl+Option+P` on macOS) to start recording.
 3. Speak; the overlay shows live audio levels.
 4. Press the hotkey again to stop. The formatted text is pasted automatically.
 
@@ -184,11 +194,12 @@ Artifacts land in `release/`.
 gladys/
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── dist/                    # runtime deps + build output
+├── dist/                    # runtime deps (fetch-deps.sh); build output is in the build space
 ├── scripts/
 │   ├── build.sh
 │   ├── fetch-deps.sh
 │   ├── package.sh
+│   ├── qt-install.sh
 │   ├── linux/uinput.sh
 │   ├── macos/README.md
 │   └── windows/README.md

@@ -17,3 +17,9 @@ build/
 compile_commands.json
 
 qt-*/
+
+# Container credentials
+.env
+
+# Secondary project
+sec/
