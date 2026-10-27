@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
   STT* stt = new STT();
   bool stt_ready = false;
   QThread* loader = QThread::create([&]() {
-    stt_ready = stt->init((llama_cpp_path() +
+    stt_ready = stt->init((QCoreApplication::applicationDirPath() +
       "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8")
         .toStdString());
   });

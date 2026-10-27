@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE and install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/.
-# Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off] [--identity <hash>]
-# Requires QT_ROOT_DIR (Qt install dir). --identity is macOS only; omitted = ad-hoc signature ("-").
+# Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off]
+# Requires QT_ROOT_DIR (Qt install dir).
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off] [--identity <hash>]" >&2;
+  echo "Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off]" >&2;
   exit 1;
 }
 
@@ -19,14 +19,12 @@ esac
 OS=$HOST_OS
 ARCH=$DEFAULT_ARCH
 MA_DEBUG=off
-IDENTITY=
 while [ $# -gt 0 ]; do
   [ $# -ge 2 ] || usage
   case "$1" in
     --os) OS=$2 ;;
     --arch) ARCH=$2 ;;
     --ma-debug) MA_DEBUG=$2 ;;
-    --identity) IDENTITY=$2 ;;
     *) usage ;;
   esac
   shift 2
@@ -46,7 +44,6 @@ case "$MA_DEBUG" in
   *) usage ;;
 esac
 [ "$OS" = "$HOST_OS" ] || { echo "Target $OS cannot be built on host $HOST_OS" >&2; exit 1; }
-[ "$OS" = macos ] || [ -z "$IDENTITY" ] || usage
 
 cd "$(dirname "$0")/.."
 
@@ -57,7 +54,9 @@ BUILD="$SPACE/build"
 
 # Bring deps back from the bundle (macOS, see below) so the clean step keeps them.
 for dep in sherpaonnx llama.cpp; do
-  [ -d "$DIST/gladys.app/Contents/Resources/$dep" ] && mv "$DIST/gladys.app/Contents/Resources/$dep" "$DIST/$dep"
+  for loc in MacOS Resources; do
+    [ -d "$DIST/gladys.app/Contents/$loc/$dep" ] && mv "$DIST/gladys.app/Contents/$loc/$dep" "$DIST/$dep"
+  done
 done
 
 # Clean dist/ but keep the downloaded llama.cpp and sherpaonnx folders.
@@ -107,16 +106,9 @@ case "$OS" in
     echo "[build] macdeployqt bundle Qt OK"
     # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
     /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
-    # Models are data, not code: keep them in Resources so codesign does not treat them as nested code.
-    mkdir -p "$DIST/gladys.app/Contents/Resources"
     for dep in sherpaonnx llama.cpp; do
-      [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/Resources/"
+      [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
-    # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
-    echo "[build] codesign gladys.app ..."
-    codesign --force --sign "${IDENTITY:--}" --identifier com.gladys.app \
-      -r='designated => anchor apple generic and identifier "com.gladys.app"' "$DIST/gladys.app"
-    echo "[build] codesign gladys.app OK"
     ;;
   windows)
     echo "[build] windeployqt bundle Qt ..."
