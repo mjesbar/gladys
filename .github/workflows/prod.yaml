@@ -10,6 +10,7 @@ permissions:
 
 env:
   BUILD_TYPE: Release
+  GLADYS_SPACE: ${{ github.workspace }}
 
 jobs:
   version:
@@ -37,8 +38,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install X11 dev and FUSE
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libfuse2t64
+      - name: Install X11 dev, FUSE and tree
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libfuse2t64 tree
 
       - name: Install Qt6
         uses: jurplel/install-qt-action@v4
@@ -53,17 +56,16 @@ jobs:
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os linux --arch x64 --ma-debug off
 
       - name: Show dist/ structure
         run: tree -a dist/
 
       - name: Package release
-        run: scripts/package.sh linux x64 ${{ needs.version.outputs.version }}
+        run: scripts/package.sh --os linux --arch x64 --version ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
         run: tree -a release/
-
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -94,22 +96,21 @@ jobs:
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os windows --arch x64 --ma-debug off
         shell: bash
 
       - name: Show dist/ structure
-        run: tree /f dist\
+        run: tree /f /a dist\
 
       - name: Install zip
         run: choco install zip --no-progress -y
 
       - name: Package release
-        run: scripts/package.sh windows x64 ${{ needs.version.outputs.version }}
+        run: scripts/package.sh --os windows --arch x64 --version ${{ needs.version.outputs.version }}
         shell: bash
 
       - name: Show release/ structure
         run: tree /f /a release\
-
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -140,7 +141,7 @@ jobs:
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os macos --arch arm64 --ma-debug off
 
       - name: Install tree
         run: brew install tree
@@ -149,11 +150,10 @@ jobs:
         run: tree -a dist/
 
       - name: Package release
-        run: scripts/package.sh macos arm64 ${{ needs.version.outputs.version }}
+        run: scripts/package.sh --os macos --arch arm64 --version ${{ needs.version.outputs.version }}
 
       - name: Show release/ structure
         run: tree -a release/
-
 
       - name: Create release
         uses: softprops/action-gh-release@v2

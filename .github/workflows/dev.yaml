@@ -5,11 +5,9 @@ on:
     branches:
       - "[0-9]*.[0-9]*.[0-9]*"
 
-permissions:
-  contents: write
-
 env:
   BUILD_TYPE: Release
+  GLADYS_SPACE: ${{ github.workspace }}
 
 jobs:
   # ----------------------------------------------------------------
@@ -21,10 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install X11 dev and FUSE
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libfuse2t64
+      - name: Install X11 dev, FUSE and tree
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libfuse2t64 tree
 
-      - name: Install Qt
+      - name: Install Qt6
         uses: jurplel/install-qt-action@v4
         with:
           aqtversion: "==3.3.*"
@@ -32,15 +32,15 @@ jobs:
           host: "linux"
           target: "desktop"
           arch: "linux_gcc_64"
+          dir: ${{ github.workspace }}/Qt
+          install-deps: true
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os linux --arch x64 --ma-debug off
 
       - name: Show dist/ structure
-        run: tree -ash dist/
-
-
+        run: tree -a dist/
 
   # ----------------------------------------------------------------
   # Windows
@@ -59,16 +59,15 @@ jobs:
           host: "windows"
           target: "desktop"
           arch: "win64_msvc2022_64"
+          dir: ${{ github.workspace }}/Qt
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os windows --arch x64 --ma-debug off
         shell: bash
 
       - name: Show dist/ structure
         run: tree /f /a dist\
-
-
 
   # ----------------------------------------------------------------
   # macOS
@@ -87,15 +86,14 @@ jobs:
           host: "mac"
           target: "desktop"
           arch: "clang_64"
+          dir: ${{ github.workspace }}/Qt
           cache: true
 
       - name: Build
-        run: scripts/build.sh
+        run: scripts/build.sh --os macos --arch arm64 --ma-debug off
 
       - name: Install tree
         run: brew install tree
 
       - name: Show dist/ structure
-        run: tree -ash dist/
-
-
+        run: tree -a dist/

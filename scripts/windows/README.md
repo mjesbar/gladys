@@ -8,22 +8,24 @@
 | Visual Studio 2022 (C++ workload) | Visual Studio Installer |
 | CMake 3.21+ | Visual Studio Installer or cmake.org |
 | Git Bash | ships with Git for Windows |
-| Qt 6.8+ | `aqt install-qt windows desktop 6.8.3 win64_msvc2022_64` |
+| Qt 6.8+ | `scripts/qt-install.sh windows` |
 
 ## Build
 
-Run from **Git Bash** (the scripts are bash):
+Run from **Git Bash** (the scripts are bash). Replace `X:` with your real drive:
 
 ```txt
-export QT_ROOT_DIR=/c/Qt/6.8.3/msvc2022_64
-scripts/fetch-deps.sh     # llama.cpp + models -> dist/
-scripts/build.sh          # CMake preset "release" -> dist\gladys.exe
+export GLADYS_SPACE=X:/Users/mjesbar/gladys
+scripts/qt-install.sh windows            # Qt -> X:/Users/mjesbar/gladys/qt-6.8.3/msvc2022_64
+export QT_ROOT_DIR=X:/Users/mjesbar/gladys/qt-6.8.3/msvc2022_64
+scripts/fetch-deps.sh                    # llama.cpp + models -> X:/Users/mjesbar/gladys/dist/
+scripts/build.sh                         # build -> X:/Users/mjesbar/gladys/build, install -> dist/
 ```
 
 ## Run
 
 ```txt
-.\dist\gladys.exe
+X:\Users\mjesbar\gladys\dist\gladys.exe
 ```
 
 ## Administrator privileges

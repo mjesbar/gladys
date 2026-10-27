@@ -40,6 +40,9 @@
 #ifndef KEY_V
 #define KEY_V 47
 #endif
+#ifndef KEY_LEFTMETA
+#define KEY_LEFTMETA 125
+#endif
 
 Paste::Paste(QObject* parent)
     : QObject(parent)
@@ -133,11 +136,8 @@ void Paste::init() { qCInfo(lcPaste) << "started"; }
 void Paste::send_key(unsigned int code, bool press) {
   CGKeyCode keyCode;
   switch (code) {
-    case KEY_LEFTCTRL:
-      keyCode = 0x3B;  // kVK_Control
-      break;
-    case KEY_LEFTSHIFT:
-      keyCode = 0x38;  // kVK_Shift
+    case KEY_LEFTMETA:
+      keyCode = 0x37;  // kVK_Command
       break;
     case KEY_V:
       keyCode = 0x09;  // kVK_ANSI_V
@@ -198,6 +198,16 @@ void Paste::copy_to_clipboard(const QString& text) { QApplication::clipboard()->
 // ---------------------------------------------------------------------------
 
 void Paste::send_paste() {
+#ifdef __APPLE__
+  qCInfo(lcPaste) << "sending Cmd+V";
+  send_key(KEY_LEFTMETA, true);
+  SleepMs(10);
+  send_key(KEY_V, true);
+  SleepMs(10);
+  send_key(KEY_V, false);
+  send_key(KEY_LEFTMETA, false);
+  return;
+#endif
   qCInfo(lcPaste) << "sending Ctrl+Shift+V";
 
   send_key(KEY_LEFTCTRL, true);

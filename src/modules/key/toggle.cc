@@ -136,7 +136,7 @@ void Toggle::process_events() {
 
 bool Toggle::init() {
   m_keycode = 0x23;  // kVK_ANSI_P
-  m_modifiers = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate;
+  m_modifiers = kCGEventFlagMaskControl | kCGEventFlagMaskAlternate;
 
   CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown);
   CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap,

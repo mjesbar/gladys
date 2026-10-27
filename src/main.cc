@@ -24,6 +24,9 @@
 #include "modules/ui/settings.hpp"
 #include "modules/ui/tray.hpp"
 #include "modules/ui/x11_shadow.hpp"
+#ifdef __APPLE__
+#include "modules/ui/macos_window.hpp"
+#endif
 
 constexpr int STT_TO_LLM_DELAY_MS = 10;
 constexpr int LLM_TO_COPY_DELAY_MS = 10;
@@ -178,6 +181,9 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   remove_x11_shadow(overlay_window->winId());
+#ifdef __APPLE__
+  configure_macos_overlay(overlay_window->winId());
+#endif
 #ifndef _WIN32  // Windows: the global hook needs no focus; activating steals it
   overlay_window->requestActivate();  // workaround: focus once so the hotkey is handled
 #endif
