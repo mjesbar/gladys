@@ -21,5 +21,6 @@ qt-*/
 # Container credentials
 .env
 
+
 # Secondary project
 sec/
