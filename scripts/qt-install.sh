@@ -63,10 +63,14 @@ command -v aqt >/dev/null || { echo "aqtinstall not found: pip install aqtinstal
 mkdir -p "$SPACE" && [ -w "$SPACE" ] || { echo "Build space not writable: $SPACE" >&2; exit 1; }
 [ ! -e "$QT_DIR/$DIR" ] || { echo "Already installed: $QT_DIR/$DIR" >&2; exit 1; }
 
+echo "[qt] aqt install $QT_VER $AQT_ARCH ..."
 aqt install-qt -O "$QT_DIR" "$HOST" desktop "$QT_VER" "$AQT_ARCH"
+echo "[qt] aqt install $QT_VER $AQT_ARCH OK"
 
 # aqt nests the install as <outputdir>/<version>/<arch>; flatten it to <outputdir>/<arch>.
+echo "[qt] flatten $DIR ..."
 mv "$QT_DIR/$QT_VER/$DIR" "$QT_DIR/$DIR"
 rmdir "$QT_DIR/$QT_VER"
+echo "[qt] flatten $DIR OK"
 
 echo "export QT_ROOT_DIR=$QT_DIR/$DIR"

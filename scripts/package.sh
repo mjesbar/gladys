@@ -48,8 +48,10 @@ mkdir -p "$RELEASE"
 EXCLUDE=(-x '*.h' '*.hpp' '*.sh' '*miniaudio*')
 
 # ---- Archive dist/ ----
+echo "[package] archive $OS $ARCH $VERSION ..."
 case "$OS" in
   linux)   tar -C "$DIST" --exclude='*.h' --exclude='*.hpp' --exclude='*.sh' --exclude='*miniaudio*' -czf "$RELEASE/gladys-linux-$ARCH-$VERSION.tar.gz" . ;;
   macos)   (cd "$DIST" && zip -qry "$RELEASE/gladys-macos-$ARCH-$VERSION.zip" . "${EXCLUDE[@]}") ;;
   windows) (cd "$DIST" && zip -qr "$RELEASE/gladys-win-$ARCH-$VERSION.zip" . "${EXCLUDE[@]}") ;;
 esac
+echo "[package] archive $OS $ARCH $VERSION OK"

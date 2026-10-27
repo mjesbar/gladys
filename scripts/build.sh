@@ -61,11 +61,21 @@ for dep in sherpaonnx llama.cpp; do
 done
 
 # Clean dist/ but keep the downloaded llama.cpp and sherpaonnx folders.
+echo "[build] clean dist ..."
 [ -d "$DIST" ] && find "$DIST" -mindepth 1 -maxdepth 1 ! -name llama.cpp ! -name sherpaonnx -exec rm -rf {} +
+echo "[build] clean dist OK"
 
+echo "[build] cmake configure ($OS $ARCH) ..."
 cmake --preset release -B "$BUILD" -DGLADYS_ARCH="$ARCH" -DGLADYS_MA_DEBUG="$MA_DEBUG"
+echo "[build] cmake configure OK"
+
+echo "[build] cmake build ..."
 cmake --build "$BUILD" --config Release
+echo "[build] cmake build OK"
+
+echo "[build] cmake install ..."
 cmake --install "$BUILD" --prefix "$DIST"
+echo "[build] cmake install OK"
 
 # Bundle the Qt runtime into dist/
 case "$OS" in
@@ -73,10 +83,13 @@ case "$OS" in
     for tool in linuxdeploy linuxdeploy-plugin-qt; do
       BIN="$QT_ROOT_DIR/bin/$tool-x86_64.AppImage"
       [ -x "$BIN" ] || {
+        echo "[build] download $tool ..."
         curl -fL -o "$BIN" "https://github.com/linuxdeploy/$tool/releases/download/continuous/$tool-x86_64.AppImage"
         chmod +x "$BIN"
+        echo "[build] download $tool OK"
       }
     done
+    echo "[build] linuxdeploy bundle Qt ..."
     LD_LIBRARY_PATH="$QT_ROOT_DIR/lib" QMAKE="$QT_ROOT_DIR/bin/qmake" QML_SOURCES_PATHS=src/qml \
       "$QT_ROOT_DIR/bin/linuxdeploy-x86_64.AppImage" --appdir "$DIST" --executable "$DIST/gladys" --plugin qt
     # Flatten usr/ back to dist/ root: the binary locates models next to itself
@@ -86,9 +99,12 @@ case "$OS" in
     mv "$DIST/usr/qml" "$DIST/qml"
     rm -rf "$DIST/usr" "$DIST/AppRun"
     printf '[Paths]\nPlugins = plugins\nQml2Imports = qml\n' > "$DIST/qt.conf"
+    echo "[build] linuxdeploy bundle Qt OK"
     ;;
   macos)
+    echo "[build] macdeployqt bundle Qt ..."
     "$QT_ROOT_DIR/bin/macdeployqt" "$DIST/gladys.app" -qmldir=src/qml
+    echo "[build] macdeployqt bundle Qt OK"
     # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
     /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
     # The app looks for models next to its binary: move them into the bundle.
@@ -96,8 +112,14 @@ case "$OS" in
       [ -d "$DIST/$dep" ] && mv "$DIST/$dep" "$DIST/gladys.app/Contents/MacOS/"
     done
     # Stable signature: TCC keeps Accessibility/Input Monitoring across rebuilds. Sign last.
-    codesign --force --deep --sign "${IDENTITY:--}" --identifier com.gladys.app \
+    echo "[build] codesign gladys.app ..."
+    codesign --force --sign "${IDENTITY:--}" --identifier com.gladys.app \
       -r='designated => anchor apple generic and identifier "com.gladys.app"' "$DIST/gladys.app"
+    echo "[build] codesign gladys.app OK"
     ;;
-  windows) "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe" ;;
+  windows)
+    echo "[build] windeployqt bundle Qt ..."
+    "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe"
+    echo "[build] windeployqt bundle Qt OK"
+    ;;
 esac

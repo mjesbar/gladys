@@ -68,10 +68,14 @@ esac
 mkdir -p "$LLAMACPP_DIR" "$SHERPAONNX_DIR"
 
 # llama.cpp binary archive + extraction (re-extract when the arch changes)
-[ -f "$LLAMACPP_DIR/$LLAMACPP_FILE" ] ||
+if [ ! -f "$LLAMACPP_DIR/$LLAMACPP_FILE" ]; then
+  echo "[deps] llama.cpp $LLAMACPP_FILE download ..."
   curl -fL -o "$LLAMACPP_DIR/$LLAMACPP_FILE" "$LLAMACPP_BASE/$LLAMACPP_FILE"
+  echo "[deps] llama.cpp $LLAMACPP_FILE download OK"
+fi
 
 if [ "$(cat "$LLAMACPP_DIR/$LLAMACPP_VER/.arch" 2>/dev/null)" != "$ARCH" ]; then
+  echo "[deps] llama.cpp $ARCH extract ..."
   rm -rf "$LLAMACPP_DIR/$LLAMACPP_VER"
   mkdir -p "$LLAMACPP_DIR/$LLAMACPP_VER"
   case "$LLAMACPP_FILE" in
@@ -79,16 +83,27 @@ if [ "$(cat "$LLAMACPP_DIR/$LLAMACPP_VER/.arch" 2>/dev/null)" != "$ARCH" ]; then
     *)     tar xzf "$LLAMACPP_DIR/$LLAMACPP_FILE" -C "$LLAMACPP_DIR/$LLAMACPP_VER" --strip-components=1 ;;
   esac
   echo "$ARCH" > "$LLAMACPP_DIR/$LLAMACPP_VER/.arch"
+  echo "[deps] llama.cpp $ARCH extract OK"
 fi
 
 # llama.cpp GGUF model (created after extraction, so extraction is never skipped)
 LLAMACPP_MODEL_PATH="$LLAMACPP_DIR/$LLAMACPP_VER/models/$LLAMACPP_MODEL"
 if [ ! -f "$LLAMACPP_MODEL_PATH" ]; then
+  echo "[deps] llama.cpp model $LLAMACPP_MODEL download ..."
   mkdir -p "$(dirname "$LLAMACPP_MODEL_PATH")"
   curl -fL -o "$LLAMACPP_MODEL_PATH" "$LLAMACPP_MODEL_URL"
+  echo "[deps] llama.cpp model $LLAMACPP_MODEL download OK"
 fi
 
 # sherpa-onnx model archive + extraction
 SHERPA_ARCHIVE="$SHERPAONNX_DIR/$SHERPAONNX_MODEL.tar.bz2"
-[ -f "$SHERPA_ARCHIVE" ] || curl -fL -o "$SHERPA_ARCHIVE" "$SHERPAONNX_MODEL_URL"
-[ -d "$SHERPAONNX_DIR/$SHERPAONNX_MODEL" ] || tar xjf "$SHERPA_ARCHIVE" -C "$SHERPAONNX_DIR"
+if [ ! -f "$SHERPA_ARCHIVE" ]; then
+  echo "[deps] sherpa-onnx $SHERPAONNX_MODEL download ..."
+  curl -fL -o "$SHERPA_ARCHIVE" "$SHERPAONNX_MODEL_URL"
+  echo "[deps] sherpa-onnx $SHERPAONNX_MODEL download OK"
+fi
+if [ ! -d "$SHERPAONNX_DIR/$SHERPAONNX_MODEL" ]; then
+  echo "[deps] sherpa-onnx $SHERPAONNX_MODEL extract ..."
+  tar xjf "$SHERPA_ARCHIVE" -C "$SHERPAONNX_DIR"
+  echo "[deps] sherpa-onnx $SHERPAONNX_MODEL extract OK"
+fi
