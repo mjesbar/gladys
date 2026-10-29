@@ -172,6 +172,7 @@ void Core::toggle_recording() {
       }
     });
   } else {
+    add_pending(1);
     post(m_asr.url + "/transcribe", QJsonObject{{"action", "stop"}}, [this](const QJsonObject& reply) {
       format_text(reply.value("text").toString());
     });
@@ -180,9 +181,15 @@ void Core::toggle_recording() {
 
 void Core::update_config(const QVariantMap& config) { m_config = config; }
 
+void Core::add_pending(int delta) {
+  m_pending += delta;
+  emit PROCESSING_CHANGED(m_pending > 0);
+}
+
 // Formats through the LLM API. Any failure pastes the raw text, so dictation is never lost.
 void Core::format_text(const QString& text) {
   if (text.isEmpty()) {
+    add_pending(-1);
     return;
   }
   if (!m_llm.ready) {
@@ -201,8 +208,9 @@ void Core::format_text(const QString& text) {
 void Core::paste_text(const QString& text) {
   QTimer::singleShot(LLM_TO_COPY_DELAY_MS, this, [this, text]() {
     Paste::copy_to_clipboard(text);
-    QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, m_paste, [paste = m_paste]() {
+    QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, m_paste, [this, paste = m_paste]() {
       paste->send_paste();
+      QMetaObject::invokeMethod(this, [this]() { add_pending(-1); });  // back to the GUI thread
     });
   });
 }

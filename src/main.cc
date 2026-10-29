@@ -216,10 +216,13 @@ int main(int argc, char* argv[]) {
 
   QObject::connect(&core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
     qCInfo(lcToggle) << (recording ? "window open" : "window close");
-    overlay->setProperty("expanded", recording);
+    overlay->setProperty("recording", recording);
 #ifndef _WIN32
     overlay_window->requestActivate();
 #endif
+  });
+  QObject::connect(&core, &Core::PROCESSING_CHANGED, overlay, [overlay](bool processing) {
+    overlay->setProperty("processing", processing);
   });
 
 #ifndef _WIN32

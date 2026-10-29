@@ -34,6 +34,7 @@ class Core : public QObject {
   void READY();
   void FAILED(const QString& reason);
   void RECORDING_CHANGED(bool recording);
+  void PROCESSING_CHANGED(bool processing);
 
  private:
   struct Child {
@@ -52,6 +53,7 @@ class Core : public QObject {
   void post(const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done);
   void format_text(const QString& text);
   void paste_text(const QString& text);
+  void add_pending(int delta);  // dictations between hotkey stop and paste
 
   Paste* m_paste;
   Child m_asr;
@@ -59,6 +61,7 @@ class Core : public QObject {
   QNetworkAccessManager m_network;
   QTimer m_probe_timer;
   QVariantMap m_config;
+  int m_pending = 0;
   bool m_recording = false;
   bool m_stopping = false;
 };

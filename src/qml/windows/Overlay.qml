@@ -8,7 +8,9 @@ Window {
     id: overlay
 
     readonly property int navBarPadding: 60 // keeps the mic clear of the OS nav bar
-    property bool expanded: false
+    property bool recording: false
+    property bool processing: false
+    readonly property bool expanded: recording || processing
 
     width: 119
     height: 130
@@ -36,6 +38,8 @@ Window {
     Mic {
         anchors.fill: parent
         expanded: overlay.expanded
+        recording: overlay.recording
+        processing: overlay.processing
     }
 
     Loader {

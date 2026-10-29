@@ -3,14 +3,18 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import "ui"
 
 Item {
     id: mic
 
     property bool expanded: false
+    property bool recording: false
+    property bool processing: false
     property real progress: expanded ? 1 : 0 // 0 = dot, 1 = mic open
 
     readonly property real scaleFactor: 0.5 + 0.5 * progress
+    readonly property real micSize: 48 * scaleFactor // diameter of the white circle
     readonly property real micCenterY: height - 80 // mic center, above the dot
     // Average bar height normalized to the tallest bar (48 px, see waves.cc).
     readonly property real audioLevel: {
@@ -58,12 +62,28 @@ Item {
     Image {
         source: "qrc:/icons/icon-app.svg"
         sourceSize: Qt.size(48, 48)
-        width: 48 * mic.scaleFactor
+        width: mic.micSize
         height: width
         x: (mic.width - width) / 2
         y: mic.micCenterY - height / 2
         smooth: true
         opacity: mic.progress
+    }
+
+    // Drawn over the white circle while the transcription is formatted and pasted.
+    Spinner {
+        size: Math.round(mic.micSize)
+        x: (mic.width - width) / 2
+        y: mic.micCenterY - height / 2
+        opacity: mic.processing ? 1 : 0
+        visible: opacity > 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.InOutQuad
+            }
+        }
     }
 
     Rectangle {
@@ -74,8 +94,8 @@ Item {
         radius: width / 2
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        color: mic.expanded ? "#FF0000" : "#FFFFFF"
-        border.color: mic.expanded ? "#FF0000" : "#7A7A7A"
+        color: mic.recording ? "#FF0000" : "#FFFFFF"
+        border.color: mic.recording ? "#FF0000" : "#7A7A7A"
         border.width: 2
 
         Behavior on color {
