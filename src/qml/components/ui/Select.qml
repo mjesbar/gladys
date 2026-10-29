@@ -26,6 +26,13 @@ Basic.ComboBox {
     verticalAlignment: Text.AlignVCenter
   }
 
+  popup.y: select.height + 4  // gap between trigger and list
+  popup.contentItem: ListView {
+    clip: true
+    implicitHeight: contentHeight
+    model: select.popup.visible ? select.delegateModel : null
+    currentIndex: select.highlightedIndex
+  }
   popup.background: Rectangle {
     radius: Theme.radius
     color: Theme.surface
