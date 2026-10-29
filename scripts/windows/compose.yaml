@@ -3,7 +3,7 @@ services:
     image: dockurr/windows
     container_name: windows
     privileged: true
-    stop_grace_period: 5s
+    stop_grace_period: 10s
     env_file: ../../.env
     environment:
       VERSION: "11"
