@@ -18,7 +18,7 @@ Basic.Menu {
     implicitWidth: 180
     radius: Theme.radius
     color: Theme.surface
-    border.color: Theme.border
+    border.width: 0
   }
 
   enter: Transition {
@@ -49,7 +49,7 @@ Basic.Menu {
         verticalAlignment: Text.AlignVCenter
       }
       background: Rectangle {
-        radius: Theme.radius
+        radius: Theme.radius  // same radius as the menu, so the highlight follows its corner
         color: option.highlighted ? Theme.hover : "transparent"
       }
     }

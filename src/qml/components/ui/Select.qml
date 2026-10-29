@@ -12,6 +12,7 @@ Basic.ComboBox {
 
   leftPadding: 16
   rightPadding: 16
+  palette.mid: Theme.surface  // Basic draws the list edge with mid; match the popup fill
 
   background: Rectangle {
     implicitHeight: 40
@@ -28,7 +29,7 @@ Basic.ComboBox {
   popup.background: Rectangle {
     radius: Theme.radius
     color: Theme.surface
-    border.color: Theme.border
+    border.width: 0
   }
 
   popup.enter: Transition {
@@ -53,7 +54,7 @@ Basic.ComboBox {
       verticalAlignment: Text.AlignVCenter
     }
     background: Rectangle {
-      radius: Theme.radius
+      radius: Theme.radius  // same radius as the popup, so the highlight follows its corner
       color: option.highlighted ? Theme.hover : "transparent"
     }
   }
