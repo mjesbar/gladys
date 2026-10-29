@@ -1,48 +1,18 @@
-// Settings - Sidebar of sections, one page per item. Real pages save; the rest are mocks. Lazy-loaded.
+// Settings - Main menus in the sidebar; each menu's sub-sections on the right. Real sections save; the rest are mocks. Lazy-loaded.
 
 pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Basic
+import QtQuick.Layouts
 import "../components"
 
 Window {
   id: settings
 
-  // Pages in the StackLayout: 0 input, 1 dictionary, 2 snippets, 3 modes, 4 placeholder.
-  readonly property int placeholderPage: 4
-  readonly property var sections: [
-    {
-      title: qsTr("System"),
-      items: [{ label: qsTr("Cloud / Local"), page: 4 }, { label: qsTr("AI Models"), page: 4 }, { label: qsTr("Store Transcriptions"), page: 4 }]
-    },
-    {
-      title: qsTr("Sound"),
-      items: [{ label: qsTr("Input Source"), page: 0 }, { label: qsTr("Enable Sound Effects"), page: 4 }, { label: qsTr("Enable LLM"), page: 4 }, { label: qsTr("Sound FXs"), page: 4 }]
-    },
-    {
-      title: qsTr("Appearance"),
-      items: [{ label: qsTr("Theme"), page: 4 }, { label: qsTr("Overlay Size"), page: 4 }, { label: qsTr("Position"), page: 4 }]
-    },
-    {
-      title: qsTr("Format"),
-      items: [{ label: qsTr("Dictionary"), page: 1 }, { label: qsTr("Snippets"), page: 2 }, { label: qsTr("Modes"), page: 3 }]
-    },
-    {
-      title: qsTr("Keyboard"),
-      items: [{ label: qsTr("Push to talk / Toggle"), page: 4 }, { label: qsTr("Shortcuts"), page: 4 }]
-    },
-    {
-      title: qsTr("Meetings"),
-      items: [{ label: qsTr("Meetings"), page: 4, note: qsTr("Coming soon!") }]
-    },
-    {
-      title: qsTr("History"),
-      items: [{ label: qsTr("Activity"), page: 4 }, { label: qsTr("Status"), page: 4 }, { label: qsTr("Errors"), page: 4 }, { label: qsTr("Logs"), page: 4 }]
-    }
-  ]
-  property var current: sections[1].items[0]
+  readonly property var menus: [qsTr("System"), qsTr("Sound"), qsTr("Appearance"), qsTr("Format"), qsTr("Keyboard"), qsTr("Meetings"), qsTr("History")]
+  property int current: 1  // index in menus, Sound by default
 
   width: 880
   height: 800
@@ -110,7 +80,7 @@ Window {
     });
   }
 
-  // Titled block that stacks its children vertically.
+  // One main menu: its sub-sections stacked vertically.
   component SettingsPage: Item {
     default property alias content: column.data
 
@@ -122,22 +92,67 @@ Window {
       x: 32
       y: 32
       width: parent.width - 64
-      spacing: 16
+      spacing: 24
     }
   }
 
-  component AliasCard: Card {
-    id: card
+  // Sub-section: heading, content, then a rule unless it is the last one of its page.
+  component SubSection: Column {
+    id: sub
+
+    default property alias content: body.data
+    property string title
+    property bool divided: true
+
+    width: parent.width
+    spacing: 12
+
+    Text {
+      text: sub.title
+      color: Theme.text
+      font.family: Theme.fontFamily
+      font.pixelSize: 15
+      font.bold: true
+    }
+
+    Column {
+      id: body
+
+      width: parent.width
+      spacing: 12
+    }
+
+    Rectangle {
+      visible: sub.divided
+      width: parent.width
+      height: 1
+      color: Theme.border
+    }
+  }
+
+  component MockNote: Text {
+    text: qsTr("Not implemented yet")
+    color: Theme.text
+    opacity: 0.6
+    wrapMode: Text.WordWrap
+    width: parent.width
+  }
+
+  component AliasEditor: Column {
+    id: editor
 
     required property ListModel aliasModel
     property string toHint: qsTr("Replacement")
+
+    width: parent.width
+    spacing: 12
 
     function addAlias() {
       const from = fromField.text.trim();
       if (from === "") {
         return;
       }
-      card.aliasModel.append({
+      editor.aliasModel.append({
         from: from,
         to: toField.text.trim()
       });
@@ -152,7 +167,7 @@ Window {
       width: parent.width
       height: 180
       clip: true
-      model: card.aliasModel
+      model: editor.aliasModel
 
       delegate: Row {
         id: row
@@ -169,20 +184,20 @@ Window {
           width: (row.width - 52) / 2
           height: parent.height
           text: row.from
-          onEditingFinished: card.aliasModel.setProperty(row.index, "from", text.trim())
+          onEditingFinished: editor.aliasModel.setProperty(row.index, "from", text.trim())
         }
         Field {
           width: (row.width - 52) / 2
           height: parent.height
           text: row.to
-          onEditingFinished: card.aliasModel.setProperty(row.index, "to", text.trim())
+          onEditingFinished: editor.aliasModel.setProperty(row.index, "to", text.trim())
         }
         IconButton {
           y: (parent.height - height) / 2
           iconSource: "qrc:/icons/trash.svg"
           ToolTip.visible: hovered
           ToolTip.text: qsTr("Remove")
-          onClicked: card.aliasModel.remove(row.index)
+          onClicked: editor.aliasModel.remove(row.index)
         }
       }
     }
@@ -198,7 +213,7 @@ Window {
 
         width: (addRow.width - 18 - 36 - 32) / 2
         placeholderText: qsTr("Original word")
-        onAccepted: card.addAlias()
+        onAccepted: editor.addAlias()
       }
       Item {
         width: 18
@@ -213,84 +228,52 @@ Window {
         id: toField
 
         width: (addRow.width - 18 - 36 - 32) / 2
-        placeholderText: card.toHint
-        onAccepted: card.addAlias()
+        placeholderText: editor.toHint
+        onAccepted: editor.addAlias()
       }
       IconButton {
         iconSource: "qrc:/icons/plus.svg"
         ToolTip.visible: hovered
         ToolTip.text: qsTr("Add Alias")
-        onClicked: card.addAlias()
+        onClicked: editor.addAlias()
       }
     }
   }
 
-  // Sidebar: sections with their items as a menu.
-  Flickable {
+  // Sidebar: the main menus only.
+  Column {
     id: sidebar
 
     anchors.left: parent.left
     anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    width: 220
-    contentHeight: menu.height + 32
-    clip: true
+    x: 12
+    y: 16
+    width: 196
+    spacing: 4
 
-    ScrollBar.vertical: ScrollBar {}
+    Repeater {
+      model: settings.menus
 
-    Column {
-      id: menu
+      delegate: ItemDelegate {
+        id: menuItem
 
-      x: 12
-      y: 16
-      width: sidebar.width - 24
-      spacing: 4
+        required property int index
+        required property string modelData
 
-      Repeater {
-        model: settings.sections
+        width: sidebar.width
+        text: modelData
+        highlighted: settings.current === index
+        onClicked: settings.current = index
 
-        delegate: Column {
-          id: section
-
-          required property var modelData
-
-          width: menu.width
-          spacing: 2
-
-          Text {
-            x: 12
-            topPadding: 12
-            bottomPadding: 6
-            text: section.modelData.title.toUpperCase()
-            color: Theme.text
-            opacity: 0.6
-            font.pixelSize: 11
-            font.bold: true
-          }
-
-          Repeater {
-            model: section.modelData.items
-
-            delegate: ItemDelegate {
-              required property var modelData
-
-              width: menu.width
-              text: modelData.label
-              highlighted: settings.current === modelData
-              onClicked: settings.current = modelData
-
-              background: Rectangle {
-                radius: 12
-                color: parent.highlighted ? Theme.hover : "transparent"
-              }
-              contentItem: Text {
-                text: parent.text
-                color: Theme.text
-                font: parent.font
-                verticalAlignment: Text.AlignVCenter
-              }
-            }
-          }
+        background: Rectangle {
+          radius: 12
+          color: menuItem.highlighted ? Theme.hover : "transparent"
+        }
+        contentItem: Text {
+          text: menuItem.text
+          color: Theme.text
+          font: menuItem.font
+          verticalAlignment: Text.AlignVCenter
         }
       }
     }
@@ -318,14 +301,29 @@ Window {
         id: stack
 
         width: parent.width
-        currentIndex: settings.current.page
+        currentIndex: settings.current
 
-        // 0: input source
+        // 0: System (mocks)
         SettingsPage {
-          Card {
-            width: parent.width
-            title: qsTr("Input Source")
+          SubSection {
+            title: qsTr("Cloud / Local")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("AI Models")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Store Transcriptions")
+            divided: false
+            MockNote {}
+          }
+        }
 
+        // 1: Sound
+        SettingsPage {
+          SubSection {
+            title: qsTr("Input Source")
             ComboBox {
               id: inputCombo
 
@@ -363,33 +361,56 @@ Window {
               }
             }
           }
+          SubSection {
+            title: qsTr("Enable Sound Effects")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Enable LLM")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Sound FXs")
+            divided: false
+            MockNote {}
+          }
         }
 
-        // 1: dictionary
+        // 2: Appearance (mocks)
         SettingsPage {
-          AliasCard {
-            width: parent.width
+          SubSection {
+            title: qsTr("Theme")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Overlay Size")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Position")
+            divided: false
+            MockNote {}
+          }
+        }
+
+        // 3: Format
+        SettingsPage {
+          SubSection {
             title: qsTr("Dictionary")
-            toHint: qsTr("Brief description")
-            aliasModel: dictionaryModel
+            AliasEditor {
+              aliasModel: dictionaryModel
+              toHint: qsTr("Brief description")
+            }
           }
-        }
-
-        // 2: snippets
-        SettingsPage {
-          AliasCard {
-            width: parent.width
+          SubSection {
             title: qsTr("Snippets")
-            aliasModel: snippetModel
+            AliasEditor {
+              aliasModel: snippetModel
+            }
           }
-        }
-
-        // 3: modes (style and markdown)
-        SettingsPage {
-          Card {
-            width: parent.width
-            title: qsTr("Style")
-
+          SubSection {
+            title: qsTr("Modes")
+            divided: false
             Row {
               id: styleRow
 
@@ -497,19 +518,48 @@ Window {
           }
         }
 
-        // 4: placeholder for items not implemented yet
+        // 4: Keyboard (mocks)
         SettingsPage {
-          Card {
-            width: parent.width
-            title: settings.current.label
+          SubSection {
+            title: qsTr("Push to talk / Toggle")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Shortcuts")
+            divided: false
+            MockNote {}
+          }
+        }
 
-            Text {
-              width: parent.width
-              text: settings.current.note ?? qsTr("Not implemented yet")
-              color: Theme.text
-              opacity: 0.6
-              wrapMode: Text.WordWrap
+        // 5: Meetings (mock)
+        SettingsPage {
+          SubSection {
+            title: qsTr("Meetings")
+            divided: false
+            MockNote {
+              text: qsTr("Coming soon!")
             }
+          }
+        }
+
+        // 6: History (mocks)
+        SettingsPage {
+          SubSection {
+            title: qsTr("Activity")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Status")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Errors")
+            MockNote {}
+          }
+          SubSection {
+            title: qsTr("Logs")
+            divided: false
+            MockNote {}
           }
         }
       }
