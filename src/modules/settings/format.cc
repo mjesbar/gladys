@@ -18,7 +18,9 @@ static QMap<QString, QString> read_pairs(QSettings& s, const char* group) {
   return pairs;
 }
 
+// Clears the group first: beginWriteArray keeps stale entries past the new size.
 static void write_pairs(QSettings& s, const char* group, const QMap<QString, QString>& pairs) {
+  s.remove(group);
   s.beginWriteArray(group);
   int idx = 0;
   for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {

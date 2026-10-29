@@ -3,6 +3,7 @@
 pragma ComponentBehavior: Bound
 
 import ".."
+import "../ui" as Ui
 
 Section {
   title: qsTr("Input Source")
@@ -18,7 +19,7 @@ Section {
     };
   }
 
-  ComboBox {
+  Ui.Select {
     id: inputCombo
 
     width: parent.width

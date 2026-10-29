@@ -3,6 +3,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import "ui" as Ui
 
 Column {
   id: sub
@@ -14,12 +15,9 @@ Column {
   width: parent.width
   spacing: 12
 
-  Text {
+  Ui.Heading {
+    level: 3
     text: sub.title
-    color: Theme.text
-    font.family: Theme.fontFamily
-    font.pixelSize: 15
-    font.bold: true
   }
 
   Column {
@@ -29,10 +27,8 @@ Column {
     spacing: 12
   }
 
-  Rectangle {
+  Ui.Divider {
     visible: sub.divided
     width: parent.width
-    height: 1
-    color: Theme.border
   }
 }

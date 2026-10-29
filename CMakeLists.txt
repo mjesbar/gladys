@@ -74,14 +74,41 @@ qt_add_qml_module(gladys
   QML_FILES
     src/qml/components/Theme.qml
     src/qml/components/Mic.qml
-    src/qml/components/Card.qml
-    src/qml/components/IconButton.qml
-    src/qml/components/ThemedCheckBox.qml
-    src/qml/components/Field.qml
     src/qml/components/Section.qml
     src/qml/components/Note.qml
     src/qml/components/MappingEditor.qml
-    src/qml/components/ComboBox.qml
+    src/qml/components/ui/Text.qml
+    src/qml/components/ui/Heading.qml
+    src/qml/components/ui/Icon.qml
+    src/qml/components/ui/Box.qml
+    src/qml/components/ui/Container.qml
+    src/qml/components/ui/Flex.qml
+    src/qml/components/ui/Stack.qml
+    src/qml/components/ui/Grid.qml
+    src/qml/components/ui/Divider.qml
+    src/qml/components/ui/Button.qml
+    src/qml/components/ui/Input.qml
+    src/qml/components/ui/Textarea.qml
+    src/qml/components/ui/Checkbox.qml
+    src/qml/components/ui/Radio.qml
+    src/qml/components/ui/RadioGroup.qml
+    src/qml/components/ui/Switch.qml
+    src/qml/components/ui/Link.qml
+    src/qml/components/ui/FormField.qml
+    src/qml/components/ui/Alert.qml
+    src/qml/components/ui/Badge.qml
+    src/qml/components/ui/Spinner.qml
+    src/qml/components/ui/Skeleton.qml
+    src/qml/components/ui/Portal.qml
+    src/qml/components/ui/Popover.qml
+    src/qml/components/ui/Tooltip.qml
+    src/qml/components/ui/DropdownMenu.qml
+    src/qml/components/ui/Select.qml
+    src/qml/components/ui/Dialog.qml
+    src/qml/components/ui/Toast.qml
+    src/qml/components/ui/Tabs.qml
+    src/qml/components/ui/Breadcrumbs.qml
+    src/qml/components/ui/TitleBar.qml
     src/qml/components/settings/SoundInputSource.qml
     src/qml/components/settings/FormatDictionary.qml
     src/qml/components/settings/FormatSnippets.qml

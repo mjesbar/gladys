@@ -4,6 +4,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
+import "../ui" as Ui
 
 Section {
   title: qsTr("Modes")
@@ -27,16 +28,15 @@ Section {
     width: parent.width
     spacing: 12
 
-    Text {
+    Ui.Text {
       id: styleLabel
 
       width: 80
       height: 40
       text: qsTr("Style")
-      color: Theme.text
       verticalAlignment: Text.AlignVCenter
     }
-    ComboBox {
+    Ui.Select {
       id: styleCombo
 
       width: styleRow.width - styleLabel.width - styleRow.spacing
@@ -49,16 +49,15 @@ Section {
     width: parent.width
     spacing: 12
 
-    Text {
+    Ui.Text {
       id: markdownLabel
 
       width: 80
       height: 40
       text: qsTr("Markdown")
-      color: Theme.text
       verticalAlignment: Text.AlignVCenter
     }
-    ComboBox {
+    Ui.Select {
       id: markdownCombo
 
       width: markdownRow.width - markdownLabel.width - markdownRow.spacing

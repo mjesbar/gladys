@@ -8,6 +8,7 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import "../components"
 import "../components/settings"
+import "../components/ui" as Ui
 
 Window {
   id: settings
@@ -20,7 +21,8 @@ Window {
   minimumWidth: 640
   minimumHeight: 480
   title: qsTr("Gladys Settings")
-  color: Theme.background
+  color: "transparent"
+  flags: Qt.Window | Qt.FramelessWindowHint
   transientParent: null
   visible: false
 
@@ -46,14 +48,22 @@ Window {
     settingsBridge.apply(Object.assign({}, soundInputSource.values(), formatDictionary.values(), formatSnippets.values(), formatModes.values()));
   }
 
+  // Rounded pseudoframe: square when maximized, since the window fills the screen.
+  Rectangle {
+    anchors.fill: parent
+    radius: settings.visibility === Window.Maximized ? 0 : Theme.radius
+    color: Theme.background
+    clip: true
+  }
+
   // Sidebar: the main menus only.
   Column {
     id: sidebar
 
     anchors.left: parent.left
-    anchors.top: parent.top
-    x: 12
-    y: 16
+    anchors.top: titleBar.bottom
+    anchors.leftMargin: 12
+    anchors.topMargin: 16
     width: 196
     spacing: 4
 
@@ -89,7 +99,7 @@ Window {
   Item {
     anchors.left: sidebar.right
     anchors.right: parent.right
-    anchors.top: parent.top
+    anchors.top: titleBar.bottom
     anchors.bottom: parent.bottom
 
     Flickable {
@@ -100,20 +110,22 @@ Window {
       anchors.top: parent.top
       anchors.bottom: applyButton.top
       anchors.bottomMargin: 16
-      leftMargin: 32
-      rightMargin: 32
-      topMargin: 32
-      bottomMargin: 32
-      contentWidth: stack.width
-      contentHeight: stack.height
+      contentWidth: width
+      // Current page's implicit height plus 32 px padding top and bottom. StackLayout is as tall as its tallest page.
+      contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 64
+      interactive: contentHeight > height
       clip: true
 
-      ScrollBar.vertical: ScrollBar {}
+      ScrollBar.vertical: ScrollBar {
+        policy: ScrollBar.AsNeeded
+      }
 
       StackLayout {
         id: stack
 
-        width: flick.width - flick.leftMargin - flick.rightMargin
+        x: 32
+        y: 32
+        width: flick.width - 64
         currentIndex: settings.current
 
         // 0: System
@@ -200,30 +212,108 @@ Window {
       }
     }
 
-    Button {
+    Ui.Button {
       id: applyButton
 
+      variant: "primary"
+      text: qsTr("Apply")
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.bottom: parent.bottom
       anchors.margins: 32
-      text: qsTr("Apply")
-      font.bold: true
       onClicked: settings.apply()
-
-      background: Rectangle {
-        implicitHeight: 40
-        radius: 20
-        color: applyButton.hovered ? Theme.text : Theme.accent
-        border.color: Theme.accent
-      }
-      contentItem: Text {
-        text: applyButton.text
-        font: applyButton.font
-        color: Theme.background
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-      }
     }
+  }
+
+  Ui.TitleBar {
+    id: titleBar
+
+    window: settings
+    title: settings.title
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+  }
+
+  // Resize grips: thin edges and corners. A drag starts a native resize. Off while maximized.
+  component Grip: MouseArea {
+    required property int edges
+
+    enabled: settings.visibility !== Window.Maximized
+    hoverEnabled: true
+    onPressed: settings.startSystemResize(edges)
+  }
+
+  Grip {
+    edges: Qt.LeftEdge
+    cursorShape: Qt.SizeHorCursor
+    width: 6
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.topMargin: 12
+    anchors.bottomMargin: 12
+  }
+  Grip {
+    edges: Qt.RightEdge
+    cursorShape: Qt.SizeHorCursor
+    width: 6
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.topMargin: 12
+    anchors.bottomMargin: 12
+  }
+  Grip {
+    edges: Qt.TopEdge
+    cursorShape: Qt.SizeVerCursor
+    height: 6
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.leftMargin: 12
+    anchors.rightMargin: 12
+  }
+  Grip {
+    edges: Qt.BottomEdge
+    cursorShape: Qt.SizeVerCursor
+    height: 6
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.leftMargin: 12
+    anchors.rightMargin: 12
+  }
+  Grip {
+    edges: Qt.LeftEdge | Qt.TopEdge
+    cursorShape: Qt.SizeFDiagCursor
+    width: 12
+    height: 12
+    anchors.left: parent.left
+    anchors.top: parent.top
+  }
+  Grip {
+    edges: Qt.RightEdge | Qt.TopEdge
+    cursorShape: Qt.SizeBDiagCursor
+    width: 12
+    height: 12
+    anchors.right: parent.right
+    anchors.top: parent.top
+  }
+  Grip {
+    edges: Qt.LeftEdge | Qt.BottomEdge
+    cursorShape: Qt.SizeBDiagCursor
+    width: 12
+    height: 12
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+  }
+  Grip {
+    edges: Qt.RightEdge | Qt.BottomEdge
+    cursorShape: Qt.SizeFDiagCursor
+    width: 12
+    height: 12
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
   }
 }

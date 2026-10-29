@@ -4,6 +4,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls.Basic
+import "ui" as Ui
 
 Column {
   id: editor
@@ -69,20 +70,21 @@ Column {
       height: 40
       spacing: 8
 
-      Field {
-        width: (row.width - 52) / 2
+      Ui.Input {
+        width: (row.width - 56) / 2
         height: parent.height
         text: row.from
         onEditingFinished: mappingModel.setProperty(row.index, "from", text.trim())
       }
-      Field {
-        width: (row.width - 52) / 2
+      Ui.Input {
+        width: (row.width - 56) / 2
         height: parent.height
         text: row.to
         onEditingFinished: mappingModel.setProperty(row.index, "to", text.trim())
       }
-      IconButton {
+      Ui.Button {
         y: (parent.height - height) / 2
+        variant: "icon"
         iconSource: "qrc:/icons/trash.svg"
         ToolTip.visible: hovered
         ToolTip.text: qsTr("Remove")
@@ -97,30 +99,27 @@ Column {
     width: parent.width
     spacing: 8
 
-    Field {
+    Ui.Input {
       id: fromField
 
-      width: (addRow.width - 18 - 36 - 32) / 2
+      width: (addRow.width - 82) / 2
       placeholderText: qsTr("Original word")
       onAccepted: editor.addMapping()
     }
-    Item {
-      width: 18
-      height: 36
-      Image {
-        anchors.centerIn: parent
-        source: "qrc:/icons/chevron-right.svg"
-        sourceSize: Qt.size(18, 18)
-      }
+    Ui.Icon {
+      source: "qrc:/icons/chevron-right.svg"
+      size: 18
+      y: (addRow.height - height) / 2
     }
-    Field {
+    Ui.Input {
       id: toField
 
-      width: (addRow.width - 18 - 36 - 32) / 2
+      width: (addRow.width - 82) / 2
       placeholderText: editor.toHint
       onAccepted: editor.addMapping()
     }
-    IconButton {
+    Ui.Button {
+      variant: "icon"
       iconSource: "qrc:/icons/plus.svg"
       ToolTip.visible: hovered
       ToolTip.text: qsTr("Add Alias")
