@@ -4,6 +4,7 @@
 
 #include <QMetaObject>
 
+#include "../settings/format.hpp"
 #include "../settings/setting.hpp"
 
 SettingsBridge::SettingsBridge(Setting* setting, QObject* parent)
@@ -16,7 +17,7 @@ QStringList SettingsBridge::input_sources() const {
   return sources;
 }
 
-QStringList SettingsBridge::styles() const { return Setting::available_styles(); }
+QStringList SettingsBridge::styles() const { return Format::available_styles(); }
 
 QVariantMap SettingsBridge::load() const {
   QVariantMap values;

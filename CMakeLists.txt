@@ -42,6 +42,13 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/keypaste/paste.cc
   src/modules/audio/levels.cc
   src/modules/settings/setting.cc
+  src/modules/settings/system.cc
+  src/modules/settings/sound.cc
+  src/modules/settings/appearance.cc
+  src/modules/settings/format.cc
+  src/modules/settings/keyboard.cc
+  src/modules/settings/meetings.cc
+  src/modules/settings/history.cc
   src/modules/ui/osshadow.cc
   src/modules/ui/waves.cc
   src/modules/ui/settings.cc
@@ -71,6 +78,30 @@ qt_add_qml_module(gladys
     src/qml/components/IconButton.qml
     src/qml/components/ThemedCheckBox.qml
     src/qml/components/Field.qml
+    src/qml/components/Section.qml
+    src/qml/components/Note.qml
+    src/qml/components/MappingEditor.qml
+    src/qml/components/ComboBox.qml
+    src/qml/components/settings/SoundInputSource.qml
+    src/qml/components/settings/FormatDictionary.qml
+    src/qml/components/settings/FormatSnippets.qml
+    src/qml/components/settings/FormatModes.qml
+    src/qml/components/settings/SystemCloudLocal.qml
+    src/qml/components/settings/SystemAiModels.qml
+    src/qml/components/settings/SystemStoreTranscriptions.qml
+    src/qml/components/settings/SoundEnableSoundEffects.qml
+    src/qml/components/settings/SoundEnableLlm.qml
+    src/qml/components/settings/SoundFxs.qml
+    src/qml/components/settings/AppearanceTheme.qml
+    src/qml/components/settings/AppearanceOverlaySize.qml
+    src/qml/components/settings/AppearancePosition.qml
+    src/qml/components/settings/KeyboardPushToTalkToggle.qml
+    src/qml/components/settings/KeyboardShortcuts.qml
+    src/qml/components/settings/MeetingsMeetings.qml
+    src/qml/components/settings/HistoryActivity.qml
+    src/qml/components/settings/HistoryStatus.qml
+    src/qml/components/settings/HistoryErrors.qml
+    src/qml/components/settings/HistoryLogs.qml
     src/qml/windows/Overlay.qml
     src/qml/windows/Splash.qml
     src/qml/windows/Settings.qml
@@ -90,8 +121,8 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/chevron-right.svg
 )
 
-# Miniaudio: device enumeration lives in the settings module
-set_source_files_properties(src/modules/settings/setting.cc PROPERTIES
+# Miniaudio: device enumeration lives in the Sound menu
+set_source_files_properties(src/modules/settings/sound.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
 
