@@ -1,33 +1,8 @@
-// LLM Module - Manages llama-server (QProcess) and formats transcriptions over
-// HTTP.
+// Prompt - Builds the system prompt that drives the transcription formatter.
 
-#include "llm.hpp"
+#include "prompt.hpp"
 
-#include <QCoreApplication>
-#include <QFileInfo>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QThread>
-
-#include "../log/log.hpp"
-#include "../setting/setting.hpp"
-
-#ifdef Q_OS_WIN
-#define LLAMA_SERVER_BINARY "llama-server.exe"
-#else
-#define LLAMA_SERVER_BINARY "llama-server"
-#endif
-
-static const char* SERVER_URL = "http://127.0.0.1:8080/v1/chat/completions";
-
-static QString build_system_prompt() {
-  Setting* s = Setting::instance();
-  const QString style = s->style();
-  const bool markdown = s->markdown_mode();
-
+QString build_system_prompt(const QString& style, bool markdown, const QVariantMap& dictionary) {
   QString instructions =
     "INSTRUCTIONS\n"
     "You are a speech transcription formatter. Your sole task is to take raw "
@@ -186,136 +161,10 @@ static QString build_system_prompt() {
 
   instructions += "---\nEXAMPLES\n" + style_examples + markdown_examples;
 
-  const auto dict = s->dictionary();
-  for (auto it = dict.cbegin(); it != dict.cend(); ++it) {
+  for (auto it = dictionary.cbegin(); it != dictionary.cend(); ++it) {
     instructions += "- Keep the rare word \"" + it.key() +
-      "\" exactly as written. Meaning: " + it.value() + ".\n";
+      "\" exactly as written. Meaning: " + it.value().toString() + ".\n";
   }
 
   return instructions;
-}
-
-// Returns the message content, or an empty string when the reply is malformed.
-static QString parse_content(const QByteArray& body) {
-  QJsonDocument doc = QJsonDocument::fromJson(body);
-  if (!doc.isObject()) {
-    return QString();
-  }
-  QJsonArray choices = doc.object()["choices"].toArray();
-  if (choices.isEmpty()) {
-    return QString();
-  }
-  return choices[0].toObject()["message"].toObject()["content"].toString();
-}
-
-// Literal, deterministic replacements applied to the LLM output.
-static QString apply_snippets(QString text) {
-  const auto snippets = Setting::instance()->snippets();
-  for (auto it = snippets.cbegin(); it != snippets.cend(); ++it) {
-    text.replace(it.key(), it.value());
-  }
-  return text;
-}
-
-LLM::LLM(QObject* parent) : QObject(parent), m_is_running(false) {}
-
-LLM::~LLM() { stop(); }
-
-bool LLM::start() {
-  if (m_is_running) {
-    return true;
-  }
-
-  QString dir = QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
-  QString model = dir + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf";
-  QString program = dir + "/" + LLAMA_SERVER_BINARY;
-  if (!QFileInfo::exists(program)) {
-    qCCritical(lcLlm) << "llama-server not found at:" << program;
-    return false;
-  }
-
-  m_server.setProgram(program);
-  m_server.setArguments(QStringList() << "--model" << model << "--ctx-size" << "4096"
-                                      << "--temperature" << "0.7"
-                                      << "--top-p" << "0.9"
-                                      << "--reasoning" << "off"
-                                      << "--reasoning-budget" << "0"
-                                      << "--n-gpu-layers" << "16"
-                                      << "--flash-attn" << "on"
-                                      << "--cache-type-k" << "q4_0"
-                                      << "--repeat-penalty" << "1.15"
-                                      << "--repeat-last-n" << "16"
-                                      << "--port" << "8080");
-
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("LD_LIBRARY_PATH", dir + ":" + env.value("LD_LIBRARY_PATH"));
-  m_server.setProcessEnvironment(env);
-
-  m_server.start();
-  if (!m_server.waitForStarted(5000)) {
-    qCCritical(lcLlm) << "failed to start llama-server";
-    return false;
-  }
-
-  // Startup only (before the UI is shown): give the server time to load the
-  // model
-  QThread::sleep(2);
-  m_is_running = true;
-  qCInfo(lcLlm) << "started, server ready";
-  return true;
-}
-
-void LLM::stop() {
-  if (m_server.state() != QProcess::NotRunning) {
-    m_server.terminate();
-    if (!m_server.waitForFinished(3000)) {
-      m_server.kill();
-      m_server.waitForFinished(1000);
-    }
-  }
-  m_is_running = false;
-  qCInfo(lcLlm) << "stopped";
-}
-
-// Async: emits FORMATTED_TEXT_READY when the server replies. On any failure
-// the raw text is emitted, so the user never loses their dictation.
-void LLM::format_transcription(const QString& text) {
-  if (!m_is_running || text.isEmpty()) {
-    emit FORMATTED_TEXT_READY(text);
-    return;
-  }
-
-  qCInfo(lcLlm) << "request:" << text.length() << "chars:" << text;
-
-  QJsonObject system;
-  system["role"] = "system";
-  system["content"] = build_system_prompt();
-
-  QJsonObject user;
-  user["role"] = "user";
-  user["content"] =
-    "TASK\nFormat the input according to the instructions & examples above.\n"
-    "input: " +
-    text + "\noutput: ";
-
-  QJsonObject json;
-  json["messages"] = QJsonArray({system, user});
-  json["stop"] = QJsonArray({"\ninput:", "\n\n", "\n \n"});
-  json["max_tokens"] = static_cast<int>(text.length() + 10);
-
-  QNetworkRequest request{QUrl(SERVER_URL)};
-  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-  QNetworkReply* reply = m_network.post(request, QJsonDocument(json).toJson());
-
-  connect(reply, &QNetworkReply::finished, this, [this, reply, text]() {
-    reply->deleteLater();
-    QString result;
-    if (reply->error() == QNetworkReply::NoError) {
-      result = apply_snippets(parse_content(reply->readAll()));
-    } else {
-      qCCritical(lcLlm) << "request failed:" << reply->errorString();
-    }
-    qCInfo(lcLlm) << "response:" << result.length() << "chars:" << result;
-    emit FORMATTED_TEXT_READY(result.isEmpty() ? text : result);
-  });
 }

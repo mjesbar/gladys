@@ -1,35 +1,23 @@
-// STT Module - Speech-to-Text using Sherpa-ONNX. Runs on its own QThread.
+// STT - Speech-to-Text using Sherpa-ONNX. Runs inside the gladys-asr process.
 
 #ifndef STT_H
 #define STT_H
 
-#include <QElapsedTimer>
-#include <QObject>
 #include <QString>
-#include <QVector>
 #include <string>
 #include <vector>
 
 #include "miniaudio/miniaudio.h"
 #include "sherpa-onnx/c-api/c-api.h"
 
-class STT : public QObject {
-  Q_OBJECT
-
+class STT {
  public:
   STT();
-  ~STT() override;
+  ~STT();
 
-  bool init(const std::string& model_dir);  // call before moveToThread
-
- public slots:
-  void start_recording();
-  void stop_recording();
-  void reconfigure_audio_source(const QString& source);
-
- signals:
-  void AUDIO_LEVEL_UPDATED(const QVector<double>& levels);
-  void FINAL_TEXT_READY(const QString& text);
+  bool init(const std::string& model_dir);
+  bool start_recording(const QString& source);  // "default" or a capture device name
+  QString stop_recording();                     // decodes the utterance, "" when silent
 
  private:
   bool open_device(const QString& source);
@@ -42,13 +30,10 @@ class STT : public QObject {
   ma_device_id m_device_id;  // m_config.capture.pDeviceID points here
   bool m_is_context_ready;
   bool m_is_device_ready;
+  QString m_source;  // device currently open
 
   const SherpaOnnxOfflineRecognizer* m_recognizer;
   std::vector<float> m_buffer;  // full utterance, decoded once on stop
-
-  QVector<double> m_audio_levels;
-  QVector<double> m_audio_levels_prev;
-  QElapsedTimer m_audio_timer;
 };
 
 #endif  // STT_H

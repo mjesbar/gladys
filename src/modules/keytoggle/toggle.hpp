@@ -25,16 +25,17 @@ class Toggle : public QObject {
   explicit Toggle(QObject* parent = nullptr);
   ~Toggle() override;
 
-  bool init();
-
  public slots:
-  void start_polling();
+  void start();  // call on the keytoggle thread: the hook must live on it
   void process_events();
 
  signals:
+  void STARTED(bool ok);
   void KEY_PRESSED();
 
  private:
+  bool init();
+
   QTimer* m_poll_timer;
   unsigned int m_keycode;
   unsigned int m_modifiers;

@@ -60,7 +60,16 @@ Toggle::~Toggle() {
 #endif
 }
 
-void Toggle::start_polling() { m_poll_timer->start(); }
+// macOS is callback-driven: its tap runs on the thread's CFRunLoop, no timer.
+void Toggle::start() {
+  const bool ok = init();
+#ifndef __APPLE__
+  if (ok) {
+    m_poll_timer->start();
+  }
+#endif
+  emit STARTED(ok);
+}
 
 // ---------------------------------------------------------------------------
 // Linux (evdev /dev/input)

@@ -1,36 +1,31 @@
-// Gladys - Entry point. Creates the modules, wires their signals and owns
-// shutdown.
+// Gladys - Entry point. Starts the module threads, the core and the UI. Owns shutdown.
 
 #include <QApplication>
-#include <QEventLoop>
 #include <QFont>
 #include <QFontDatabase>
 #include <QIcon>
+#include <QEventLoop>
+#include <vector>
 #include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QSocketNotifier>
 #include <QThread>
-#include <QTimer>
 #include <QWindow>
 
-#include "modules/ai/llm.hpp"
-#include "modules/ai/stt.hpp"
-#include "modules/key/paste.hpp"
-#include "modules/key/toggle.hpp"
+#include "core.hpp"
+#include "modules/keypaste/paste.hpp"
+#include "modules/keytoggle/toggle.hpp"
+#include "modules/audio/levels.hpp"
 #include "modules/log/log.hpp"
-#include "modules/setting/setting.hpp"
-#include "modules/ui/audio_bars.hpp"
+#include "modules/settings/setting.hpp"
+#include "modules/ui/waves.hpp"
 #include "modules/ui/settings.hpp"
 #include "modules/ui/tray.hpp"
-#include "modules/ui/x11_shadow.hpp"
+#include "modules/ui/osshadow.hpp"
 #ifdef __APPLE__
-#include "modules/ui/macos_window.hpp"
+#include "modules/ui/macos.hpp"
 #endif
-
-constexpr int STT_TO_LLM_DELAY_MS = 10;
-constexpr int LLM_TO_COPY_DELAY_MS = 10;
-constexpr int COPY_TO_PASTE_DELAY_MS = 250;
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -52,8 +47,7 @@ static void on_signal(int) {
 #include <cstdio>
 #include <string>
 
-// Adds <exe dir>/lib to the DLL search path. Must run before any Qt or sherpa
-// call.
+// Adds <exe dir>/lib to the DLL search path. Must run before any Qt call.
 static bool set_dll_directory() {
   wchar_t path[MAX_PATH];
   if (GetModuleFileNameW(nullptr, path, MAX_PATH) == 0) return false;
@@ -104,13 +98,53 @@ int main(int argc, char* argv[]) {
   app.setFont(ui_font);
   qCInfo(lcMain) << "started";
 
-  Setting* setting = Setting::instance();
+  // Each module runs on its own thread. Settings owns QSettings and the device list.
+  Setting* setting = new Setting();
+  QThread* settings_thread = new QThread(&app);
+  setting->moveToThread(settings_thread);
 
-  // QML engine lives for the whole run: splash, overlay and settings share it.
-  AudioBars audio_bars;
-  SettingsBridge settings_bridge;
+  // The hotkey hook is installed on its own thread by Toggle::start.
+  Toggle* toggle = new Toggle();
+  QThread* toggle_thread = new QThread(&app);
+  toggle->moveToThread(toggle_thread);
+  QObject::connect(toggle_thread, &QThread::started, toggle, &Toggle::start);
+  QObject::connect(toggle, &Toggle::STARTED, &app, [&app](bool ok) {
+    if (!ok) {
+      qCCritical(lcMain) << "hotkey unavailable";
+      app.exit(1);
+    }
+  });
+
+  // Keystrokes run on their own thread; the clipboard stays on the GUI thread.
+  Paste* paste = new Paste();
+  paste->init();
+  QThread* paste_thread = new QThread(&app);
+  paste->moveToThread(paste_thread);
+
+  for (QThread* t : {settings_thread, toggle_thread, paste_thread}) {
+    t->start();
+  }
+  // Stops the module threads on every return path, including startup failures.
+  struct ThreadStopper {
+    std::vector<QThread*> threads;
+    ~ThreadStopper() {
+      qCInfo(lcMain) << "quitting";
+      for (QThread* t : threads) {
+        t->quit();
+        t->wait();
+      }
+    }
+  } stop_threads{{settings_thread, toggle_thread, paste_thread}};
+
+  // Settings bridge calls the settings thread, so it starts after the thread.
+  Waves waves;
+  AudioLevels levels;  // wave bars read the mic directly, not the ASR process
+  if (!levels.init()) {
+    return 1;
+  }
+  SettingsBridge settings_bridge(setting);
   QQmlApplicationEngine engine;
-  engine.rootContext()->setContextProperty("audioBars", &audio_bars);
+  engine.rootContext()->setContextProperty("waves", &waves);
   engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
 
   engine.loadFromModule("Gladys", "Splash");
@@ -120,48 +154,34 @@ int main(int argc, char* argv[]) {
   }
   QObject* splash = engine.rootObjects().first();
 
-  // Model load is blocking: run it off the GUI thread so the splash keeps
-  // spinning.
-  STT* stt = new STT();
-  bool stt_ready = false;
-  QThread* loader = QThread::create([&]() {
-    stt_ready = stt->init((QCoreApplication::applicationDirPath() +
-      "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8")
-        .toStdString());
+  // gladys-asr and gladys-llm are separate processes owned by the core.
+  const QString model_dir = QCoreApplication::applicationDirPath() +
+    "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8";
+  Core core(model_dir, paste);
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &core, &Core::update_config);
+  QObject::connect(toggle, &Toggle::KEY_PRESSED, &core, &Core::toggle_recording);
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &levels, [&levels](const QVariantMap& s) {
+    levels.set_source(s.value("inputSource").toString());
   });
-  QEventLoop loading;
-  QObject::connect(loader, &QThread::finished, &loading, &QEventLoop::quit);
-  loader->start();
-  loading.exec();
-  loader->wait();
-  delete loader;
-  if (!stt_ready) {
+  QObject::connect(&levels, &AudioLevels::LEVELS_UPDATED, &waves, &Waves::update_levels);
+  QObject::connect(&core, &Core::RECORDING_CHANGED, &levels, &AudioLevels::set_active);
+  // Publish after the connections exist, so the initial settings are not lost.
+  QMetaObject::invokeMethod(setting, "publish");
+  QObject::connect(&core, &Core::FAILED, &app, [&app](const QString& reason) {
+    qCCritical(lcMain) << reason;
+    app.exit(1);
+  });
+  if (!core.start()) {
     return 1;
   }
 
-  LLM* llm = new LLM(&app);
-  if (!llm->start()) {
+  // Splash stays until both APIs are ready; a failed API aborts the start.
+  QEventLoop starting;
+  QObject::connect(&core, &Core::READY, &starting, &QEventLoop::quit);
+  QObject::connect(&core, &Core::FAILED, &starting, [&starting]() { starting.exit(1); });
+  if (starting.exec() != 0) {
     return 1;
   }
-
-  Toggle* toggle = new Toggle();
-  if (!toggle->init()) {
-    return 1;
-  }
-
-  Paste* paste = new Paste();
-  paste->init();
-
-  QThread* stt_thread = new QThread(&app);
-  QThread* toggle_thread = new QThread(&app);
-  QThread* paste_thread = new QThread(&app);
-  stt->moveToThread(stt_thread);
-  toggle->moveToThread(toggle_thread);
-  paste->moveToThread(paste_thread);
-  QObject::connect(toggle_thread, &QThread::started, toggle, &Toggle::start_polling);
-  stt_thread->start();
-  toggle_thread->start();
-  paste_thread->start();
 
   QEventLoop fading;
   QObject::connect(splash, SIGNAL(fadeOutFinished()), &fading, SLOT(quit()));
@@ -194,46 +214,12 @@ int main(int argc, char* argv[]) {
     QMetaObject::invokeMethod(overlay, "openSettings");
   });
 
-  bool recording = false;
-  QObject::connect(toggle, &Toggle::KEY_PRESSED, &app, [&]() {
-    recording = !recording;
-    if (recording) {
-      qCInfo(lcToggle) << "window open";
-      QMetaObject::invokeMethod(stt, &STT::start_recording);
-    } else {
-      qCInfo(lcToggle) << "window close";
-      QMetaObject::invokeMethod(stt, &STT::stop_recording);
-    }
+  QObject::connect(&core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
+    qCInfo(lcToggle) << (recording ? "window open" : "window close");
     overlay->setProperty("expanded", recording);
 #ifndef _WIN32
     overlay_window->requestActivate();
 #endif
-  });
-
-  // ASR -> LLM -> Text Copy -> Text Paste
-  QObject::connect(stt, &STT::AUDIO_LEVEL_UPDATED, &audio_bars, &AudioBars::update_levels);
-  QObject::connect(stt, &STT::FINAL_TEXT_READY, llm, [llm](const QString& text) {
-    QTimer::singleShot(
-      STT_TO_LLM_DELAY_MS, llm, [llm, text]() { llm->format_transcription(text); });
-  });
-  QObject::connect(llm, &LLM::FORMATTED_TEXT_READY, &app, [paste, &app](const QString& text) {
-    // Context is the GUI thread: the clipboard must be touched there.
-    QTimer::singleShot(LLM_TO_COPY_DELAY_MS, &app, [paste, text]() {
-      Paste::copy_to_clipboard(text);
-      QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, paste, [paste]() {
-        QMetaObject::invokeMethod(paste, &Paste::send_paste);
-      });
-    });
-  });
-  QObject::connect(setting, &Setting::SETTINGS_CHANGED, stt, &STT::reconfigure_audio_source);
-
-  QObject::connect(&app, &QApplication::aboutToQuit, [&]() {
-    qCInfo(lcMain) << "quitting";
-    llm->stop();
-    for (QThread* t : {stt_thread, toggle_thread, paste_thread}) {
-      t->quit();
-      t->wait();
-    }
   });
 
 #ifndef _WIN32

@@ -1,6 +1,6 @@
 // X11 Shadow - Removes the KDE/X11 drop shadow from a native window.
 
-#include "x11_shadow.hpp"
+#include "osshadow.hpp"
 
 #ifdef __linux__
 #include <X11/Xlib.h>

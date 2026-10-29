@@ -12,12 +12,12 @@ Item {
 
     readonly property real scaleFactor: 0.5 + 0.5 * progress
     readonly property real micCenterY: height - 80 // mic center, above the dot
-    // Average bar height normalized to the tallest bar (48 px, see audio_bars.cc).
+    // Average bar height normalized to the tallest bar (48 px, see waves.cc).
     readonly property real audioLevel: {
         let sum = 0;
-        for (const h of audioBars.heights)
+        for (const h of waves.heights)
             sum += h;
-        return Math.min(sum / (audioBars.heights.length * 48), 1);
+        return Math.min(sum / (waves.heights.length * 48), 1);
     }
 
     Behavior on progress {
@@ -39,13 +39,13 @@ Item {
     }
 
     Repeater {
-        model: audioBars.heights.length
+        model: waves.heights.length
 
         Rectangle {
             required property int index
 
             width: 5
-            height: audioBars.heights[index] * mic.scaleFactor
+            height: waves.heights[index] * mic.scaleFactor
             radius: 2.5
             x: index * 6
             y: mic.micCenterY - height / 2

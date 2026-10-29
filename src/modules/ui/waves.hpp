@@ -1,20 +1,20 @@
-// Audio Bars - Turns STT audio levels into the 20 wave bar heights for QML.
+// Waves - Turns audio levels into the 20 wave bar heights for QML.
 
-#ifndef UI_AUDIO_BARS_HPP
-#define UI_AUDIO_BARS_HPP
+#ifndef UI_WAVES_HPP
+#define UI_WAVES_HPP
 
 #include <QList>
 #include <QObject>
 #include <QVector>
 
-class AudioBars : public QObject {
+class Waves : public QObject {
   Q_OBJECT
   Q_PROPERTY(QList<qreal> heights READ heights NOTIFY HEIGHTS_CHANGED)
 
  public:
   static constexpr int BAR_COUNT = 20;
 
-  explicit AudioBars(QObject* parent = nullptr);
+  explicit Waves(QObject* parent = nullptr);
 
   QList<qreal> heights() const;
 
@@ -28,4 +28,4 @@ class AudioBars : public QObject {
   QList<qreal> m_heights;  // pixel heights at full (open) scale
 };
 
-#endif  // UI_AUDIO_BARS_HPP
+#endif  // UI_WAVES_HPP

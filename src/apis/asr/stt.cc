@@ -1,15 +1,12 @@
-// STT Module - Speech-to-Text using Sherpa-ONNX. Runs on its own QThread.
+// STT - Speech-to-Text using Sherpa-ONNX. Runs inside the gladys-asr process.
 
 #include "stt.hpp"
 
-#include <cmath>
 #include <cstring>
 
-#include "../log/log.hpp"
-#include "../setting/setting.hpp"
+#include "../../modules/log/log.hpp"
 
 static const int SAMPLE_RATE = 16000;
-static const int LEVEL_BARS = 30;
 static const size_t MAX_SAMPLES = SAMPLE_RATE * 60;  // 60 s cap per utterance
 
 STT::STT() : m_is_context_ready(false), m_is_device_ready(false), m_recognizer(nullptr) {
@@ -67,8 +64,7 @@ bool STT::init(const std::string& model_dir) {
     return false;
   }
   m_is_context_ready = true;
-
-  return open_device(Setting::instance()->input_source());
+  return true;  // capture device is opened on the first start
 }
 
 // Selects the capture device by name ("default" = system default) and
@@ -106,39 +102,50 @@ bool STT::open_device(const QString& source) {
     return false;
   }
   m_is_device_ready = true;
+  m_source = source;
   qCInfo(lcStt) << "capture device ready:" << source;
   return true;
 }
 
-void STT::start_recording() {
-  if (!m_recognizer || !m_is_device_ready || ma_device_is_started(&m_device)) {
-    return;
+// The device stays open between utterances; it is reopened only when the source changes.
+bool STT::start_recording(const QString& source) {
+  if (!m_recognizer || !m_is_context_ready) {
+    return false;
+  }
+  if (m_is_device_ready && ma_device_is_started(&m_device)) {
+    return true;
+  }
+  if (!m_is_device_ready || source != m_source) {
+    if (!open_device(source)) {
+      return false;
+    }
   }
 
   m_buffer.clear();
   m_buffer.reserve(MAX_SAMPLES);
   if (ma_device_start(&m_device) != MA_SUCCESS) {
     qCCritical(lcStt) << "failed to start capture device";
-    return;
+    return false;
   }
   qCInfo(lcStt) << "audio recognition started";
+  return true;
 }
 
-void STT::stop_recording() {
+QString STT::stop_recording() {
   if (!m_is_device_ready || !ma_device_is_started(&m_device)) {
-    return;
+    return QString();
   }
   ma_device_stop(&m_device);  // joins the audio callback before we touch m_buffer
   qCInfo(lcStt) << "audio recognition stopped";
   if (m_buffer.empty()) {
-    return;
+    return QString();
   }
 
   const SherpaOnnxOfflineStream* stream = SherpaOnnxCreateOfflineStream(m_recognizer);
   if (!stream) {
     qCCritical(lcStt) << "failed to create stream";
     m_buffer.clear();
-    return;
+    return QString();
   }
   SherpaOnnxAcceptWaveformOffline(
     stream, SAMPLE_RATE, m_buffer.data(), static_cast<int32_t>(m_buffer.size()));
@@ -147,27 +154,11 @@ void STT::stop_recording() {
   QString text = result ? QString::fromUtf8(result->text).trimmed() : QString();
   if (!text.isEmpty()) {
     qCInfo(lcStt) << "transcription output:" << text;
-    emit FINAL_TEXT_READY(text);
   }
   SherpaOnnxDestroyOfflineRecognizerResult(result);
   SherpaOnnxDestroyOfflineStream(stream);
   m_buffer.clear();
-}
-
-void STT::reconfigure_audio_source(const QString& source) {
-  if (!m_is_context_ready) {
-    return;
-  }
-  bool wasRunning = m_is_device_ready && ma_device_is_started(&m_device);
-  if (wasRunning) {
-    stop_recording();
-  }
-  if (!open_device(source)) {
-    return;
-  }
-  if (wasRunning) {
-    start_recording();
-  }
+  return text;
 }
 
 void STT::data_callback(
@@ -180,28 +171,5 @@ void STT::data_callback(
   const size_t kept = qMin(static_cast<size_t>(frameCount), room);
   for (size_t i = 0; i < kept; ++i) {
     self->m_buffer.push_back(static_cast<float>(pcm[i]) / 32768.0f);
-  }
-
-  // Audio levels for the wave bars, smoothed against the previous frame
-  int samplesPerBar = qMax(1, static_cast<int>(frameCount) / LEVEL_BARS);
-  self->m_audio_levels.clear();
-  for (int i = 0; i < LEVEL_BARS; ++i) {
-    int idx = qMin(i * samplesPerBar, static_cast<int>(frameCount) - 1);
-    double sample = std::abs(pcm[idx]) / 32768.0;
-    self->m_audio_levels.append(qMin(1.0, sample * 15.0));
-  }
-  if (self->m_audio_levels_prev.size() == LEVEL_BARS) {
-    for (int i = 0; i < LEVEL_BARS; ++i) {
-      self->m_audio_levels[i] = self->m_audio_levels_prev[i] * 0.7 + self->m_audio_levels[i] * 0.3;
-    }
-  }
-  self->m_audio_levels_prev = self->m_audio_levels;
-
-  if (!self->m_audio_timer.isValid()) {
-    self->m_audio_timer.start();
-  }
-  if (self->m_audio_timer.hasExpired(33)) {  // ~30fps
-    self->m_audio_timer.restart();
-    emit self->AUDIO_LEVEL_UPDATED(self->m_audio_levels);
   }
 }

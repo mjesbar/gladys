@@ -1,6 +1,6 @@
 // macOS Window - Overlay behavior for the native Cocoa window.
 
-#include "macos_window.hpp"
+#include "macos.hpp"
 
 #import <AppKit/AppKit.h>
 

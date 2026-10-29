@@ -6,17 +6,8 @@
 
 #include "../log/log.hpp"
 
-// Miniaudio header only (implementation is in stt.cc)
+// Miniaudio is compiled into this executable here, for device enumeration.
 #include "miniaudio/miniaudio.h"
-
-Setting* Setting::s_instance = nullptr;
-
-Setting* Setting::instance() {
-  if (!s_instance) {
-    s_instance = new Setting();
-  }
-  return s_instance;
-}
 
 Setting::Setting(QObject* parent) : QObject(parent) { load(); }
 
@@ -45,6 +36,26 @@ static void write_pairs(QSettings& s, const char* group, const QMap<QString, QSt
   s.endArray();
 }
 
+static QVariantMap to_variant(const QMap<QString, QString>& pairs) {
+  QVariantMap map;
+  for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
+    map.insert(it.key(), it.value());
+  }
+  return map;
+}
+
+// Blank keys are dropped.
+static QMap<QString, QString> to_pairs(const QVariantMap& map) {
+  QMap<QString, QString> pairs;
+  for (auto it = map.cbegin(); it != map.cend(); ++it) {
+    const QString from = it.key().trimmed();
+    if (!from.isEmpty()) {
+      pairs.insert(from, it.value().toString().trimmed());
+    }
+  }
+  return pairs;
+}
+
 void Setting::load() {
   QSettings s("gladys", "gladys");
   qCInfo(lcSetting) << "loaded" << s.fileName();
@@ -60,22 +71,47 @@ void Setting::load() {
   }
 }
 
-void Setting::save() {
+void Setting::publish() { emit SETTINGS_CHANGED(snapshot()); }
+
+QVariantMap Setting::snapshot() const {
+  return {
+    {"inputSource", m_input_source},
+    {"markdown", m_markdown_mode},
+    {"style", m_style},
+    {"dictionary", to_variant(m_dictionary)},
+    {"snippets", to_variant(m_snippets)},
+  };
+}
+
+// Unknown input sources and styles are ignored.
+void Setting::apply(const QVariantMap& values) {
+  const QString source = values.value("inputSource").toString();
+  if (input_sources().contains(source)) {
+    m_input_source = source;
+  }
+
+  const QString style = values.value("style").toString();
+  if (available_styles().contains(style)) {
+    m_style = style;
+  }
+
+  m_dictionary = to_pairs(values.value("dictionary").toMap());
+  m_snippets = to_pairs(values.value("snippets").toMap());
+  m_markdown_mode = values.value("markdown").toBool();
+
   QSettings s("gladys", "gladys");
   s.setValue("audio/inputSource", m_input_source);
-
   write_pairs(s, "dictionary", m_dictionary);
   write_pairs(s, "snippets", m_snippets);
-
   s.setValue("style/markdownMode", m_markdown_mode);
   s.setValue("style/tone", m_style);
 
-  emit SETTINGS_CHANGED(m_input_source);
+  publish();
 }
 
 QStringList Setting::available_styles() { return {"Casual", "Formal", "Email"}; }
 
-QStringList Setting::available_input_sources() {
+QStringList Setting::input_sources() const {
   QStringList sources;
   sources << "default";
 
@@ -95,15 +131,3 @@ QStringList Setting::available_input_sources() {
   ma_context_uninit(&context);
   return sources;
 }
-
-QString Setting::input_source() const { return m_input_source; }
-QMap<QString, QString> Setting::dictionary() const { return m_dictionary; }
-QMap<QString, QString> Setting::snippets() const { return m_snippets; }
-bool Setting::markdown_mode() const { return m_markdown_mode; }
-QString Setting::style() const { return m_style; }
-
-void Setting::set_input_source(const QString& v) { m_input_source = v; }
-void Setting::set_dictionary(const QMap<QString, QString>& d) { m_dictionary = d; }
-void Setting::set_snippets(const QMap<QString, QString>& d) { m_snippets = d; }
-void Setting::set_markdown_mode(bool v) { m_markdown_mode = v; }
-void Setting::set_style(const QString& v) { m_style = v; }
