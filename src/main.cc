@@ -127,14 +127,18 @@ int main(int argc, char* argv[]) {
   // Stops the module threads on every return path, including startup failures.
   struct ThreadStopper {
     std::vector<QThread*> threads;
+    Toggle* toggle;
     ~ThreadStopper() {
       qCInfo(lcMain) << "quitting";
+#ifdef __APPLE__
+      toggle->stop();  // the macOS hotkey loop runs inside start(), so quit() cannot end it
+#endif
       for (QThread* t : threads) {
         t->quit();
         t->wait();
       }
     }
-  } stop_threads{{settings_thread, toggle_thread, paste_thread}};
+  } stop_threads{{settings_thread, toggle_thread, paste_thread}, toggle};
 
   // Settings bridge calls the settings thread, so it starts after the thread.
   Waves waves;

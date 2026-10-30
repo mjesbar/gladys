@@ -14,7 +14,7 @@
 #include <string>
 #endif
 #ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
+#include <ApplicationServices/ApplicationServices.h>
 #endif
 
 #ifdef _WIN32
@@ -28,6 +28,7 @@ Toggle::Toggle(QObject* parent)
 #ifdef __APPLE__
   m_event_tap = nullptr;
   m_run_loop_source = nullptr;
+  m_stop_requested = false;
 #endif
 #ifdef _WIN32
   m_keyboard_hook = nullptr;
@@ -60,7 +61,7 @@ Toggle::~Toggle() {
 #endif
 }
 
-// macOS is callback-driven: its tap runs on the thread's CFRunLoop, no timer.
+// macOS is callback-driven: this thread runs its own CFRunLoop until stop().
 void Toggle::start() {
   const bool ok = init();
 #ifndef __APPLE__
@@ -69,7 +70,16 @@ void Toggle::start() {
   }
 #endif
   emit STARTED(ok);
+#ifdef __APPLE__
+  while (ok && !m_stop_requested) {
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, false);  // 0.1s bounds stop latency
+  }
+#endif
 }
+
+#ifdef __APPLE__
+void Toggle::stop() { m_stop_requested = true; }
+#endif
 
 // ---------------------------------------------------------------------------
 // Linux (evdev /dev/input)
@@ -143,9 +153,27 @@ void Toggle::process_events() {
 
 #ifdef __APPLE__
 
+// Event taps need Accessibility. Prompts the user while it is not granted.
+static bool has_accessibility() {
+  const void* keys[] = {kAXTrustedCheckOptionPrompt};
+  const void* values[] = {kCFBooleanTrue};
+  CFDictionaryRef options = CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1,
+                                               &kCFTypeDictionaryKeyCallBacks,
+                                               &kCFTypeDictionaryValueCallBacks);
+  const bool trusted = AXIsProcessTrustedWithOptions(options);
+  CFRelease(options);
+  return trusted;
+}
+
 bool Toggle::init() {
   m_keycode = 0x23;  // kVK_ANSI_P
   m_modifiers = kCGEventFlagMaskControl | kCGEventFlagMaskAlternate;
+
+  if (!has_accessibility()) {
+    qCCritical(lcToggle) << "Accessibility not granted. Enable Gladys in System Settings "
+                            "> Privacy & Security > Accessibility, then restart.";
+    return false;
+  }
 
   CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown);
   CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap,
@@ -155,8 +183,7 @@ bool Toggle::init() {
     event_tap_callback,
     this);
   if (!tap) {
-    qCCritical(lcToggle) << "CGEventTapCreate failed. "
-                            "Grant Accessibility permission in System Preferences.";
+    qCCritical(lcToggle) << "CGEventTapCreate failed. Check Accessibility permission.";
     return false;
   }
   m_event_tap = tap;
@@ -179,8 +206,14 @@ void Toggle::process_events() {
 CGEventRef Toggle::event_tap_callback(
   CGEventTapProxy proxy, CGEventType type, CGEventRef event, void* userInfo) {
   (void)proxy;
+  Toggle* self = static_cast<Toggle*>(userInfo);
+  // macOS disables a tap after a slow callback or user input; a disabled tap stays dead.
+  if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput) {
+    qCWarning(lcToggle) << "event tap disabled by macOS, re-enabling";
+    CGEventTapEnable(static_cast<CFMachPortRef>(self->m_event_tap), true);
+    return event;
+  }
   if (type == kCGEventKeyDown) {
-    Toggle* self = static_cast<Toggle*>(userInfo);
     CGKeyCode keyCode =
       static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
     CGEventFlags flags = CGEventGetFlags(event);

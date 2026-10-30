@@ -2,10 +2,12 @@
 
 #include "log.hpp"
 
+#include <QString>
 #include <QtGlobal>
 
 // ANSI colors per level: DEBUG grey, INFO green, WARN yellow, ERROR red, FATAL magenta
 void log_setup() {
+  QLoggingCategory::setFilterRules(QStringLiteral("gladys.*=true"));  // info is off by default
   qSetMessagePattern(
     "%{time yyyy-MM-dd hh:mm:ss.zzz} "
     "%{if-debug}\033[90mDEBUG%{endif}"
