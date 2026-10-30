@@ -33,8 +33,10 @@ jobs:
           target: "desktop"
           arch: "linux_gcc_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           install-deps: true
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os linux --arch x64 --ma-debug off
@@ -60,7 +62,9 @@ jobs:
           target: "desktop"
           arch: "win64_msvc2022_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os windows --arch x64 --ma-debug off
@@ -87,7 +91,9 @@ jobs:
           target: "desktop"
           arch: "clang_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os macos --arch arm64 --ma-debug off
