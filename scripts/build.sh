@@ -69,7 +69,9 @@ cmake --preset release -B "$BUILD" -DGLADYS_ARCH="$ARCH" -DGLADYS_MA_DEBUG="$MA_
 echo "[build] cmake configure OK"
 
 # Copy the compile database to the project root so editors (Zed/clangd) find it.
-cp "$BUILD/compile_commands.json" compile_commands.json
+if [ "$OS" = linux ]; then
+  sudo cp "$BUILD/compile_commands.json" compile_commands.json
+fi
 
 echo "[build] cmake build ..."
 cmake --build "$BUILD" --config Release
