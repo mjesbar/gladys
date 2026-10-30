@@ -68,6 +68,11 @@ echo "[build] cmake configure ($OS $ARCH) ..."
 cmake --preset release -B "$BUILD" -DGLADYS_ARCH="$ARCH" -DGLADYS_MA_DEBUG="$MA_DEBUG"
 echo "[build] cmake configure OK"
 
+# Copy the compile database to the project root so editors (Zed/clangd) find it.
+if [ "$OS" = linux ]; then
+  sudo cp "$BUILD/compile_commands.json" compile_commands.json
+fi
+
 echo "[build] cmake build ..."
 cmake --build "$BUILD" --config Release
 echo "[build] cmake build OK"
@@ -90,7 +95,9 @@ case "$OS" in
     done
     echo "[build] linuxdeploy bundle Qt ..."
     LD_LIBRARY_PATH="$QT_ROOT_DIR/lib" QMAKE="$QT_ROOT_DIR/bin/qmake" QML_SOURCES_PATHS=src/qml \
-      "$QT_ROOT_DIR/bin/linuxdeploy-x86_64.AppImage" --appdir "$DIST" --executable "$DIST/gladys" --plugin qt
+      "$QT_ROOT_DIR/bin/linuxdeploy-x86_64.AppImage" --appdir "$DIST" \
+      --executable "$DIST/gladys" --executable "$DIST/gladys-asr" --executable "$DIST/gladys-llm" \
+      --plugin qt
     # Flatten usr/ back to dist/ root: the binary locates models next to itself
     mkdir -p "$DIST/lib"
     mv "$DIST"/usr/lib/* "$DIST/lib/"
@@ -112,7 +119,9 @@ case "$OS" in
     ;;
   windows)
     echo "[build] windeployqt bundle Qt ..."
-    "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe"
+    for exe in gladys gladys-asr gladys-llm; do
+      "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/$exe.exe"
+    done
     echo "[build] windeployqt bundle Qt OK"
     ;;
 esac

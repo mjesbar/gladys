@@ -13,6 +13,24 @@ QtObject {
     readonly property color hover: "#1C1C1C"
     readonly property color pressed: "#2A2A2A"
     readonly property color accent: "#BDBDBD"
+    readonly property color danger: "#E5484D"
+    readonly property color success: "#3FB950"
+    readonly property color warning: "#D29922"
+    readonly property color info: "#58A6FF"
+
+    function toneColor(tone) {
+        if (tone === "success") return success;
+        if (tone === "warning") return warning;
+        if (tone === "error") return danger;
+        return info;
+    }
     readonly property string fontFamily: "Roboto Slab"
     readonly property int fontSize: 13
+    readonly property int radius: 12
+    readonly property int radiusPill: 20
+    readonly property int gap: 12
+    readonly property int padding: 16
+    readonly property int durationFast: 120
+    readonly property int durationBase: 150
+    readonly property int durationSlow: 200
 }

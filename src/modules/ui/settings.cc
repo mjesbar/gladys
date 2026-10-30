@@ -2,61 +2,31 @@
 
 #include "settings.hpp"
 
-#include "../setting/setting.hpp"
+#include <QMetaObject>
 
-SettingsBridge::SettingsBridge(QObject* parent) : QObject(parent) {}
+#include "../settings/format.hpp"
+#include "../settings/setting.hpp"
 
-QStringList SettingsBridge::input_sources() const { return Setting::available_input_sources(); }
+SettingsBridge::SettingsBridge(Setting* setting, QObject* parent)
+    : QObject(parent), m_setting(setting) {}
 
-QStringList SettingsBridge::styles() const { return Setting::available_styles(); }
-
-static QVariantMap to_variant(const QMap<QString, QString>& pairs) {
-  QVariantMap map;
-  for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
-    map.insert(it.key(), it.value());
-  }
-  return map;
+QStringList SettingsBridge::input_sources() const {
+  QStringList sources;
+  QMetaObject::invokeMethod(m_setting, "input_sources", Qt::BlockingQueuedConnection,
+                            Q_RETURN_ARG(QStringList, sources));
+  return sources;
 }
 
-// Blank keys are dropped.
-static QMap<QString, QString> to_pairs(const QVariantMap& map) {
-  QMap<QString, QString> pairs;
-  for (auto it = map.cbegin(); it != map.cend(); ++it) {
-    const QString from = it.key().trimmed();
-    if (!from.isEmpty()) {
-      pairs.insert(from, it.value().toString().trimmed());
-    }
-  }
-  return pairs;
-}
+QStringList SettingsBridge::styles() const { return Format::available_styles(); }
 
 QVariantMap SettingsBridge::load() const {
-  Setting* s = Setting::instance();
-  return {
-    {"inputSource", s->input_source()},
-    {"markdown", s->markdown_mode()},
-    {"style", s->style()},
-    {"dictionary", to_variant(s->dictionary())},
-    {"snippets", to_variant(s->snippets())},
-  };
+  QVariantMap values;
+  QMetaObject::invokeMethod(m_setting, "snapshot", Qt::BlockingQueuedConnection,
+                            Q_RETURN_ARG(QVariantMap, values));
+  return values;
 }
 
-// Unknown input sources and styles are ignored.
 void SettingsBridge::apply(const QVariantMap& values) {
-  Setting* s = Setting::instance();
-
-  const QString source = values.value("inputSource").toString();
-  if (Setting::available_input_sources().contains(source)) {
-    s->set_input_source(source);
-  }
-
-  const QString style = values.value("style").toString();
-  if (Setting::available_styles().contains(style)) {
-    s->set_style(style);
-  }
-
-  s->set_dictionary(to_pairs(values.value("dictionary").toMap()));
-  s->set_snippets(to_pairs(values.value("snippets").toMap()));
-  s->set_markdown_mode(values.value("markdown").toBool());
-  s->save();
+  QMetaObject::invokeMethod(m_setting, "apply", Qt::BlockingQueuedConnection,
+                            Q_ARG(QVariantMap, values));
 }
