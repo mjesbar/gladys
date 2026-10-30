@@ -119,7 +119,9 @@ case "$OS" in
     ;;
   windows)
     echo "[build] windeployqt bundle Qt ..."
-    "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/gladys.exe"
+    for exe in gladys gladys-asr gladys-llm; do
+      "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/$exe.exe"
+    done
     echo "[build] windeployqt bundle Qt OK"
     ;;
 esac
