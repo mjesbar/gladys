@@ -15,7 +15,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0 CACHE STRING "" FORCE)
 project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 
 # Find Qt6 modules and set C++17
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Widgets Network Svg HttpServer)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Widgets Network Svg HttpServer Sql)
 qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,6 +37,7 @@ option(GLADYS_MA_DEBUG "Enable miniaudio debug output" OFF)
 qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/core.cc
+  src/modules/data/data.cc
   src/modules/log/log.cc
   src/modules/keytoggle/toggle.cc
   src/modules/keypaste/paste.cc
@@ -51,6 +52,7 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/settings/history.cc
   src/modules/ui/osshadow.cc
   src/modules/ui/waves.cc
+  src/modules/ui/history.cc
   src/modules/ui/settings.cc
   src/modules/ui/tray.cc
 )
@@ -76,6 +78,7 @@ qt_add_qml_module(gladys
     src/qml/components/Mic.qml
     src/qml/components/Section.qml
     src/qml/components/Note.qml
+    src/qml/components/PagedList.qml
     src/qml/components/MappingEditor.qml
     src/qml/components/ui/Text.qml
     src/qml/components/ui/Heading.qml
@@ -115,7 +118,6 @@ qt_add_qml_module(gladys
     src/qml/components/settings/FormatModes.qml
     src/qml/components/settings/SystemCloudLocal.qml
     src/qml/components/settings/SystemAiModels.qml
-    src/qml/components/settings/SystemStoreTranscriptions.qml
     src/qml/components/settings/SoundEnableSoundEffects.qml
     src/qml/components/settings/SoundEnableLlm.qml
     src/qml/components/settings/SoundFxs.qml
@@ -132,6 +134,7 @@ qt_add_qml_module(gladys
     src/qml/windows/Overlay.qml
     src/qml/windows/Splash.qml
     src/qml/windows/Settings.qml
+    src/qml/windows/StorageError.qml
 )
 
 # Embed fonts and icons into the binary
@@ -155,7 +158,7 @@ set_source_files_properties(src/modules/settings/sound.cc PROPERTIES
 )
 
 target_include_directories(gladys PRIVATE src src/include)
-target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Widgets Qt6::Network Qt6::Svg Qt6::HttpServer)
+target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Widgets Qt6::Network Qt6::Svg Qt6::HttpServer Qt6::Sql)
 
 # OS-specific system libraries
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -176,10 +179,11 @@ install(TARGETS gladys RUNTIME DESTINATION . BUNDLE DESTINATION .)
 qt_add_executable(gladys-asr
   src/apis/asr/server.cc
   src/apis/asr/stt.cc
+  src/modules/data/data.cc
   src/modules/log/log.cc
 )
 target_include_directories(gladys-asr PRIVATE src src/include)
-target_link_libraries(gladys-asr PRIVATE Qt6::Core Qt6::HttpServer)
+target_link_libraries(gladys-asr PRIVATE Qt6::Core Qt6::HttpServer Qt6::Sql)
 set_source_files_properties(src/apis/asr/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
@@ -246,10 +250,11 @@ qt_add_executable(gladys-llm
   src/apis/llm/server.cc
   src/apis/llm/llm.cc
   src/apis/llm/prompt.cc
+  src/modules/data/data.cc
   src/modules/log/log.cc
 )
 target_include_directories(gladys-llm PRIVATE src)
-target_link_libraries(gladys-llm PRIVATE Qt6::Core Qt6::Network Qt6::HttpServer)
+target_link_libraries(gladys-llm PRIVATE Qt6::Core Qt6::Network Qt6::HttpServer Qt6::Sql)
 
 # Helpers sit next to gladys (macOS: inside the bundle, next to the llama.cpp folder)
 foreach(helper gladys-asr gladys-llm)

@@ -2,19 +2,13 @@
 
 #include "sound.hpp"
 
-#include <QSettings>
-
 // Miniaudio is compiled into this executable here, for device enumeration.
 #include "miniaudio/miniaudio.h"
-
-void Sound::load(QSettings& s) { m_input_source = s.value("audio/inputSource", "default").toString(); }
-
-void Sound::save(QSettings& s) const { s.setValue("audio/inputSource", m_input_source); }
 
 QVariantMap Sound::to_map() const { return {{"inputSource", m_input_source}}; }
 
 void Sound::from_map(const QVariantMap& values) {
-  const QString source = values.value("inputSource").toString();
+  const QString source = values.value("inputSource", m_input_source).toString();
   if (input_sources().contains(source)) {
     m_input_source = source;
   }

@@ -6,14 +6,10 @@
 #include <QStringList>
 #include <QVariantMap>
 
-class QSettings;
-
 class Sound {
  public:
   static QStringList input_sources();  // "default" plus capture devices
 
-  void load(QSettings& s);
-  void save(QSettings& s) const;
   QVariantMap to_map() const;
   void from_map(const QVariantMap& values);  // unknown input sources are ignored
 

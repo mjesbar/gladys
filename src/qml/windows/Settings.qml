@@ -48,6 +48,12 @@ Window {
     formatDictionary.load(s);
     formatSnippets.load(s);
     formatModes.load(s);
+    historyActivity.load(s);
+    historyLogs.load(s);
+    historyActivity.reload();
+    historyStatus.reload();
+    historyErrors.reload();
+    historyLogs.reload();
   }
 
   // Shadow: one translucent rounded rect per pixel of inset, growing outward. Plain QML, no extra module.
@@ -184,8 +190,7 @@ Window {
             spacing: Theme.spacingXl
 
             SystemCloudLocal {}
-            SystemAiModels {}
-            SystemStoreTranscriptions {
+            SystemAiModels {
               divided: false
             }
           }
@@ -253,10 +258,18 @@ Window {
           Column {
             spacing: Theme.spacingXl
 
-            HistoryActivity {}
-            HistoryStatus {}
-            HistoryErrors {}
+            HistoryActivity {
+              id: historyActivity
+            }
+            HistoryStatus {
+              id: historyStatus
+            }
+            HistoryErrors {
+              id: historyErrors
+            }
             HistoryLogs {
+              id: historyLogs
+
               divided: false
             }
           }

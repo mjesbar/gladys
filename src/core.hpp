@@ -43,11 +43,13 @@ class Core : public QObject {
     QStringList args;
     QString url;  // API base URL, e.g. http://127.0.0.1:8081
     QProcess process;
+    QByteArray err_buf;  // stderr bytes not yet ending in a newline
     bool ready = false;
   };
 
   void spawn(Child& child);
   void on_exit(Child& child);
+  void read_stderr(Child& child);  // echoes each line and stores it in logs
   void probe(Child& child);  // GET /alive
   void check_ready();
   void post(const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done);

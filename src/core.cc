@@ -7,9 +7,12 @@
 #include <QJsonDocument>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 #include <QUrl>
+#include <cstdio>
 
 #include "apis/server.hpp"
+#include "modules/data/data.hpp"
 #include "modules/keypaste/paste.hpp"
 #include "modules/log/log.hpp"
 
@@ -32,6 +35,10 @@ static QString sibling_binary(const char* name) {
 
 static QString api_url(quint16 port) { return QStringLiteral("http://127.0.0.1:%1").arg(port); }
 
+static const QRegularExpression ANSI_COLOR("\x1b\\[[0-9;]*m");
+static const QRegularExpression SEVERE_LEVEL("\\b(ERROR|FATAL)\\b");
+static const QRegularExpression WARN_LEVEL("\\bWARN\\b");
+
 Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
     : QObject(parent), m_paste(paste) {
   m_asr.name = "gladys-asr";
@@ -43,7 +50,7 @@ Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
   m_llm.url = api_url(LLM_PORT);
 
   for (Child* child : {&m_asr, &m_llm}) {
-    child->process.setProcessChannelMode(QProcess::ForwardedErrorChannel);
+    connect(&child->process, &QProcess::readyReadStandardError, this, [this, child]() { read_stderr(*child); });
     connect(&child->process, &QProcess::finished, this, [this, child]() { on_exit(*child); });
   }
 
@@ -112,6 +119,21 @@ void Core::on_exit(Child& child) {
       spawn(child);
     }
   });
+}
+
+// Stderr arrives in chunks: complete lines are echoed to the console and stored with their level.
+void Core::read_stderr(Child& child) {
+  child.err_buf += child.process.readAllStandardError();
+  for (int end = child.err_buf.indexOf('\n'); end >= 0; end = child.err_buf.indexOf('\n')) {
+    const QString line = QString::fromUtf8(child.err_buf.left(end)).remove(ANSI_COLOR).trimmed();
+    child.err_buf.remove(0, end + 1);
+    if (line.isEmpty()) {
+      continue;
+    }
+    std::fprintf(stderr, "%s\n", qPrintable(line));
+    Data::post_log("[" + child.name + "] " + line, SEVERE_LEVEL.match(line).hasMatch(),
+                   WARN_LEVEL.match(line).hasMatch());
+  }
 }
 
 // 200 on /alive means ready. 503 (model loading) and connection errors retry on the next tick.
@@ -206,6 +228,7 @@ void Core::format_text(const QString& text) {
 
 // Clipboard is written on the GUI thread; the keystroke runs on the keypaste thread.
 void Core::paste_text(const QString& text) {
+  Data::post_transcription(text);
   QTimer::singleShot(LLM_TO_COPY_DELAY_MS, this, [this, text]() {
     Paste::copy_to_clipboard(text);
     QTimer::singleShot(COPY_TO_PASTE_DELAY_MS, m_paste, [this, paste = m_paste]() {

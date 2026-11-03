@@ -2,35 +2,6 @@
 
 #include "format.hpp"
 
-#include <QSettings>
-
-static QMap<QString, QString> read_pairs(QSettings& s, const char* group) {
-  QMap<QString, QString> pairs;
-  int size = s.beginReadArray(group);
-  for (int i = 0; i < size; ++i) {
-    s.setArrayIndex(i);
-    QString from = s.value("from").toString();
-    if (!from.isEmpty()) {
-      pairs.insert(from, s.value("to").toString());
-    }
-  }
-  s.endArray();
-  return pairs;
-}
-
-// Clears the group first: beginWriteArray keeps stale entries past the new size.
-static void write_pairs(QSettings& s, const char* group, const QMap<QString, QString>& pairs) {
-  s.remove(group);
-  s.beginWriteArray(group);
-  int idx = 0;
-  for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
-    s.setArrayIndex(idx++);
-    s.setValue("from", it.key());
-    s.setValue("to", it.value());
-  }
-  s.endArray();
-}
-
 static QVariantMap to_variant(const QMap<QString, QString>& pairs) {
   QVariantMap map;
   for (auto it = pairs.cbegin(); it != pairs.cend(); ++it) {
@@ -52,23 +23,6 @@ static QMap<QString, QString> to_pairs(const QVariantMap& map) {
 }
 
 QStringList Format::available_styles() { return {"Casual", "Formal", "Email"}; }
-
-void Format::load(QSettings& s) {
-  m_dictionary = read_pairs(s, "dictionary");
-  m_snippets = read_pairs(s, "snippets");
-  m_markdown_mode = s.value("style/markdownMode", false).toBool();
-  m_style = s.value("style/tone", "Casual").toString();
-  if (!available_styles().contains(m_style)) {
-    m_style = "Casual";
-  }
-}
-
-void Format::save(QSettings& s) const {
-  write_pairs(s, "dictionary", m_dictionary);
-  write_pairs(s, "snippets", m_snippets);
-  s.setValue("style/markdownMode", m_markdown_mode);
-  s.setValue("style/tone", m_style);
-}
 
 QVariantMap Format::to_map() const {
   return {

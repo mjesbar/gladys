@@ -1,4 +1,4 @@
-// System Menu - Cloud / Local, AI Models, Store Transcriptions. Not implemented yet.
+// System Menu - Cloud / Local, AI Models. Not implemented yet.
 
 #ifndef SETTING_SYSTEM_HPP
 #define SETTING_SYSTEM_HPP

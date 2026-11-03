@@ -7,14 +7,10 @@
 #include <QStringList>
 #include <QVariantMap>
 
-class QSettings;
-
 class Format {
  public:
   static QStringList available_styles();  // Casual | Formal | Email
 
-  void load(QSettings& s);
-  void save(QSettings& s) const;
   QVariantMap to_map() const;
   void from_map(const QVariantMap& values);  // unknown styles are ignored
 
