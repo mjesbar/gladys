@@ -82,7 +82,10 @@ cmake --install "$BUILD" --prefix "$DIST"
 echo "[build] cmake install OK"
 
 # Gladys only uses SQLite. Other SQL drivers (mysql, psql, odbc...) need client libs the deploy tools cannot find.
-find "$QT_ROOT_DIR/plugins/sqldrivers" -maxdepth 1 -type f ! -name '*qsqlite*' -delete
+# Qt's CMake config imports every driver file, so they are moved aside only for the bundle step and restored on exit.
+SQL_ASIDE=$(mktemp -d)
+find "$QT_ROOT_DIR/plugins/sqldrivers" -maxdepth 1 -type f ! -name '*qsqlite*' -exec mv {} "$SQL_ASIDE" \;
+trap 'for f in "$SQL_ASIDE"/*; do [ -e "$f" ] && mv "$f" "$QT_ROOT_DIR/plugins/sqldrivers/"; done; rmdir "$SQL_ASIDE"' EXIT
 
 # Bundle the Qt runtime into dist/
 case "$OS" in
