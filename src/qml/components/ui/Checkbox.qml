@@ -3,7 +3,7 @@
 import QtQuick
 import "." as Ui
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.CheckBox {
   id: check

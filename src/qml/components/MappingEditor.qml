@@ -11,6 +11,8 @@ Column {
 
   property string toHint: qsTr("Replacement")
 
+  signal edited()
+
   width: parent.width
   spacing: 12
 
@@ -45,6 +47,7 @@ Column {
     fromField.clear();
     toField.clear();
     fromField.forceActiveFocus();
+    editor.edited();
   }
 
   ListModel {
@@ -56,6 +59,7 @@ Column {
 
     width: parent.width
     height: 180
+    spacing: 8
     clip: true
     model: mappingModel
 
@@ -74,13 +78,19 @@ Column {
         width: (row.width - 56) / 2
         height: parent.height
         text: row.from
-        onEditingFinished: mappingModel.setProperty(row.index, "from", text.trim())
+        onEditingFinished: {
+          mappingModel.setProperty(row.index, "from", text.trim());
+          editor.edited();
+        }
       }
       Ui.Input {
         width: (row.width - 56) / 2
         height: parent.height
         text: row.to
-        onEditingFinished: mappingModel.setProperty(row.index, "to", text.trim())
+        onEditingFinished: {
+          mappingModel.setProperty(row.index, "to", text.trim());
+          editor.edited();
+        }
       }
       Ui.Button {
         y: (parent.height - height) / 2
@@ -88,7 +98,10 @@ Column {
         iconSource: "qrc:/icons/trash.svg"
         ToolTip.visible: hovered
         ToolTip.text: qsTr("Remove")
-        onClicked: mappingModel.remove(row.index)
+        onClicked: {
+          mappingModel.remove(row.index);
+          editor.edited();
+        }
       }
     }
   }

@@ -6,7 +6,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic as Basic
 import "." as Ui
-import ".."
+import "../.."
 
 Column {
   id: tabs

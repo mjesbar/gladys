@@ -2,7 +2,7 @@
 
 import QtQuick
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.TextField {
   id: field
@@ -18,7 +18,7 @@ Basic.TextField {
   background: Rectangle {
     radius: Theme.radiusPill
     color: Theme.surface
-    border.color: field.invalid ? Theme.danger : field.activeFocus ? Theme.accent : Theme.border
+    border.color: field.invalid ? Theme.danger : field.activeFocus ? Theme.focus : Theme.border
 
     Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
   }

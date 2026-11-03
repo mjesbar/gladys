@@ -2,7 +2,7 @@
 
 import QtQuick
 import "." as Ui
-import ".."
+import "../.."
 
 Ui.Text {
   id: link

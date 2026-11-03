@@ -5,7 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import "." as Ui
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.Button {
   id: button

@@ -2,7 +2,7 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
-import ".."
+import "../.."
 
 Popup {
   id: dialog

@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import ".."
 import "../components"
 import "../components/settings"
 import "../components/ui" as Ui
@@ -44,16 +45,33 @@ Window {
     formatModes.load(s);
   }
 
-  function apply() {
-    settingsBridge.apply(Object.assign({}, soundInputSource.values(), formatDictionary.values(), formatSnippets.values(), formatModes.values()));
-  }
-
   // Rounded pseudoframe: square when maximized, since the window fills the screen.
   Rectangle {
     anchors.fill: parent
-    radius: settings.visibility === Window.Maximized ? 0 : Theme.radius
+    radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
     color: Theme.background
-    clip: true
+  }
+
+  // Sidebar: full height behind the transparent title bar. Its rounded edge is
+  // the window corner radius; the square edge strip hides its rounded right side.
+  readonly property int sidebarWidth: 220
+
+  Rectangle {
+    id: sidebarPanel
+
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: settings.sidebarWidth + Theme.radiusLg
+    radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
+    color: Theme.sidebar
+  }
+  Rectangle {
+    x: settings.sidebarWidth
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: Theme.radiusLg
+    color: Theme.background
   }
 
   // Sidebar: the main menus only.
@@ -62,10 +80,10 @@ Window {
 
     anchors.left: parent.left
     anchors.top: titleBar.bottom
-    anchors.leftMargin: 12
-    anchors.topMargin: 16
+    anchors.leftMargin: Theme.spacingMd
+    anchors.topMargin: Theme.spacingLg
     width: 196
-    spacing: 4
+    spacing: Theme.spacingXs
 
     Repeater {
       model: settings.menus
@@ -82,7 +100,7 @@ Window {
         onClicked: settings.current = index
 
         background: Rectangle {
-          radius: 12
+          radius: Theme.radiusMd
           color: menuItem.highlighted ? Theme.hover : "transparent"
         }
         contentItem: Text {
@@ -95,9 +113,10 @@ Window {
     }
   }
 
-  // Page area with the apply button pinned at the bottom. Flickable margins give each page its padding.
+  // Page area: config panel, darker grey than the sidebar. Each page gets its padding from the StackLayout.
   Item {
-    anchors.left: sidebar.right
+    anchors.left: parent.left
+    anchors.leftMargin: settings.sidebarWidth
     anchors.right: parent.right
     anchors.top: titleBar.bottom
     anchors.bottom: parent.bottom
@@ -108,11 +127,10 @@ Window {
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.top: parent.top
-      anchors.bottom: applyButton.top
-      anchors.bottomMargin: 16
+      anchors.bottom: parent.bottom
       contentWidth: width
-      // Current page's implicit height plus 32 px padding top and bottom. StackLayout is as tall as its tallest page.
-      contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 64
+      // Current page's implicit height plus padding top and bottom. StackLayout is as tall as its tallest page.
+      contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 2 * Theme.spacingXxl
       interactive: contentHeight > height
       clip: true
 
@@ -123,14 +141,14 @@ Window {
       StackLayout {
         id: stack
 
-        x: 32
-        y: 32
-        width: flick.width - 64
+        x: Theme.spacingXxl
+        y: Theme.spacingXxl
+        width: flick.width - 2 * Theme.spacingXxl
         currentIndex: settings.current
 
         // 0: System
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           SystemCloudLocal {}
           SystemAiModels {}
@@ -141,7 +159,7 @@ Window {
 
         // 1: Sound
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           SoundInputSource {
             id: soundInputSource
@@ -155,7 +173,7 @@ Window {
 
         // 2: Appearance
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           AppearanceTheme {}
           AppearanceOverlaySize {}
@@ -166,7 +184,7 @@ Window {
 
         // 3: Format
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           FormatDictionary {
             id: formatDictionary
@@ -181,7 +199,7 @@ Window {
 
         // 4: Keyboard
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           KeyboardPushToTalkToggle {}
           KeyboardShortcuts {
@@ -191,7 +209,7 @@ Window {
 
         // 5: Meetings
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           MeetingsMeetings {
             divided: false
@@ -200,7 +218,7 @@ Window {
 
         // 6: History
         Column {
-          spacing: 24
+          spacing: Theme.spacingXl
 
           HistoryActivity {}
           HistoryStatus {}
@@ -211,22 +229,12 @@ Window {
         }
       }
     }
-
-    Ui.Button {
-      id: applyButton
-
-      variant: "primary"
-      text: qsTr("Apply")
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      anchors.margins: 32
-      onClicked: settings.apply()
-    }
   }
 
   Ui.TitleBar {
     id: titleBar
+
+    z: 1  // paints above sidebar and config panel
 
     window: settings
     title: settings.title

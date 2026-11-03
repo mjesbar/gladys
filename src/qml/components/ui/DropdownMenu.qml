@@ -5,7 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic as Basic
 import "." as Ui
-import ".."
+import "../.."
 
 Basic.Menu {
   id: menu
@@ -16,7 +16,7 @@ Basic.Menu {
 
   background: Rectangle {
     implicitWidth: 180
-    radius: Theme.radius
+    radius: Theme.radiusMd
     color: Theme.surface
     border.width: 0
   }
@@ -49,7 +49,7 @@ Basic.Menu {
         verticalAlignment: Text.AlignVCenter
       }
       background: Rectangle {
-        radius: Theme.radius  // same radius as the menu, so the highlight follows its corner
+        radius: Theme.radiusMd  // same radius as the menu, so the highlight follows its corner
         color: option.highlighted ? Theme.hover : "transparent"
       }
     }

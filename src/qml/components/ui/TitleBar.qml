@@ -5,7 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Window
 import "." as Ui
-import ".."
+import "../.."
 
 Item {
   id: bar

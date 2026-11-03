@@ -79,12 +79,18 @@ QVariantMap Format::to_map() const {
   };
 }
 
+// Only keys present in values change: each control saves its own key alone.
 void Format::from_map(const QVariantMap& values) {
-  const QString style = values.value("style").toString();
-  if (available_styles().contains(style)) {
-    m_style = style;
+  if (values.contains("style") && available_styles().contains(values.value("style").toString())) {
+    m_style = values.value("style").toString();
   }
-  m_dictionary = to_pairs(values.value("dictionary").toMap());
-  m_snippets = to_pairs(values.value("snippets").toMap());
-  m_markdown_mode = values.value("markdown").toBool();
+  if (values.contains("dictionary")) {
+    m_dictionary = to_pairs(values.value("dictionary").toMap());
+  }
+  if (values.contains("snippets")) {
+    m_snippets = to_pairs(values.value("snippets").toMap());
+  }
+  if (values.contains("markdown")) {
+    m_markdown_mode = values.value("markdown").toBool();
+  }
 }

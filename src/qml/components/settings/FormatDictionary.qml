@@ -1,4 +1,4 @@
-// FormatDictionary - Format > Dictionary: rare words and their brief descriptions, saved on Apply.
+// FormatDictionary - Format > Dictionary: rare words and their brief descriptions, saved on change.
 
 pragma ComponentBehavior: Bound
 
@@ -11,15 +11,12 @@ Section {
     editor.load(s.dictionary);
   }
 
-  function values() {
-    return {
-      dictionary: editor.pairs()
-    };
-  }
-
   MappingEditor {
     id: editor
 
     toHint: qsTr("Brief description")
+    onEdited: settingsBridge.apply({
+      dictionary: editor.pairs()
+    })
   }
 }

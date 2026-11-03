@@ -5,7 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic as Basic
 import "." as Ui
-import ".."
+import "../.."
 
 Basic.ComboBox {
   id: select
@@ -18,7 +18,7 @@ Basic.ComboBox {
     implicitHeight: 40
     radius: Theme.radiusPill
     color: Theme.surface
-    border.color: select.activeFocus ? Theme.accent : Theme.border
+    border.color: select.activeFocus ? Theme.focus : Theme.border
   }
 
   contentItem: Ui.Text {
@@ -34,7 +34,7 @@ Basic.ComboBox {
     currentIndex: select.highlightedIndex
   }
   popup.background: Rectangle {
-    radius: Theme.radius
+    radius: Theme.radiusMd
     color: Theme.surface
     border.width: 0
   }
@@ -61,7 +61,7 @@ Basic.ComboBox {
       verticalAlignment: Text.AlignVCenter
     }
     background: Rectangle {
-      radius: Theme.radius  // same radius as the popup, so the highlight follows its corner
+      radius: Theme.radiusMd  // same radius as the popup, so the highlight follows its corner
       color: option.highlighted ? Theme.hover : "transparent"
     }
   }

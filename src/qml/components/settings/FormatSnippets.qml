@@ -1,4 +1,4 @@
-// FormatSnippets - Format > Snippets: literal text and its replacement, saved on Apply.
+// FormatSnippets - Format > Snippets: literal text and its replacement, saved on change.
 
 pragma ComponentBehavior: Bound
 
@@ -11,13 +11,11 @@ Section {
     editor.load(s.snippets);
   }
 
-  function values() {
-    return {
-      snippets: editor.pairs()
-    };
-  }
-
   MappingEditor {
     id: editor
+
+    onEdited: settingsBridge.apply({
+      snippets: editor.pairs()
+    })
   }
 }

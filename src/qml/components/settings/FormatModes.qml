@@ -1,4 +1,4 @@
-// FormatModes - Format > Modes: output style and markdown mode, saved on Apply.
+// FormatModes - Format > Modes: output style and markdown mode, saved on change.
 
 pragma ComponentBehavior: Bound
 
@@ -13,13 +13,6 @@ Section {
   function load(s) {
     markdownCombo.currentIndex = s.markdown ? 0 : 1;
     styleCombo.currentIndex = Math.max(0, styleCombo.find(s.style));
-  }
-
-  function values() {
-    return {
-      style: styleCombo.currentText,
-      markdown: markdownCombo.currentIndex === 0
-    };
   }
 
   Row {
@@ -41,6 +34,9 @@ Section {
 
       width: styleRow.width - styleLabel.width - styleRow.spacing
       model: settingsBridge.styles
+      onActivated: settingsBridge.apply({
+        style: currentText
+      })
     }
   }
   Row {
@@ -62,6 +58,9 @@ Section {
 
       width: markdownRow.width - markdownLabel.width - markdownRow.spacing
       model: [qsTr("Yes"), qsTr("No")]
+      onActivated: settingsBridge.apply({
+        markdown: currentIndex === 0
+      })
     }
   }
 }

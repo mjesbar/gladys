@@ -67,12 +67,12 @@ elseif(APPLE)
 endif()
 
 # QML module and its files; Theme is a singleton
-set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(src/qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 qt_add_qml_module(gladys
   URI Gladys
   VERSION 1.0
   QML_FILES
-    src/qml/components/Theme.qml
+    src/qml/Theme.qml
     src/qml/components/Mic.qml
     src/qml/components/Section.qml
     src/qml/components/Note.qml
