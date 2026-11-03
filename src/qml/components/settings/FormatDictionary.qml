@@ -7,6 +7,8 @@ import ".."
 Section {
   title: qsTr("Dictionary")
 
+  readonly property bool hovered: editor.hovered
+
   function load(s) {
     editor.load(s.dictionary);
   }

@@ -7,6 +7,8 @@ import ".."
 Section {
   title: qsTr("Snippets")
 
+  readonly property bool hovered: editor.hovered
+
   function load(s) {
     editor.load(s.snippets);
   }

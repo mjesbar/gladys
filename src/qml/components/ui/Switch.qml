@@ -13,10 +13,11 @@ Basic.Switch {
     implicitWidth: 40
     implicitHeight: 22
     radius: 11
-    color: toggle.checked ? Theme.accent : Theme.surface
-    border.color: Theme.border
+    color: toggle.checked ? Theme.accent : toggle.hovered ? Theme.hover : Theme.surface
+    border.color: toggle.hovered ? Theme.muted : Theme.border
 
     Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+    Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
 
     Rectangle {
       x: toggle.checked ? parent.width - width - 3 : 3

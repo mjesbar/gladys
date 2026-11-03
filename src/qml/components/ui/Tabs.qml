@@ -35,8 +35,10 @@ Column {
         padding: 8
         contentItem: Ui.Text {
           text: tab.modelData
-          color: tab.checked ? Theme.text : Theme.muted
+          color: tab.checked || tab.hovered ? Theme.text : Theme.muted
           font.bold: tab.checked
+
+          Behavior on color { ColorAnimation { duration: Theme.durationBase } }
         }
         background: Rectangle {
           color: "transparent"

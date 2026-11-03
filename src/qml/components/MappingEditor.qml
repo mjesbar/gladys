@@ -13,6 +13,12 @@ Column {
 
   signal edited()
 
+  readonly property bool hovered: hover.hovered
+
+  HoverHandler {
+    id: hover
+  }
+
   width: parent.width
   spacing: 12
 

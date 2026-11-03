@@ -146,6 +146,7 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/plus.svg
   src/assets/icons/trash.svg
   src/assets/icons/chevron-right.svg
+  src/assets/icons/chevron-down.svg
 )
 
 # Miniaudio: device enumeration lives in the Sound menu
