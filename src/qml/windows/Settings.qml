@@ -17,15 +17,12 @@ Window {
   readonly property var menus: [qsTr("System"), qsTr("Sound"), qsTr("Appearance"), qsTr("Format"), qsTr("Keyboard"), qsTr("Meetings"), qsTr("History")]
   property int current: 1  // index in menus, Sound by default
 
-  // Shadow room around the visible frame; zero while maximized (window fills the screen).
-  readonly property int shadowSize: 16
   readonly property int sidebarWidth: 220
-  readonly property int inset: visibility === Window.Maximized ? 0 : shadowSize
 
-  width: 880 + 2 * shadowSize
-  height: 800 + 2 * shadowSize
-  minimumWidth: 640 + 2 * shadowSize
-  minimumHeight: 480 + 2 * shadowSize
+  width: 880
+  height: 800
+  minimumWidth: 640
+  minimumHeight: 480
   title: qsTr("Gladys Settings")
   color: "transparent"
   flags: Qt.Window | Qt.FramelessWindowHint
@@ -74,27 +71,10 @@ Window {
     historyLogs.reload();
   }
 
-  // Shadow: one translucent rounded rect per pixel of inset, growing outward. Plain QML, no extra module.
-  Repeater {
-    model: settings.inset
-
-    Rectangle {
-      required property int index
-
-      anchors.fill: frame
-      anchors.margins: -(index + 1)
-      radius: Theme.radiusLg + index + 1
-      color: "#000000"
-      opacity: 0.02
-    }
-  }
-
-  // Everything below lives inside the frame, so the shadow stays outside it.
   Item {
     id: frame
 
     anchors.fill: parent
-    anchors.margins: settings.inset
 
     Rectangle {
       anchors.fill: parent
@@ -307,10 +287,22 @@ Window {
       anchors.top: parent.top
     }
 
+    // Window hairline: 1px stroke over the frame edge, hidden while maximized.
+    Rectangle {
+      anchors.fill: parent
+      radius: Theme.radiusLg
+      color: "transparent"
+      border.color: Theme.border
+      border.width: 1
+      visible: settings.visibility !== Window.Maximized
+      z: 2
+    }
+
     // Resize grips: thin edges and corners. A drag starts a native resize. Off while maximized.
     component Grip: MouseArea {
       required property int edges
 
+      z: 3  // above titleBar (z 1), so top edge and corners receive the press
       enabled: settings.visibility !== Window.Maximized
       hoverEnabled: true
       onPressed: settings.startSystemResize(edges)
