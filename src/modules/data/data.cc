@@ -155,12 +155,16 @@ void Data::push_log(const QString& text, bool is_err, bool is_warn) {
 qlonglong Data::create_history(const QString& transcription) {
   QSqlQuery q = query("history", "INSERT INTO history (datetime, transcription) VALUES (?, ?)",
                       {now_iso(), transcription});
-  return q.isActive() ? q.lastInsertId().toLongLong() : -1;
+  if (!q.isActive()) {
+    return -1;
+  }
+  emit TRANSCRIPTION_STORED();
+  return q.lastInsertId().toLongLong();
 }
 
 QVariantList Data::read_history(int offset, int limit) {
   QSqlQuery q = query("history",
-                      "SELECT id, datetime, transcription FROM history ORDER BY datetime DESC LIMIT ? OFFSET ?",
+                      "SELECT id, datetime, transcription FROM history ORDER BY id DESC LIMIT ? OFFSET ?",
                       {limit, offset});
   return to_rows(q);
 }
@@ -180,13 +184,17 @@ bool Data::delete_history(qlonglong id) {
 qlonglong Data::create_logs(const QString& text, bool is_err, bool is_warn) {
   QSqlQuery q = query("logs", "INSERT INTO logs (datetime, log, is_err, is_warn) VALUES (?, ?, ?, ?)",
                       {now_iso(), text, is_err, is_warn});
-  return q.isActive() ? q.lastInsertId().toLongLong() : -1;
+  if (!q.isActive()) {
+    return -1;
+  }
+  emit LOG_STORED();
+  return q.lastInsertId().toLongLong();
 }
 
 QVariantList Data::read_logs(int offset, int limit) {
   QSqlQuery q = query("logs",
                       "SELECT id, datetime, log, is_err, is_warn FROM logs WHERE datetime >= ? "
-                      "ORDER BY datetime DESC LIMIT ? OFFSET ?",
+                      "ORDER BY id DESC LIMIT ? OFFSET ?",
                       {cutoff_iso(), limit, offset});
   return to_rows(q);
 }

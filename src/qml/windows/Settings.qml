@@ -42,6 +42,24 @@ Window {
   onVisibleChanged: if (visible)
     load()
 
+  // Live updates while the window is open; a hidden window reads nothing.
+  Connections {
+    target: historyBridge
+
+    function onTranscriptionsChanged() {
+      if (settings.visible) {
+        historyActivity.refresh();
+      }
+    }
+    function onLogsChanged() {
+      if (settings.visible) {
+        historyLogs.refresh();
+        historyStatus.reload();
+        historyErrors.reload();
+      }
+    }
+  }
+
   function load() {
     const s = settingsBridge.load();
     soundInputSource.load(s);
@@ -169,8 +187,8 @@ Window {
         contentWidth: width
         // Current page's implicit height plus padding top and bottom. StackLayout is as tall as its tallest page.
         contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 2 * Theme.spacingXxl
-        // While the pointer is over Dictionary or Snippets, their lists take the wheel, not the page.
-      interactive: contentHeight > height && !(formatDictionary.hovered || formatSnippets.hovered)
+        // While the pointer is over a list, the list takes the wheel and the page never scrolls, even at its ends.
+      interactive: contentHeight > height && !(formatDictionary.hovered || formatSnippets.hovered || historyActivity.hovered || historyLogs.hovered)
         clip: true
 
         ScrollBar.vertical: ScrollBar {

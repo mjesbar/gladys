@@ -4,12 +4,14 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
+import "../.."
 import "../ui" as Ui
 
 Section {
   id: logs
 
   title: qsTr("Logs")
+  readonly property bool hovered: list.hovered
 
   function load(s) {
     storeSwitch.checked = s.storeLogs;
@@ -17,6 +19,10 @@ Section {
 
   function reload() {
     list.reset();
+  }
+
+  function refresh() {
+    list.refresh();
   }
 
   Note {
@@ -54,16 +60,15 @@ Section {
       required property bool is_err
       required property bool is_warn
 
-      width: ListView.view.width
+      width: ListView.view.width - Theme.spacingMd  // rows stop at the scrollbar lane
       spacing: 4
 
       Note {
         text: entry.datetime + (entry.is_err ? qsTr(" · error") : entry.is_warn ? qsTr(" · warning") : "")
       }
-      Ui.Text {
+      Ui.Selectable {
         width: parent.width
         text: entry.log
-        wrapMode: Text.WordWrap
       }
     }
   }

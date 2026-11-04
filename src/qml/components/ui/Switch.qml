@@ -7,6 +7,10 @@ import "../.."
 Basic.Switch {
   id: toggle
 
+  HoverHandler {
+    cursorShape: Qt.PointingHandCursor
+  }
+
   indicator: Rectangle {
     x: toggle.leftPadding
     y: (toggle.height - height) / 2

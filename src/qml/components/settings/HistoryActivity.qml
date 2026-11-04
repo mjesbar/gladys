@@ -4,10 +4,12 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import ".."
+import "../.."
 import "../ui" as Ui
 
 Section {
   title: qsTr("Activity")
+  readonly property bool hovered: list.hovered
 
   function load(s) {
     storeSwitch.checked = s.storeTranscriptions;
@@ -15,6 +17,10 @@ Section {
 
   function reload() {
     list.reset();
+  }
+
+  function refresh() {
+    list.refresh();
   }
 
   Row {
@@ -41,23 +47,8 @@ Section {
 
     fetch: (offset, limit) => historyBridge.transcriptions(offset, limit)
 
-    delegate: Column {
-      id: entry
-
-      required property string datetime
-      required property string transcription
-
-      width: ListView.view.width
-      spacing: 4
-
-      Note {
-        text: entry.datetime
-      }
-      Ui.Text {
-        width: parent.width
-        text: entry.transcription
-        wrapMode: Text.WordWrap
-      }
+    delegate: HistoryTranscription {
+      width: ListView.view.width - Theme.spacingMd  // rows stop at the scrollbar lane
     }
   }
 }

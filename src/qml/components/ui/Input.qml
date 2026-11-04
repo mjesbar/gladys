@@ -14,6 +14,7 @@ Basic.TextField {
   rightPadding: 12
   color: Theme.text
   placeholderTextColor: Theme.muted
+  selectByMouse: true
 
   background: Rectangle {
     radius: Theme.radiusPill

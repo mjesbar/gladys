@@ -5,6 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic
 import "ui" as Ui
+import ".."
 
 Column {
   id: editor
@@ -69,6 +70,11 @@ Column {
     clip: true
     model: mappingModel
 
+    ScrollBar.vertical: ScrollBar {
+      policy: ScrollBar.AsNeeded
+      width: Theme.spacingMd
+    }
+
     delegate: Row {
       id: row
 
@@ -76,7 +82,7 @@ Column {
       required property string from
       required property string to
 
-      width: aliasView.width
+      width: aliasView.width - Theme.spacingMd  // rows stop at the scrollbar lane
       height: 40
       spacing: 8
 

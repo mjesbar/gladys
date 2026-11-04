@@ -67,6 +67,8 @@ class Data : public QObject {
 
  signals:
   void STORAGE_FAILED(const QString& what);  // raised once per table per session
+  void TRANSCRIPTION_STORED();               // a history row was inserted
+  void LOG_STORED();                         // a logs row was inserted
 
  private:
   Data() = default;

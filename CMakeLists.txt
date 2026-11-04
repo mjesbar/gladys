@@ -81,6 +81,7 @@ qt_add_qml_module(gladys
     src/qml/components/PagedList.qml
     src/qml/components/MappingEditor.qml
     src/qml/components/ui/Text.qml
+    src/qml/components/ui/Selectable.qml
     src/qml/components/ui/Heading.qml
     src/qml/components/ui/Icon.qml
     src/qml/components/ui/Box.qml
@@ -130,6 +131,7 @@ qt_add_qml_module(gladys
     src/qml/components/settings/HistoryActivity.qml
     src/qml/components/settings/HistoryStatus.qml
     src/qml/components/settings/HistoryErrors.qml
+    src/qml/components/settings/HistoryTranscription.qml
     src/qml/components/settings/HistoryLogs.qml
     src/qml/windows/Overlay.qml
     src/qml/windows/Splash.qml
@@ -150,6 +152,7 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/trash.svg
   src/assets/icons/chevron-right.svg
   src/assets/icons/chevron-down.svg
+  src/assets/icons/copy.svg
 )
 
 # Miniaudio: device enumeration lives in the Sound menu

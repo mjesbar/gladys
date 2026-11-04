@@ -17,6 +17,10 @@ class HistoryBridge : public QObject {
   Q_INVOKABLE QVariantList logs(int offset, int limit) const;
   Q_INVOKABLE int error_count() const;  // errors in the last 30 days
   Q_INVOKABLE int health() const;       // 100 minus the error share of the last 30 days, in percent
+
+ signals:
+  void transcriptionsChanged();  // a transcription was stored; emitted on the GUI thread
+  void logsChanged();            // a log line was stored; emitted on the GUI thread
 };
 
 #endif  // UI_HISTORY_BRIDGE_HPP

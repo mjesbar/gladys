@@ -16,6 +16,10 @@ Basic.Button {
   readonly property bool primary: variant === "primary"
   readonly property bool iconOnly: variant === "icon"
 
+  HoverHandler {
+    cursorShape: Qt.PointingHandCursor
+  }
+
   implicitHeight: 40
   leftPadding: iconOnly ? 11 : 16
   rightPadding: leftPadding
