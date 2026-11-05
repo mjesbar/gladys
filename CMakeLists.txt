@@ -127,6 +127,7 @@ qt_add_qml_module(gladys
     src/qml/components/settings/SoundEnableLlm.qml
     src/qml/components/settings/SoundFxs.qml
     src/qml/components/settings/AppearanceOverlaySize.qml
+    src/qml/components/settings/AppearanceScreen.qml
     src/qml/components/settings/AppearancePosition.qml
     src/qml/components/settings/KeyboardPushToTalkToggle.qml
     src/qml/components/settings/KeyboardShortcuts.qml

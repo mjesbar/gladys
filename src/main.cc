@@ -9,6 +9,7 @@
 #include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QScreen>
 #include <QSocketNotifier>
 #include <QThread>
 #include <QWindow>
@@ -77,6 +78,16 @@ static void load_fonts() {
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Regular.ttf");
   QFontDatabase::addApplicationFont(":/fonts/RobotoSlab-Bold.ttf");
   QFontDatabase::addApplicationFont(":/fonts/Molle-Regular.ttf");
+}
+
+// The connected screen with this name, or the primary screen when it is not connected.
+static QScreen* screen_named(const QString& name) {
+  for (QScreen* screen : QGuiApplication::screens()) {
+    if (screen->name() == name) {
+      return screen;
+    }
+  }
+  return QGuiApplication::primaryScreen();
 }
 
 int main(int argc, char* argv[]) {
@@ -230,10 +241,11 @@ int main(int argc, char* argv[]) {
     qCCritical(lcMain) << "overlay root is not a window";
     return 1;
   }
-  // Position and Overlay Size: current values now, then every change.
-  auto apply_appearance = [overlay](const QVariantMap& s) {
+  // Position, Overlay Size and Screen: current values now, then every change.
+  auto apply_appearance = [overlay, overlay_window](const QVariantMap& s) {
     overlay->setProperty("placement", s.value("position"));
     overlay->setProperty("overlaySize", s.value("overlaySize"));
+    overlay_window->setScreen(screen_named(s.value("screen").toString()));
   };
   QVariantMap current;
   QMetaObject::invokeMethod(setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));

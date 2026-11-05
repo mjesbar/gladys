@@ -62,6 +62,7 @@ Window {
         soundInputSource.load(s);
         appearanceOverlaySize.load(s);
         appearancePosition.load(s);
+    appearanceScreen.load(s);
         formatDictionary.load(s);
         formatSnippets.load(s);
         formatModes.load(s);
@@ -222,8 +223,9 @@ Window {
                         }
                         AppearancePosition {
                             id: appearancePosition
-
-                            divided: false
+                        }
+                        AppearanceScreen {
+                            id: appearanceScreen
                         }
                     }
 

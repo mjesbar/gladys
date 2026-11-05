@@ -67,9 +67,9 @@ class Data : public QObject {
   bool update_snippets(const QString& from_text, const QString& to_text);
   bool delete_snippets(const QString& from_text);
 
-  // appearance: single row, keys position and overlaySize
+  // appearance: single row, keys position, overlaySize and screen
   QVariantMap read_appearance();
-  bool update_appearance(const QString& position, const QString& overlay_size);
+  bool update_appearance(const QString& position, const QString& overlay_size, const QString& screen);
 
  signals:
   void STORAGE_FAILED(const QString& what);  // raised once per table per session

@@ -60,24 +60,26 @@ static void sync_pairs(const char* kind, const QVariantMap& before, const QVaria
   }
 }
 
-// Overlay position and size share one row, so they are written together.
+// Position, overlay size and screen share one row, so they are written together.
 static void persist_appearance(const QVariantMap& before, const QVariantMap& after) {
   if (before.value("position") == after.value("position") &&
-    before.value("overlaySize") == after.value("overlaySize")) {
+    before.value("overlaySize") == after.value("overlaySize") &&
+    before.value("screen") == after.value("screen")) {
     return;
   }
   QMetaObject::invokeMethod(Data::instance(),
     "update_appearance",
     Qt::BlockingQueuedConnection,
     Q_ARG(QString, after.value("position").toString()),
-    Q_ARG(QString, after.value("overlaySize").toString()));
+    Q_ARG(QString, after.value("overlaySize").toString()),
+    Q_ARG(QString, after.value("screen").toString()));
 }
 
 // Only changed scalars are written: update first, create when the row does not exist yet.
 static void persist(const QVariantMap& before, const QVariantMap& after) {
   for (auto it = after.cbegin(); it != after.cend(); ++it) {
     if (it.key() == "dictionary" || it.key() == "snippets" || it.key() == "position" ||
-      it.key() == "overlaySize" || before.value(it.key()) == it.value()) {
+      it.key() == "overlaySize" || it.key() == "screen" || before.value(it.key()) == it.value()) {
       continue;
     }
     if (!call_setting("update_setting", it.key(), it.value())) {

@@ -7,7 +7,6 @@ import "../ui" as Ui
 
 Section {
   title: qsTr("Position")
-  divided: false
 
   function load(s) {
     positionCombo.currentIndex = Math.max(0, positionCombo.find(s.position));

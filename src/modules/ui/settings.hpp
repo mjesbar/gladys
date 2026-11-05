@@ -15,6 +15,7 @@ class SettingsBridge : public QObject {
   Q_PROPERTY(QStringList styles READ styles CONSTANT)
   Q_PROPERTY(QStringList positions READ positions CONSTANT)
   Q_PROPERTY(QStringList overlaySizes READ overlay_sizes CONSTANT)
+  Q_PROPERTY(QStringList screens READ screens)
 
  public:
   // setting lives on the settings thread; every call blocks until it answers.
@@ -24,6 +25,7 @@ class SettingsBridge : public QObject {
   QStringList styles() const;
   QStringList positions() const;
   QStringList overlay_sizes() const;
+  QStringList screens() const;  // read on the GUI thread, where QScreen lives
 
   Q_INVOKABLE QVariantMap load() const;
   Q_INVOKABLE void apply(const QVariantMap& values);

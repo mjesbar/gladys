@@ -24,6 +24,8 @@ QStringList SettingsBridge::positions() const { return Appearance::available_pos
 
 QStringList SettingsBridge::overlay_sizes() const { return Appearance::available_sizes(); }
 
+QStringList SettingsBridge::screens() const { return Appearance::available_screens(); }
+
 QVariantMap SettingsBridge::load() const {
   QVariantMap values;
   QMetaObject::invokeMethod(m_setting, "snapshot", Qt::BlockingQueuedConnection,

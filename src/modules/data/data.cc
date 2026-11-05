@@ -42,8 +42,8 @@ static const char* const SCHEMA[] = {
   "to_text TEXT NOT NULL)",
   "CREATE TABLE IF NOT EXISTS appearance (id INTEGER PRIMARY KEY CHECK (id = 1), position TEXT NOT "
   "NULL, "
-  "overlay_size TEXT NOT NULL)",
-  "INSERT OR IGNORE INTO appearance (id, position, overlay_size) VALUES (1, 'up', 'Minimal')",
+  "overlay_size TEXT NOT NULL, screen TEXT NOT NULL)",
+  "INSERT OR IGNORE INTO appearance (id, position, overlay_size, screen) VALUES (1, 'down', 'Basic', 'Primary')",
 };
 
 static std::atomic<Data*> g_instance{nullptr};
@@ -271,19 +271,20 @@ bool Data::delete_setting(const QString& key) {
 // appearance: the single row (id 1), seeded by the schema
 
 QVariantMap Data::read_appearance() {
-  QSqlQuery q = query("appearance", "SELECT position, overlay_size FROM appearance WHERE id = 1");
+  QSqlQuery q = query("appearance", "SELECT position, overlay_size, screen FROM appearance WHERE id = 1");
   QVariantMap appearance;
   if (q.next()) {
     appearance.insert("position", q.value(0).toString());
     appearance.insert("overlaySize", q.value(1).toString());
+    appearance.insert("screen", q.value(2).toString());
   }
   return appearance;
 }
 
-bool Data::update_appearance(const QString& position, const QString& overlay_size) {
+bool Data::update_appearance(const QString& position, const QString& overlay_size, const QString& screen) {
   QSqlQuery q = query("appearance",
-    "UPDATE appearance SET position = ?, overlay_size = ? WHERE id = 1",
-    {position, overlay_size});
+    "UPDATE appearance SET position = ?, overlay_size = ?, screen = ? WHERE id = 1",
+    {position, overlay_size, screen});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
