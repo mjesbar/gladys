@@ -12,9 +12,21 @@ Section {
   // Cards are 220 px wide (196 px image + card padding); each note sits under its card.
   readonly property var notes: [
     qsTr("Most reliable. Control+Alt+P on Windows/Linux, Control+Option+P on macOS."),
-    qsTr("Warning: not compatible with all keyboards. Fn is often handled by the keyboard firmware and never reaches the OS."),
+    Qt.platform.os === "linux"
+      ? qsTr("Warning: Fn does not work on Linux. Most keyboards handle Fn in firmware and never send it to the OS.")
+      : qsTr("Warning: not compatible with all keyboards. Fn is often handled by the keyboard firmware and never reaches the OS."),
     qsTr("Warning: may cause glitches. AltGr is used for layout characters and can clash with typing.")
   ]
+
+  function imageFor(profile) {
+    if (profile === "Fn") {
+      return "Fn.png";
+    }
+    if (profile === "AltGr") {
+      return "AltGr.png";
+    }
+    return Qt.platform.os === "osx" ? "CtrlOptP.png" : "CtrlAltP.png";
+  }
 
   function load(s) {
     for (let i = 0; i < cards.count; ++i) {
@@ -37,9 +49,9 @@ Section {
       delegate: Ui.RadioCard {
         required property string modelData
 
-        // Stored value stays "Ctrl+Alt+P"; only the label shows the macOS shortcut too.
+        // Stored value stays "Ctrl+Alt+P"; only the label and image show the macOS shortcut too.
         text: modelData === "Ctrl+Alt+P" ? qsTr("Ctrl+Alt+P / Ctrl+Opt+P") : modelData
-        source: "qrc:/keyboard/placeholder.svg"
+        source: "qrc:/keyboard/" + imageFor(modelData)
         onClicked: settingsBridge.apply({
           hotkeyProfile: modelData
         })
