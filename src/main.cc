@@ -230,6 +230,15 @@ int main(int argc, char* argv[]) {
     qCCritical(lcMain) << "overlay root is not a window";
     return 1;
   }
+  // Position and Overlay Size: current values now, then every change.
+  auto apply_appearance = [overlay](const QVariantMap& s) {
+    overlay->setProperty("placement", s.value("position"));
+    overlay->setProperty("overlaySize", s.value("overlaySize"));
+  };
+  QVariantMap current;
+  QMetaObject::invokeMethod(setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
+  apply_appearance(current);
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, overlay, apply_appearance);
   remove_x11_shadow(overlay_window->winId());
 #ifdef __APPLE__
   configure_macos_overlay(overlay_window->winId());

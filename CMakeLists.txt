@@ -75,7 +75,10 @@ qt_add_qml_module(gladys
   VERSION 1.0
   QML_FILES
     src/qml/Theme.qml
-    src/qml/components/Mic.qml
+    src/qml/components/MicGreat.qml
+    src/qml/components/MicMinimal.qml
+    src/qml/components/MicBasic.qml
+    src/qml/components/overlay/OverlayProfiles.js
     src/qml/components/Section.qml
     src/qml/components/Note.qml
     src/qml/components/PagedList.qml
