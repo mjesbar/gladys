@@ -28,9 +28,8 @@ Section {
       delegate: Ui.RadioCard {
         required property string modelData
 
-        width: (parent.width - parent.spacing * (repeater.count - 1)) / repeater.count
         text: modelData
-        source: "qrc:/overlay/" + modelData.toLowerCase() + ".svg"
+        source: "qrc:/overlay/" + modelData.toLowerCase() + ".png"
         onClicked: settingsBridge.apply({
           overlaySize: modelData
         })

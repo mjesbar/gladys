@@ -29,10 +29,10 @@ Basic.RadioButton {
     spacing: Theme.spacingSm
 
     Image {
-      width: card.availableWidth
+      width: 196
       height: 96
       source: card.source
-      fillMode: Image.PreserveAspectFit
+      fillMode: Image.Pad
     }
     Row {
       spacing: Theme.spacingSm

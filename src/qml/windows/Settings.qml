@@ -19,10 +19,12 @@ Window {
 
     readonly property int sidebarWidth: 220
 
-    width: 880
+    // Narrowest window that keeps the 3 overlay cards (196 px preview + card padding) on one row.
+    width: minimumWidth
     height: 800
-    minimumWidth: 640
-    minimumHeight: 480
+    minimumWidth: sidebarWidth + 2 * Theme.spacingXxl + 3 * (196 + 2 * Theme.spacingMd) + 2 * Theme.spacingMd
+    // Tallest the sidebar needs: title bar, top margin, all menus, bottom margin.
+    minimumHeight: titleBar.height + Theme.spacingLg + sidebar.height + Theme.spacingLg
     title: qsTr("Gladys Settings")
     color: "transparent"
     flags: Qt.Window | Qt.FramelessWindowHint
