@@ -1,4 +1,5 @@
-// Data - Singleton owner of history.db (SQLite, plaintext). ORM-style CRUD per table, on its own thread.
+// Data - Singleton owner of history.db (SQLite, plaintext). ORM-style CRUD per table, on its own
+// thread.
 
 #include "data.hpp"
 
@@ -23,18 +24,26 @@ static const int RETENTION_DAYS = 30;
 static const int PURGE_INTERVAL_MS = 60 * 60 * 1000;
 
 static const char* const SCHEMA[] = {
-    "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, datetime TEXT NOT NULL, "
-    "transcription TEXT NOT NULL)",
-    "CREATE INDEX IF NOT EXISTS history_datetime ON history (datetime)",
-    "CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, datetime TEXT NOT NULL, "
-    "log TEXT NOT NULL, is_err INTEGER NOT NULL, is_warn INTEGER NOT NULL)",
-    "CREATE INDEX IF NOT EXISTS logs_datetime ON logs (datetime)",
-    "CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, "
-    "value TEXT NOT NULL)",
-    "CREATE TABLE IF NOT EXISTS dictionary (id INTEGER PRIMARY KEY AUTOINCREMENT, from_text TEXT UNIQUE NOT NULL, "
-    "to_text TEXT NOT NULL)",
-    "CREATE TABLE IF NOT EXISTS snippets (id INTEGER PRIMARY KEY AUTOINCREMENT, from_text TEXT UNIQUE NOT NULL, "
-    "to_text TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, datetime TEXT NOT "
+  "NULL, "
+  "transcription TEXT NOT NULL)",
+  "CREATE INDEX IF NOT EXISTS history_datetime ON history (datetime)",
+  "CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, datetime TEXT NOT NULL, "
+  "log TEXT NOT NULL, is_err INTEGER NOT NULL, is_warn INTEGER NOT NULL)",
+  "CREATE INDEX IF NOT EXISTS logs_datetime ON logs (datetime)",
+  "CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT "
+  "NULL, "
+  "value TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS dictionary (id INTEGER PRIMARY KEY AUTOINCREMENT, from_text TEXT "
+  "UNIQUE NOT NULL, "
+  "to_text TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS snippets (id INTEGER PRIMARY KEY AUTOINCREMENT, from_text TEXT "
+  "UNIQUE NOT NULL, "
+  "to_text TEXT NOT NULL)",
+  "CREATE TABLE IF NOT EXISTS appearance (id INTEGER PRIMARY KEY CHECK (id = 1), position TEXT NOT "
+  "NULL, "
+  "overlay_size TEXT NOT NULL)",
+  "INSERT OR IGNORE INTO appearance (id, position, overlay_size) VALUES (1, 'up', 'Minimal')",
 };
 
 static std::atomic<Data*> g_instance{nullptr};
@@ -47,8 +56,8 @@ static QString cutoff_iso() {
 
 // Values keep their type (bool stays bool): stored as a JSON document, decoded back on read.
 static QString encode(const QVariant& value) {
-  return QString::fromUtf8(
-      QJsonDocument(QJsonObject{{"v", QJsonValue::fromVariant(value)}}).toJson(QJsonDocument::Compact));
+  return QString::fromUtf8(QJsonDocument(QJsonObject{{"v", QJsonValue::fromVariant(value)}})
+      .toJson(QJsonDocument::Compact));
 }
 
 static QVariant decode(const QString& text) {
@@ -86,14 +95,19 @@ Data::~Data() {
 
 void Data::post_log(const QString& text, bool is_err, bool is_warn) {
   if (Data* data = g_instance) {
-    QMetaObject::invokeMethod(data, "push_log", Qt::QueuedConnection, Q_ARG(QString, text), Q_ARG(bool, is_err),
-                              Q_ARG(bool, is_warn));
+    QMetaObject::invokeMethod(data,
+      "push_log",
+      Qt::QueuedConnection,
+      Q_ARG(QString, text),
+      Q_ARG(bool, is_err),
+      Q_ARG(bool, is_warn));
   }
 }
 
 void Data::post_transcription(const QString& text) {
   if (Data* data = g_instance) {
-    QMetaObject::invokeMethod(data, "push_transcription", Qt::QueuedConnection, Q_ARG(QString, text));
+    QMetaObject::invokeMethod(
+      data, "push_transcription", Qt::QueuedConnection, Q_ARG(QString, text));
   }
 }
 
@@ -153,8 +167,9 @@ void Data::push_log(const QString& text, bool is_err, bool is_warn) {
 // history
 
 qlonglong Data::create_history(const QString& transcription) {
-  QSqlQuery q = query("history", "INSERT INTO history (datetime, transcription) VALUES (?, ?)",
-                      {now_iso(), transcription});
+  QSqlQuery q = query("history",
+    "INSERT INTO history (datetime, transcription) VALUES (?, ?)",
+    {now_iso(), transcription});
   if (!q.isActive()) {
     return -1;
   }
@@ -164,13 +179,14 @@ qlonglong Data::create_history(const QString& transcription) {
 
 QVariantList Data::read_history(int offset, int limit) {
   QSqlQuery q = query("history",
-                      "SELECT id, datetime, transcription FROM history ORDER BY id DESC LIMIT ? OFFSET ?",
-                      {limit, offset});
+    "SELECT id, datetime, transcription FROM history ORDER BY id DESC LIMIT ? OFFSET ?",
+    {limit, offset});
   return to_rows(q);
 }
 
 bool Data::update_history(qlonglong id, const QString& transcription) {
-  QSqlQuery q = query("history", "UPDATE history SET transcription = ? WHERE id = ?", {transcription, id});
+  QSqlQuery q =
+    query("history", "UPDATE history SET transcription = ? WHERE id = ?", {transcription, id});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
@@ -182,8 +198,9 @@ bool Data::delete_history(qlonglong id) {
 // logs
 
 qlonglong Data::create_logs(const QString& text, bool is_err, bool is_warn) {
-  QSqlQuery q = query("logs", "INSERT INTO logs (datetime, log, is_err, is_warn) VALUES (?, ?, ?, ?)",
-                      {now_iso(), text, is_err, is_warn});
+  QSqlQuery q = query("logs",
+    "INSERT INTO logs (datetime, log, is_err, is_warn) VALUES (?, ?, ?, ?)",
+    {now_iso(), text, is_err, is_warn});
   if (!q.isActive()) {
     return -1;
   }
@@ -193,15 +210,16 @@ qlonglong Data::create_logs(const QString& text, bool is_err, bool is_warn) {
 
 QVariantList Data::read_logs(int offset, int limit) {
   QSqlQuery q = query("logs",
-                      "SELECT id, datetime, log, is_err, is_warn FROM logs WHERE datetime >= ? "
-                      "ORDER BY id DESC LIMIT ? OFFSET ?",
-                      {cutoff_iso(), limit, offset});
+    "SELECT id, datetime, log, is_err, is_warn FROM logs WHERE datetime >= ? "
+    "ORDER BY id DESC LIMIT ? OFFSET ?",
+    {cutoff_iso(), limit, offset});
   return to_rows(q);
 }
 
 bool Data::update_logs(qlonglong id, const QString& text, bool is_err, bool is_warn) {
-  QSqlQuery q = query("logs", "UPDATE logs SET log = ?, is_err = ?, is_warn = ? WHERE id = ?",
-                      {text, is_err, is_warn, id});
+  QSqlQuery q = query("logs",
+    "UPDATE logs SET log = ?, is_err = ?, is_warn = ? WHERE id = ?",
+    {text, is_err, is_warn, id});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
@@ -216,7 +234,8 @@ int Data::count_logs() {
 }
 
 int Data::count_error_logs() {
-  QSqlQuery q = query("logs", "SELECT COUNT(*) FROM logs WHERE datetime >= ? AND is_err = 1", {cutoff_iso()});
+  QSqlQuery q =
+    query("logs", "SELECT COUNT(*) FROM logs WHERE datetime >= ? AND is_err = 1", {cutoff_iso()});
   return q.next() ? q.value(0).toInt() : 0;
 }
 
@@ -234,16 +253,37 @@ QVariantMap Data::read_settings() {
 }
 
 bool Data::create_setting(const QString& key, const QVariant& value) {
-  return query("settings", "INSERT INTO settings (key, value) VALUES (?, ?)", {key, encode(value)}).isActive();
+  return query("settings", "INSERT INTO settings (key, value) VALUES (?, ?)", {key, encode(value)})
+    .isActive();
 }
 
 bool Data::update_setting(const QString& key, const QVariant& value) {
-  QSqlQuery q = query("settings", "UPDATE settings SET value = ? WHERE key = ?", {encode(value), key});
+  QSqlQuery q =
+    query("settings", "UPDATE settings SET value = ? WHERE key = ?", {encode(value), key});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
 bool Data::delete_setting(const QString& key) {
   QSqlQuery q = query("settings", "DELETE FROM settings WHERE key = ?", {key});
+  return q.isActive() && q.numRowsAffected() > 0;
+}
+
+// appearance: the single row (id 1), seeded by the schema
+
+QVariantMap Data::read_appearance() {
+  QSqlQuery q = query("appearance", "SELECT position, overlay_size FROM appearance WHERE id = 1");
+  QVariantMap appearance;
+  if (q.next()) {
+    appearance.insert("position", q.value(0).toString());
+    appearance.insert("overlaySize", q.value(1).toString());
+  }
+  return appearance;
+}
+
+bool Data::update_appearance(const QString& position, const QString& overlay_size) {
+  QSqlQuery q = query("appearance",
+    "UPDATE appearance SET position = ?, overlay_size = ? WHERE id = 1",
+    {position, overlay_size});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
@@ -259,7 +299,9 @@ bool Data::update_dictionary(const QString& from_text, const QString& to_text) {
   return update_pair("dictionary", from_text, to_text);
 }
 
-bool Data::delete_dictionary(const QString& from_text) { return delete_pair("dictionary", from_text); }
+bool Data::delete_dictionary(const QString& from_text) {
+  return delete_pair("dictionary", from_text);
+}
 
 QVariantMap Data::read_snippets() { return read_pairs("snippets"); }
 
@@ -276,7 +318,9 @@ bool Data::delete_snippets(const QString& from_text) { return delete_pair("snipp
 // Table names come from the constants above, never from user input; values are bound.
 
 QVariantMap Data::read_pairs(const char* table) {
-  QSqlQuery q = query(table, QStringLiteral("SELECT from_text, to_text FROM %1 ORDER BY from_text").arg(QString::fromLatin1(table)));
+  QSqlQuery q = query(table,
+    QStringLiteral("SELECT from_text, to_text FROM %1 ORDER BY from_text")
+      .arg(QString::fromLatin1(table)));
   QVariantMap pairs;
   while (q.next()) {
     pairs.insert(q.value(0).toString(), q.value(1).toString());
@@ -285,19 +329,24 @@ QVariantMap Data::read_pairs(const char* table) {
 }
 
 bool Data::create_pair(const char* table, const QString& from_text, const QString& to_text) {
-  return query(table, QStringLiteral("INSERT INTO %1 (from_text, to_text) VALUES (?, ?)").arg(QString::fromLatin1(table)),
-               {from_text, to_text})
-      .isActive();
+  return query(table,
+    QStringLiteral("INSERT INTO %1 (from_text, to_text) VALUES (?, ?)")
+      .arg(QString::fromLatin1(table)),
+    {from_text, to_text})
+    .isActive();
 }
 
 bool Data::update_pair(const char* table, const QString& from_text, const QString& to_text) {
-  QSqlQuery q = query(table, QStringLiteral("UPDATE %1 SET to_text = ? WHERE from_text = ?").arg(QString::fromLatin1(table)),
-                      {to_text, from_text});
+  QSqlQuery q = query(table,
+    QStringLiteral("UPDATE %1 SET to_text = ? WHERE from_text = ?").arg(QString::fromLatin1(table)),
+    {to_text, from_text});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 
 bool Data::delete_pair(const char* table, const QString& from_text) {
-  QSqlQuery q = query(table, QStringLiteral("DELETE FROM %1 WHERE from_text = ?").arg(QString::fromLatin1(table)), {from_text});
+  QSqlQuery q = query(table,
+    QStringLiteral("DELETE FROM %1 WHERE from_text = ?").arg(QString::fromLatin1(table)),
+    {from_text});
   return q.isActive() && q.numRowsAffected() > 0;
 }
 

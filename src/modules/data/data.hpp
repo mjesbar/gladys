@@ -1,4 +1,5 @@
-// Data - Singleton owner of history.db (SQLite, plaintext). ORM-style CRUD per table, on its own thread.
+// Data - Singleton owner of history.db (SQLite, plaintext). ORM-style CRUD per table, on its own
+// thread.
 
 #ifndef DATA_DATA_HPP
 #define DATA_DATA_HPP
@@ -31,7 +32,8 @@ class Data : public QObject {
   void close();
   void set_toggles(bool store_transcriptions, bool store_logs);
   void push_transcription(const QString& text);  // stored only when Store Transcriptions is on
-  void push_log(const QString& text, bool is_err, bool is_warn);  // stored only when Store Logs is on
+  void push_log(
+    const QString& text, bool is_err, bool is_warn);  // stored only when Store Logs is on
 
   // history: id-keyed
   qlonglong create_history(const QString& transcription);
@@ -64,6 +66,10 @@ class Data : public QObject {
   bool create_snippets(const QString& from_text, const QString& to_text);
   bool update_snippets(const QString& from_text, const QString& to_text);
   bool delete_snippets(const QString& from_text);
+
+  // appearance: single row, keys position and overlaySize
+  QVariantMap read_appearance();
+  bool update_appearance(const QString& position, const QString& overlay_size);
 
  signals:
   void STORAGE_FAILED(const QString& what);  // raised once per table per session

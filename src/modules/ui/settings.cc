@@ -4,6 +4,7 @@
 
 #include <QMetaObject>
 
+#include "../settings/appearance.hpp"
 #include "../settings/format.hpp"
 #include "../settings/setting.hpp"
 
@@ -18,6 +19,10 @@ QStringList SettingsBridge::input_sources() const {
 }
 
 QStringList SettingsBridge::styles() const { return Format::available_styles(); }
+
+QStringList SettingsBridge::positions() const { return Appearance::available_positions(); }
+
+QStringList SettingsBridge::overlay_sizes() const { return Appearance::available_sizes(); }
 
 QVariantMap SettingsBridge::load() const {
   QVariantMap values;

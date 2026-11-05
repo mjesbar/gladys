@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QVariantMap>
 
+#include "appearance.hpp"
 #include "format.hpp"
 #include "history.hpp"
 #include "sound.hpp"
@@ -32,6 +33,7 @@ class Setting : public QObject {
   Sound m_sound;
   Format m_format;
   History m_history;
+  Appearance m_appearance;
 };
 
 #endif  // SETTING_HPP

@@ -96,6 +96,7 @@ qt_add_qml_module(gladys
     src/qml/components/ui/Checkbox.qml
     src/qml/components/ui/Radio.qml
     src/qml/components/ui/RadioGroup.qml
+    src/qml/components/ui/RadioCard.qml
     src/qml/components/ui/Switch.qml
     src/qml/components/ui/Link.qml
     src/qml/components/ui/FormField.qml
@@ -122,7 +123,6 @@ qt_add_qml_module(gladys
     src/qml/components/settings/SoundEnableSoundEffects.qml
     src/qml/components/settings/SoundEnableLlm.qml
     src/qml/components/settings/SoundFxs.qml
-    src/qml/components/settings/AppearanceTheme.qml
     src/qml/components/settings/AppearanceOverlaySize.qml
     src/qml/components/settings/AppearancePosition.qml
     src/qml/components/settings/KeyboardPushToTalkToggle.qml
@@ -153,6 +153,9 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/chevron-right.svg
   src/assets/icons/chevron-down.svg
   src/assets/icons/copy.svg
+  src/assets/overlay/minimal.svg
+  src/assets/overlay/basic.svg
+  src/assets/overlay/great.svg
 )
 
 # Miniaudio: device enumeration lives in the Sound menu
