@@ -1,4 +1,4 @@
-// Toggle Module - Global hotkey (Ctrl+Alt+P) detection.
+// Toggle Module - Global hotkey for the active profile (Ctrl+Alt+P, Fn or AltGr).
 
 #include "toggle.hpp"
 
@@ -21,8 +21,8 @@
 static Toggle* g_toggle = nullptr;  // hook callback has no user data
 #endif
 
-Toggle::Toggle(QObject* parent)
-    : QObject(parent), m_poll_timer(new QTimer(this)), m_keycode(0), m_modifiers(0) {
+Toggle::Toggle(QObject* parent) : QObject(parent), m_poll_timer(new QTimer(this)) {
+  m_edge_clock.start();
   m_poll_timer->setInterval(33);  // ~30fps, enough for hotkey detection
   connect(m_poll_timer, &QTimer::timeout, this, &Toggle::process_events);
 #ifdef __APPLE__
@@ -62,6 +62,40 @@ Toggle::~Toggle() {
 }
 
 // macOS is callback-driven: this thread runs its own CFRunLoop until stop().
+void Toggle::set_profile(const QString& name) {
+  HotkeyProfile profile = HotkeyProfile::CtrlAltP;
+  if (name == "Fn") {
+    profile = HotkeyProfile::Fn;
+  } else if (name == "AltGr") {
+    profile = HotkeyProfile::AltGr;
+  }
+  m_profile = profile;
+  m_held = false;  // the old trigger's release can never match the new one
+}
+
+// Presses closer than this to the last accepted edge are contact bounce or a double trigger
+// (AltGr and Fn chatter on some keyboards). Releases are never dropped, so Hold cannot get stuck.
+static const qint64 DEBOUNCE_MS = 200;
+
+// Press and release are emitted once each: key repeat and bounced presses are ignored.
+void Toggle::on_trigger(bool down) {
+  if (down == m_held) {
+    return;
+  }
+  if (down && m_edge_clock.elapsed() < DEBOUNCE_MS) {
+    return;
+  }
+  m_held = down;
+  m_edge_clock.restart();
+  if (down) {
+    qCInfo(lcToggle) << "hotkey pressed";
+    emit KEY_PRESSED();
+  } else {
+    qCInfo(lcToggle) << "hotkey released";
+    emit KEY_RELEASED();
+  }
+}
+
 void Toggle::start() {
   const bool ok = init();
 #ifndef __APPLE__
@@ -86,6 +120,18 @@ void Toggle::stop() { m_stop_requested = true; }
 // ---------------------------------------------------------------------------
 
 #ifdef __linux__
+
+// evdev code of the trigger key. Fn is often kept by the keyboard firmware and may never arrive.
+static unsigned int trigger_key(HotkeyProfile profile) {
+  switch (profile) {
+    case HotkeyProfile::Fn:
+      return KEY_FN;
+    case HotkeyProfile::AltGr:
+      return KEY_RIGHTALT;
+    default:
+      return KEY_P;
+  }
+}
 
 // A device is a keyboard if it reports every key of the hotkey.
 static bool is_keyboard(int fd) {
@@ -120,8 +166,6 @@ bool Toggle::init() {
                             "(add user to the input group)";
     return false;
   }
-  m_ctrl_down = false;
-  m_alt_down = false;
   qCInfo(lcToggle) << "started, hotkey registered on" << m_fds.size() << "keyboard(s)";
   return true;
 }
@@ -130,16 +174,18 @@ void Toggle::process_events() {
   input_event ev;
   for (int fd : m_fds) {
     while (read(fd, &ev, sizeof ev) == sizeof ev) {
-      if (ev.type != EV_KEY) {
+      if (ev.type != EV_KEY || ev.value == 2) {  // 2 is key repeat
         continue;
       }
-      if (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL) {
-        m_ctrl_down = ev.value != 0;
+      const bool down = ev.value == 1;
+      const HotkeyProfile profile = m_profile;
+      if (ev.code == trigger_key(profile)) {
+        const bool combo = profile != HotkeyProfile::CtrlAltP || (m_ctrl_down && m_alt_down);
+        on_trigger(down && combo);
+      } else if (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL) {
+        m_ctrl_down = down;
       } else if (ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT) {
-        m_alt_down = ev.value != 0;
-      } else if (ev.code == KEY_P && ev.value == 1 && m_ctrl_down && m_alt_down) {
-        qCInfo(lcToggle) << "hotkey pressed";
-        emit KEY_PRESSED();
+        m_alt_down = down;
       }
     }
   }
@@ -165,17 +211,27 @@ static bool has_accessibility() {
   return trusted;
 }
 
-bool Toggle::init() {
-  m_keycode = 0x23;  // kVK_ANSI_P
-  m_modifiers = kCGEventFlagMaskControl | kCGEventFlagMaskAlternate;
+// Virtual key code of the trigger key. Fn and right Option are modifiers: they arrive as flags changed.
+static CGKeyCode trigger_key(HotkeyProfile profile) {
+  switch (profile) {
+    case HotkeyProfile::Fn:
+      return 0x3F;  // kVK_Function
+    case HotkeyProfile::AltGr:
+      return 0x3D;  // kVK_RightOption
+    default:
+      return 0x23;  // kVK_ANSI_P
+  }
+}
 
+bool Toggle::init() {
   if (!has_accessibility()) {
     qCCritical(lcToggle) << "Accessibility not granted. Enable Gladys in System Settings "
                             "> Privacy & Security > Accessibility, then restart.";
     return false;
   }
 
-  CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown);
+  CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp) |
+                          CGEventMaskBit(kCGEventFlagsChanged);
   CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap,
     kCGHeadInsertEventTap,
     kCGEventTapOptionDefault,
@@ -213,14 +269,24 @@ CGEventRef Toggle::event_tap_callback(
     CGEventTapEnable(static_cast<CFMachPortRef>(self->m_event_tap), true);
     return event;
   }
-  if (type == kCGEventKeyDown) {
-    CGKeyCode keyCode =
-      static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
-    CGEventFlags flags = CGEventGetFlags(event);
-    if (keyCode == self->m_keycode && (flags & self->m_modifiers) == self->m_modifiers) {
-      qCInfo(lcToggle) << "hotkey pressed";
-      emit self->KEY_PRESSED();
+  const HotkeyProfile profile = self->m_profile;
+  const CGKeyCode keyCode =
+    static_cast<CGKeyCode>(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode));
+  if (keyCode != trigger_key(profile)) {
+    return event;
+  }
+  const CGEventFlags flags = CGEventGetFlags(event);
+  if (profile == HotkeyProfile::CtrlAltP) {
+    const CGEventFlags combo = kCGEventFlagMaskControl | kCGEventFlagMaskAlternate;
+    if (type == kCGEventKeyDown) {
+      self->on_trigger((flags & combo) == combo);
+    } else if (type == kCGEventKeyUp) {
+      self->on_trigger(false);
     }
+  } else if (type == kCGEventFlagsChanged) {
+    const CGEventFlags mask =
+      profile == HotkeyProfile::Fn ? kCGEventFlagMaskSecondaryFn : kCGEventFlagMaskAlternate;
+    self->on_trigger((flags & mask) != 0);
   }
   return event;  // pass through
 }
@@ -233,9 +299,19 @@ CGEventRef Toggle::event_tap_callback(
 
 #ifdef _WIN32
 
+// Virtual key code of the trigger key. Fn never reaches the Windows hook, so it matches nothing.
+static DWORD trigger_key(HotkeyProfile profile) {
+  switch (profile) {
+    case HotkeyProfile::Fn:
+      return 0;
+    case HotkeyProfile::AltGr:
+      return VK_RMENU;
+    default:
+      return 'P';
+  }
+}
+
 bool Toggle::init() {
-  m_keycode = 'P';
-  m_modifiers = MOD_CONTROL | MOD_ALT;
   g_toggle = this;
 
   HHOOK hook = SetWindowsHookEx(WH_KEYBOARD_LL, low_level_keyboard_proc, GetModuleHandle(NULL), 0);
@@ -259,13 +335,15 @@ void Toggle::process_events() {
 }
 
 LRESULT CALLBACK Toggle::low_level_keyboard_proc(int nCode, WPARAM wParam, LPARAM lParam) {
-  if (nCode == HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
-    KBDLLHOOKSTRUCT* p = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
-    bool ctrl = GetAsyncKeyState(VK_CONTROL) & 0x8000;
-    bool alt = GetAsyncKeyState(VK_MENU) & 0x8000;
-    if (p->vkCode == 'P' && ctrl && alt && g_toggle) {
-      qCInfo(lcToggle) << "hotkey pressed";
-      emit g_toggle->KEY_PRESSED();
+  if (nCode == HC_ACTION && g_toggle) {
+    const KBDLLHOOKSTRUCT* p = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
+    const bool down = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
+    const bool up = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
+    const HotkeyProfile profile = g_toggle->m_profile;
+    if ((down || up) && p->vkCode == trigger_key(profile)) {
+      const bool combo = profile != HotkeyProfile::CtrlAltP ||
+        ((GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_MENU) & 0x8000));
+      g_toggle->on_trigger(down && combo);
     }
   }
   return CallNextHookEx(NULL, nCode, wParam, lParam);

@@ -195,7 +195,12 @@ int main(int argc, char* argv[]) {
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, data, [data](const QVariantMap& s) {
     data->set_toggles(s.value("storeTranscriptions").toBool(), s.value("storeLogs").toBool());
   });
-  QObject::connect(toggle, &Toggle::KEY_PRESSED, &core, &Core::toggle_recording);
+  QObject::connect(toggle, &Toggle::KEY_PRESSED, &core, &Core::hotkey_down);
+  QObject::connect(toggle, &Toggle::KEY_RELEASED, &core, &Core::hotkey_up);
+  // Runs on the GUI thread: the macOS hotkey loop does not process queued Qt events.
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &app, [toggle](const QVariantMap& s) {
+    toggle->set_profile(s.value("hotkeyProfile").toString());
+  });
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &levels, [&levels](const QVariantMap& s) {
     levels.set_source(s.value("inputSource").toString());
   });
@@ -257,6 +262,7 @@ int main(int argc, char* argv[]) {
   QMetaObject::invokeMethod(setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
   apply_appearance(current);
   sfx.update(current);
+  toggle->set_profile(current.value("hotkeyProfile").toString());
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, overlay, apply_appearance);
   remove_x11_shadow(overlay_window->winId());
 #ifdef __APPLE__

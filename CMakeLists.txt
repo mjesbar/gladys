@@ -162,6 +162,7 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/overlay/minimal.png
   src/assets/overlay/basic.png
   src/assets/overlay/great.png
+  src/assets/keyboard/placeholder.svg
   src/assets/sfx/beep.mp3
   src/assets/sfx/bell.mp3
   src/assets/sfx/end.mp3

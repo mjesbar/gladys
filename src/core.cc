@@ -175,33 +175,52 @@ void Core::post(const QString& url, const QJsonObject& body, std::function<void(
   });
 }
 
-// Hotkey: the first press starts capture, the second stops it and formats the text.
-void Core::toggle_recording() {
+// Hotkey down. Toggle: each press flips recording. Hold: the press starts it.
+void Core::hotkey_down() {
+  if (!m_recording) {
+    start_recording();
+  } else if (!m_hold_mode) {
+    stop_recording();
+  }
+}
+
+// Hotkey up. Only Hold stops on release.
+void Core::hotkey_up() {
+  if (m_hold_mode && m_recording) {
+    stop_recording();
+  }
+}
+
+void Core::start_recording() {
   if (!m_asr.ready) {
     qCWarning(lcMain) << "gladys-asr not ready";
     return;
   }
-  m_recording = !m_recording;
-  emit RECORDING_CHANGED(m_recording);
-
-  if (m_recording) {
-    const QJsonObject body{{"action", "start"},
-                           {"inputSource", m_config.value("inputSource", "default").toString()}};
-    post(m_asr.url + "/transcribe", body, [this](const QJsonObject& reply) {
-      if (reply.isEmpty()) {
-        m_recording = false;
-        emit RECORDING_CHANGED(false);
-      }
-    });
-  } else {
-    add_pending(1);
-    post(m_asr.url + "/transcribe", QJsonObject{{"action", "stop"}}, [this](const QJsonObject& reply) {
-      format_text(reply.value("text").toString());
-    });
-  }
+  m_recording = true;
+  emit RECORDING_CHANGED(true);
+  const QJsonObject body{{"action", "start"},
+                         {"inputSource", m_config.value("inputSource", "default").toString()}};
+  post(m_asr.url + "/transcribe", body, [this](const QJsonObject& reply) {
+    if (reply.isEmpty()) {
+      m_recording = false;
+      emit RECORDING_CHANGED(false);
+    }
+  });
 }
 
-void Core::update_config(const QVariantMap& config) { m_config = config; }
+void Core::stop_recording() {
+  m_recording = false;
+  emit RECORDING_CHANGED(false);
+  add_pending(1);
+  post(m_asr.url + "/transcribe", QJsonObject{{"action", "stop"}}, [this](const QJsonObject& reply) {
+    format_text(reply.value("text").toString());
+  });
+}
+
+void Core::update_config(const QVariantMap& config) {
+  m_config = config;
+  m_hold_mode = config.value("hotkeyMode").toString() == "Hold";
+}
 
 void Core::add_pending(int delta) {
   m_pending += delta;

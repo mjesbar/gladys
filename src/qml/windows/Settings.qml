@@ -71,6 +71,8 @@ Window {
         formatDictionary.load(s);
         formatSnippets.load(s);
         formatModes.load(s);
+        hotkeyMode.load(s);
+        hotkeyProfile.load(s);
         historyActivity.load(s);
         historyLogs.load(s);
         historyActivity.reload();
@@ -259,8 +261,12 @@ Window {
                     Column {
                         spacing: Theme.spacingXl
 
-                        KeyboardPushToTalkToggle {}
+                        KeyboardPushToTalkToggle {
+                            id: hotkeyMode
+                        }
                         KeyboardShortcuts {
+                            id: hotkeyProfile
+
                             divided: false
                         }
                     }

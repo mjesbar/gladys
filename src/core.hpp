@@ -27,7 +27,8 @@ class Core : public QObject {
   bool start();  // spawns gladys-asr and gladys-llm; READY once both answer /alive
 
  public slots:
-  void toggle_recording();
+  void hotkey_down();  // Toggle flips recording; Hold starts it
+  void hotkey_up();    // Hold stops it
   void update_config(const QVariantMap& config);
 
  signals:
@@ -53,6 +54,8 @@ class Core : public QObject {
   void probe(Child& child);  // GET /alive
   void check_ready();
   void post(const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done);
+  void start_recording();
+  void stop_recording();
   void format_text(const QString& text);
   void paste_text(const QString& text);
   void add_pending(int delta);  // dictations between hotkey stop and paste
@@ -65,6 +68,7 @@ class Core : public QObject {
   QVariantMap m_config;
   int m_pending = 0;
   bool m_recording = false;
+  bool m_hold_mode = false;  // hotkeyMode is Hold
   bool m_stopping = false;
 };
 

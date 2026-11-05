@@ -14,6 +14,8 @@ class SettingsBridge : public QObject {
   Q_PROPERTY(QStringList inputSources READ input_sources CONSTANT)
   Q_PROPERTY(QStringList styles READ styles CONSTANT)
   Q_PROPERTY(QStringList sfxs READ sfxs CONSTANT)
+  Q_PROPERTY(QStringList hotkeyModes READ hotkey_modes CONSTANT)
+  Q_PROPERTY(QStringList hotkeyProfiles READ hotkey_profiles CONSTANT)
   Q_PROPERTY(QStringList positions READ positions CONSTANT)
   Q_PROPERTY(QStringList overlaySizes READ overlay_sizes CONSTANT)
   Q_PROPERTY(QStringList screens READ screens)
@@ -25,6 +27,8 @@ class SettingsBridge : public QObject {
   QStringList input_sources() const;
   QStringList styles() const;
   QStringList sfxs() const;
+  QStringList hotkey_modes() const;
+  QStringList hotkey_profiles() const;
   QStringList positions() const;
   QStringList overlay_sizes() const;
   QStringList screens() const;  // read on the GUI thread, where QScreen lives

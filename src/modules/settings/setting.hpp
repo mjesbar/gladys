@@ -11,6 +11,7 @@
 #include "appearance.hpp"
 #include "format.hpp"
 #include "history.hpp"
+#include "keyboard.hpp"
 #include "sound.hpp"
 
 class Setting : public QObject {
@@ -34,6 +35,7 @@ class Setting : public QObject {
   Format m_format;
   History m_history;
   Appearance m_appearance;
+  Keyboard m_keyboard;
 };
 
 #endif  // SETTING_HPP

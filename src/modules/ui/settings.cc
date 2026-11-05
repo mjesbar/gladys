@@ -6,6 +6,7 @@
 
 #include "../settings/appearance.hpp"
 #include "../settings/format.hpp"
+#include "../settings/keyboard.hpp"
 #include "../settings/setting.hpp"
 #include "../settings/sound.hpp"
 
@@ -13,6 +14,10 @@ SettingsBridge::SettingsBridge(Setting* setting, QObject* parent)
     : QObject(parent), m_setting(setting) {}
 
 QStringList SettingsBridge::sfxs() const { return Sound::available_sfx(); }
+
+QStringList SettingsBridge::hotkey_modes() const { return Keyboard::available_modes(); }
+
+QStringList SettingsBridge::hotkey_profiles() const { return Keyboard::available_profiles(); }
 
 QStringList SettingsBridge::input_sources() const {
   QStringList sources;

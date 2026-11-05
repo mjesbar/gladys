@@ -122,6 +122,7 @@ void Setting::load() {
   m_format.from_map(stored);
   m_history.from_map(stored);
   m_appearance.from_map(stored);
+  m_keyboard.from_map(stored);
   qCInfo(lcSetting) << "loaded from history.db";
 }
 
@@ -132,6 +133,7 @@ QVariantMap Setting::snapshot() const {
   map.insert(m_format.to_map());
   map.insert(m_history.to_map());
   map.insert(m_appearance.to_map());
+  map.insert(m_keyboard.to_map());
   return map;
 }
 
@@ -143,6 +145,7 @@ void Setting::apply(const QVariantMap& values) {
   m_format.from_map(values);
   m_history.from_map(values);
   m_appearance.from_map(values);
+  m_keyboard.from_map(values);
   persist(before, snapshot());
 
   publish();
