@@ -19,6 +19,7 @@
 #include "modules/keypaste/paste.hpp"
 #include "modules/keytoggle/toggle.hpp"
 #include "modules/audio/levels.hpp"
+#include "modules/audio/sfx.hpp"
 #include "modules/log/log.hpp"
 #include "modules/settings/setting.hpp"
 #include "modules/ui/history.hpp"
@@ -168,10 +169,13 @@ int main(int argc, char* argv[]) {
   if (!levels.init()) {
     return 1;
   }
+  Sfx sfx;
+  sfx.init();
   SettingsBridge settings_bridge(setting);
   HistoryBridge history_bridge;
   QQmlApplicationEngine engine;
   engine.rootContext()->setContextProperty("waves", &waves);
+  engine.rootContext()->setContextProperty("sfx", &sfx);
   engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
   engine.rootContext()->setContextProperty("historyBridge", &history_bridge);
 
@@ -197,6 +201,8 @@ int main(int argc, char* argv[]) {
   });
   QObject::connect(&levels, &AudioLevels::LEVELS_UPDATED, &waves, &Waves::update_levels);
   QObject::connect(&core, &Core::RECORDING_CHANGED, &levels, &AudioLevels::set_active);
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &sfx, &Sfx::update);
+  QObject::connect(&core, &Core::RECORDING_CHANGED, &sfx, &Sfx::play_toggle);
   // Storage opens before settings load. A failure raises the popup; the app keeps running on defaults.
   // The popup is appended after the splash, so rootObjects().first() and .last() stay valid.
   QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
@@ -250,6 +256,7 @@ int main(int argc, char* argv[]) {
   QVariantMap current;
   QMetaObject::invokeMethod(setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
   apply_appearance(current);
+  sfx.update(current);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, overlay, apply_appearance);
   remove_x11_shadow(overlay_window->winId());
 #ifdef __APPLE__

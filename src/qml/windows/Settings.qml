@@ -62,9 +62,12 @@ Window {
     function load() {
         const s = settingsBridge.load();
         soundInputSource.load(s);
+        soundEffects.load(s);
+        soundFxs.load(s);
         appearanceOverlaySize.load(s);
         appearancePosition.load(s);
-    appearanceScreen.load(s);
+        appearanceScreen.load(s);
+        formatLlm.load(s);
         formatDictionary.load(s);
         formatSnippets.load(s);
         formatModes.load(s);
@@ -209,9 +212,12 @@ Window {
                         SoundInputSource {
                             id: soundInputSource
                         }
-                        SoundEnableSoundEffects {}
-                        SoundEnableLlm {}
+                        SoundEnableSoundEffects {
+                            id: soundEffects
+                        }
                         SoundFxs {
+                            id: soundFxs
+
                             divided: false
                         }
                     }
@@ -235,6 +241,9 @@ Window {
                     Column {
                         spacing: Theme.spacingXl
 
+                        FormatEnableLlm {
+                            id: formatLlm
+                        }
                         FormatDictionary {
                             id: formatDictionary
                         }

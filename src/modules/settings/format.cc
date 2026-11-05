@@ -28,6 +28,7 @@ QVariantMap Format::to_map() const {
   return {
     {"style", m_style},
     {"markdown", m_markdown_mode},
+    {"llm", m_llm},
     {"dictionary", to_variant(m_dictionary)},
     {"snippets", to_variant(m_snippets)},
   };
@@ -46,5 +47,8 @@ void Format::from_map(const QVariantMap& values) {
   }
   if (values.contains("markdown")) {
     m_markdown_mode = values.value("markdown").toBool();
+  }
+  if (values.contains("llm")) {
+    m_llm = values.value("llm").toBool();
   }
 }

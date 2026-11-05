@@ -42,6 +42,7 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/keytoggle/toggle.cc
   src/modules/keypaste/paste.cc
   src/modules/audio/levels.cc
+  src/modules/audio/sfx.cc
   src/modules/settings/setting.cc
   src/modules/settings/system.cc
   src/modules/settings/sound.cc
@@ -121,10 +122,10 @@ qt_add_qml_module(gladys
     src/qml/components/settings/FormatDictionary.qml
     src/qml/components/settings/FormatSnippets.qml
     src/qml/components/settings/FormatModes.qml
+    src/qml/components/settings/FormatEnableLlm.qml
     src/qml/components/settings/SystemCloudLocal.qml
     src/qml/components/settings/SystemAiModels.qml
     src/qml/components/settings/SoundEnableSoundEffects.qml
-    src/qml/components/settings/SoundEnableLlm.qml
     src/qml/components/settings/SoundFxs.qml
     src/qml/components/settings/AppearanceOverlaySize.qml
     src/qml/components/settings/AppearanceScreen.qml
@@ -156,10 +157,22 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/trash.svg
   src/assets/icons/chevron-right.svg
   src/assets/icons/chevron-down.svg
+  src/assets/icons/play.svg
   src/assets/icons/copy.svg
   src/assets/overlay/minimal.png
   src/assets/overlay/basic.png
   src/assets/overlay/great.png
+  src/assets/sfx/beep.mp3
+  src/assets/sfx/bell.mp3
+  src/assets/sfx/end.mp3
+  src/assets/sfx/notification.mp3
+  src/assets/sfx/pump.mp3
+  src/assets/sfx/switcher.mp3
+  src/assets/sfx/ui1.mp3
+  src/assets/sfx/ui2.mp3
+  src/assets/sfx/ui3.mp3
+  src/assets/sfx/ui4.mp3
+  src/assets/sfx/ui5.mp3
 )
 
 # Miniaudio: device enumeration lives in the Sound menu

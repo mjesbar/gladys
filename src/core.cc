@@ -208,13 +208,13 @@ void Core::add_pending(int delta) {
   emit PROCESSING_CHANGED(m_pending > 0);
 }
 
-// Formats through the LLM API. Any failure pastes the raw text, so dictation is never lost.
+// Formats through the LLM API. Any failure, or LLM disabled, pastes the raw text, so dictation is never lost.
 void Core::format_text(const QString& text) {
   if (text.isEmpty()) {
     add_pending(-1);
     return;
   }
-  if (!m_llm.ready) {
+  if (!m_llm.ready || !m_config.value("llm", true).toBool()) {
     paste_text(text);
     return;
   }
