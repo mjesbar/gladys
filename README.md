@@ -41,7 +41,7 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 ```txt
  ┌──────────┐  hotkey  ┌───────────────┐  final text  ┌──────────────────┐
  │ Hotkey   │ ───────► │ STT           │ ───────────► │ LLM (llama-server)│
- │ toggle   │          │ miniaudio +   │              │ 127.0.0.1:8080   │
+ │ toggle   │          │ miniaudio +   │              │ 127.0.0.1:26001  │
  └──────────┘          │ sherpa-onnx   │              └────────┬─────────┘
                        └───────┬───────┘                       │ formatted text
                                │ audio levels                  ▼

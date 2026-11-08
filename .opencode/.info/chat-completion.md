@@ -3,7 +3,7 @@ This is the approach to pipe audio files to the llama-server.
 # Gemma
 
 ```bash
-NERV🍁 ~/Github/mjesbar/gladys/bin/llama.cpp/llama-b9049 > time cat <<EOF | curl -s http://127.0.0.1:8080/v1/chat/completions   -H "Content-Type: application/json"   -d @- | jq '.choices[0].message.content'
+NERV🍁 ~/Github/mjesbar/gladys/bin/llama.cpp/llama-b9049 > time cat <<EOF | curl -s http://127.0.0.1:26001/v1/chat/completions   -H "Content-Type: application/json"   -d @- | jq '.choices[0].message.content'
 {
   "messages": [
     {
@@ -32,7 +32,7 @@ sys     0m0.016s
 # Llama Ultravox
 
 ```bash
-time cat <<EOF | curl -s http://127.0.0.1:8080/v1/chat/completions \
+time cat <<EOF | curl -s http://127.0.0.1:26001/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d @- | jq '.choices[0].message.content'
 {

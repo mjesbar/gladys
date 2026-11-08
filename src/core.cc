@@ -1,4 +1,4 @@
-// Core - Pipeline and supervisor for gladys-asr and gladys-llm. Runs on the GUI thread.
+// Core - Pipeline and supervisor for gladys-asr and gladys-llm (llama-server). Runs on the GUI thread.
 
 #include "core.hpp"
 
@@ -11,6 +11,7 @@
 #include <QUrl>
 #include <cstdio>
 
+#include "apis/llm/llm.hpp"
 #include "apis/server.hpp"
 #include "modules/data/data.hpp"
 #include "modules/keypaste/paste.hpp"
@@ -23,7 +24,7 @@
 #endif
 
 static const int RESTART_DELAY_MS = 1000;
-static const int STOP_TIMEOUT_MS = 6000;  // llm needs time to stop llama-server
+static const int STOP_TIMEOUT_MS = 6000;
 static const int PROBE_INTERVAL_MS = 250;
 static const int REQUEST_TIMEOUT_MS = 30000;  // a stop includes the transcription
 static const int LLM_TO_COPY_DELAY_MS = 10;
@@ -46,8 +47,11 @@ Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
   m_asr.args = {model_dir};
   m_asr.url = api_url(ASR_PORT);
   m_llm.name = "gladys-llm";
-  m_llm.program = sibling_binary("gladys-llm");
+  m_llm.program = llama_server_program();
+  m_llm.args = llama_server_args();
   m_llm.url = api_url(LLM_PORT);
+  m_llm.ready_path = "/health";  // 503 while loading, 200 ready
+  m_llm.process.setProcessEnvironment(llama_server_env());
 
   for (Child* child : {&m_asr, &m_llm}) {
     connect(&child->process, &QProcess::readyReadStandardError, this, [this, child]() { read_stderr(*child); });
@@ -65,14 +69,15 @@ Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
   });
 }
 
-// Closing stdin tells each child to quit; kill only if it does not finish in time.
+// Closing stdin quits gladys-asr; llama-server ignores stdin, so it is terminated. Kill if still running after the timeout.
 Core::~Core() {
   m_stopping = true;
+  m_asr.process.closeWriteChannel();
+  m_llm.process.terminate();
   for (Child* child : {&m_asr, &m_llm}) {
     if (child->process.state() == QProcess::NotRunning) {
       continue;
     }
-    child->process.closeWriteChannel();
     if (!child->process.waitForFinished(STOP_TIMEOUT_MS)) {
       child->process.kill();
       child->process.waitForFinished(STOP_TIMEOUT_MS);
@@ -136,9 +141,9 @@ void Core::read_stderr(Child& child) {
   }
 }
 
-// 200 on /alive means ready. 503 (model loading) and connection errors retry on the next tick.
+// 200 means ready. 503 (model loading) and connection errors retry on the next tick.
 void Core::probe(Child& child) {
-  QNetworkReply* reply = m_network.get(QNetworkRequest(QUrl(child.url + "/alive")));
+  QNetworkReply* reply = m_network.get(QNetworkRequest(QUrl(child.url + child.ready_path)));
   connect(reply, &QNetworkReply::finished, this, [this, reply, &child]() {
     reply->deleteLater();
     if (child.ready || reply->error() != QNetworkReply::NoError) {
@@ -227,7 +232,7 @@ void Core::add_pending(int delta) {
   emit PROCESSING_CHANGED(m_pending > 0);
 }
 
-// Formats through the LLM API. Any failure, or LLM disabled, pastes the raw text, so dictation is never lost.
+// Formats through llama-server. Any failure, or LLM disabled, pastes the raw text, so dictation is never lost.
 void Core::format_text(const QString& text) {
   if (text.isEmpty()) {
     add_pending(-1);
@@ -237,12 +242,10 @@ void Core::format_text(const QString& text) {
     paste_text(text);
     return;
   }
-  QJsonObject body = QJsonObject::fromVariantMap(m_config);
-  body["text"] = text;
-  post(m_llm.url + "/format", body, [this, text](const QJsonObject& reply) {
-    const QString formatted = reply.value("text").toString();
-    paste_text(formatted.isEmpty() ? text : formatted);
-  });
+  post(m_llm.url + "/v1/chat/completions", build_format_request(text, m_config),
+       [this, text](const QJsonObject& reply) {
+         paste_text(read_format_reply(reply, text, m_config.value("snippets").toMap()));
+       });
 }
 
 // Clipboard is written on the GUI thread; the keystroke runs on the keypaste thread.

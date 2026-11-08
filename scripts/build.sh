@@ -102,7 +102,7 @@ case "$OS" in
     echo "[build] linuxdeploy bundle Qt ..."
     LD_LIBRARY_PATH="$QT_ROOT_DIR/lib" QMAKE="$QT_ROOT_DIR/bin/qmake" QML_SOURCES_PATHS=src/qml \
       "$QT_ROOT_DIR/bin/linuxdeploy-x86_64.AppImage" --appdir "$DIST" \
-      --executable "$DIST/gladys" --executable "$DIST/gladys-asr" --executable "$DIST/gladys-llm" \
+      --executable "$DIST/gladys" --executable "$DIST/gladys-asr" \
       --plugin qt
     # Flatten usr/ back to dist/ root: the binary locates models next to itself
     mkdir -p "$DIST/lib"
@@ -125,7 +125,7 @@ case "$OS" in
     ;;
   windows)
     echo "[build] windeployqt bundle Qt ..."
-    for exe in gladys gladys-asr gladys-llm; do
+    for exe in gladys gladys-asr; do
       "$QT_ROOT_DIR/bin/windeployqt" --release --qmldir src/qml "$DIST/$exe.exe"
     done
     echo "[build] windeployqt bundle Qt OK"

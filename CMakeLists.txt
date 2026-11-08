@@ -37,6 +37,8 @@ option(GLADYS_MA_DEBUG "Enable miniaudio debug output" OFF)
 qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/core.cc
+  src/apis/llm/llm.cc
+  src/apis/llm/prompt.cc
   src/modules/data/data.cc
   src/modules/log/log.cc
   src/modules/keytoggle/toggle.cc
@@ -270,21 +272,8 @@ else()
   message(FATAL_ERROR "sherpa-onnx library not found: ${SHERPA_ONNX_LIB_DIR}")
 endif()
 
-# ---------------------------------------------------------------------------
-# gladys-llm: transcription formatting process (owns llama-server)
-# ---------------------------------------------------------------------------
-qt_add_executable(gladys-llm
-  src/apis/llm/server.cc
-  src/apis/llm/llm.cc
-  src/apis/llm/prompt.cc
-  src/modules/data/data.cc
-  src/modules/log/log.cc
-)
-target_include_directories(gladys-llm PRIVATE src)
-target_link_libraries(gladys-llm PRIVATE Qt6::Core Qt6::Network Qt6::HttpServer Qt6::Sql)
-
 # Helpers sit next to gladys (macOS: inside the bundle, next to the llama.cpp folder)
-foreach(helper gladys-asr gladys-llm)
+foreach(helper gladys-asr)
   set_target_properties(${helper} PROPERTIES
     INSTALL_RPATH "${GLADYS_RPATH}"
     BUILD_WITH_INSTALL_RPATH TRUE
@@ -295,7 +284,7 @@ set_target_properties(gladys PROPERTIES
   BUILD_WITH_INSTALL_RPATH TRUE
 )
 if(APPLE)
-  install(TARGETS gladys-asr gladys-llm RUNTIME DESTINATION gladys.app/Contents/MacOS)
+  install(TARGETS gladys-asr RUNTIME DESTINATION gladys.app/Contents/MacOS)
 else()
-  install(TARGETS gladys-asr gladys-llm RUNTIME DESTINATION .)
+  install(TARGETS gladys-asr RUNTIME DESTINATION .)
 endif()
