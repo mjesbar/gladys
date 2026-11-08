@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-GPLv3-blue" alt="License: GPLv3">
+  <img src="https://img.shields.io/badge/license-PolyForm%20Shield%201.0.0-blue" alt="License: PolyForm Shield 1.0.0">
   <img src="https://img.shields.io/badge/Qt-6.8%2B-41CD52" alt="Qt 6.8+">
   <img src="https://img.shields.io/badge/C%2B%2B-17-00599C" alt="C++17">
   <img src="https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey" alt="Linux | Windows | macOS">
@@ -227,7 +227,7 @@ gladys/
 
 # License
 
-[GNU General Public License v3.0](LICENSE)
+[PolyForm Shield License 1.0.0](LICENSE)
 
 ---
 
