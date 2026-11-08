@@ -55,10 +55,13 @@ Column {
       property int progress: modelData.progress
 
       width: list.width
-      padding: Theme.spacingMd
+      padding: Theme.spacingSm
       color: modelData.selected ? Theme.hover : Theme.surface
       border.color: modelData.selected ? Theme.accent : Theme.border
-      radius: Theme.radiusMd
+      radius: Theme.radiusLg
+
+      Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+      Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
 
       Connections {
         target: modelsBridge
@@ -72,7 +75,7 @@ Column {
 
       Item {
         width: parent.width
-        height: 40  // the icon button height
+        height: 32  // the icon button height
 
         Ui.Text {
           anchors.left: parent.left
@@ -106,6 +109,8 @@ Column {
 
             visible: !row.modelData.busy && !row.modelData.installed
             variant: "icon"
+            implicitWidth: 32
+            implicitHeight: 32
             iconSource: "qrc:/icons/download.svg"
             ToolTip.visible: hovered
             ToolTip.text: qsTr("Install")
@@ -116,6 +121,8 @@ Column {
 
             visible: !row.modelData.busy && row.modelData.installed && !row.modelData.selected
             variant: "icon"
+            implicitWidth: 32
+            implicitHeight: 32
             iconSource: "qrc:/icons/check.svg"
             enabled: !modelsBridge.loading
             opacity: enabled ? 1 : 0.4
@@ -128,6 +135,8 @@ Column {
 
             visible: !row.modelData.busy && row.modelData.installed && !row.modelData.selected
             variant: "icon"
+            implicitWidth: 32
+            implicitHeight: 32
             iconSource: "qrc:/icons/trash.svg"
             enabled: list.installedCount > 1
             opacity: enabled ? 1 : 0.4

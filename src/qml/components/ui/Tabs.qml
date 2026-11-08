@@ -1,4 +1,4 @@
-// Tabs - Full-width pill switch over a stack. Each child is one page, titled by model[index].
+// Tabs - Fitted pill switch over a stack. A pill slides under the current tab; each child is one page.
 
 pragma ComponentBehavior: Bound
 
@@ -14,6 +14,8 @@ Column {
   property var model: []
   property alias currentIndex: bar.currentIndex
   default property alias pages: stack.data
+  readonly property int tabWidth: 80
+  readonly property int tabHeight: 32
 
   width: parent.width
   spacing: Theme.gap
@@ -21,7 +23,8 @@ Column {
   Basic.TabBar {
     id: bar
 
-    width: tabs.width
+    width: tabs.tabWidth * tabs.model.length + spacing * (tabs.model.length - 1) + leftPadding + rightPadding
+    height: tabs.tabHeight + topPadding + bottomPadding
     padding: Theme.spacingXs
     spacing: Theme.spacingXs
 
@@ -29,6 +32,17 @@ Column {
       radius: Theme.radiusPill
       color: Theme.surface
       border.color: Theme.border
+
+      Rectangle {
+        x: bar.leftPadding + bar.currentIndex * (tabs.tabWidth + bar.spacing)
+        y: bar.topPadding
+        width: tabs.tabWidth
+        height: bar.height - bar.topPadding - bar.bottomPadding
+        radius: Theme.radiusPill
+        color: Theme.accent
+
+        Behavior on x { NumberAnimation { duration: Theme.durationBase; easing.type: Easing.OutCubic } }
+      }
     }
 
     Repeater {
@@ -39,24 +53,26 @@ Column {
 
         required property string modelData
 
-        width: (bar.width - bar.leftPadding - bar.rightPadding - bar.spacing * (tabs.model.length - 1)) / tabs.model.length
-        height: 36
-        padding: 0
-        contentItem: Ui.Text {
-          width: tab.width
-          text: tab.modelData
-          color: tab.checked ? Theme.background : Theme.muted
-          font.bold: tab.checked
-          horizontalAlignment: Text.AlignHCenter
-          verticalAlignment: Text.AlignVCenter
-
-          Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+        HoverHandler {
+          cursorShape: Qt.PointingHandCursor
         }
-        background: Rectangle {
-          radius: Theme.radiusPill
-          color: tab.checked ? Theme.accent : tab.hovered ? Theme.hover : "transparent"
 
-          Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+        width: tabs.tabWidth
+        height: tabs.tabHeight
+        padding: 0
+        background: Item {}
+        contentItem: Item {
+          implicitWidth: tab.width
+          implicitHeight: tab.height
+
+          Ui.Text {
+            anchors.centerIn: parent
+            text: tab.modelData
+            color: tab.checked ? Theme.background : Theme.muted
+            font.bold: tab.checked
+
+            Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+          }
         }
       }
     }
