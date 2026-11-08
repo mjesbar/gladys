@@ -159,6 +159,8 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg
   src/assets/icons/trash.svg
+  src/assets/icons/download.svg
+  src/assets/icons/check.svg
   src/assets/icons/chevron-right.svg
   src/assets/icons/chevron-down.svg
   src/assets/icons/play.svg

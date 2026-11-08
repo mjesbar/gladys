@@ -23,7 +23,7 @@ static QString llama_dir() {
 QString llama_server_program() { return llama_dir() + "/" + LLAMA_SERVER_BINARY; }
 
 QStringList llama_server_args() {
-  return QStringList() << "--model" << default_model_path(ModelKind::Llm) << "--ctx-size" << "4096"
+  return QStringList() << "--model" << selected_model_path(ModelKind::Llm) << "--ctx-size" << "4096"
                        << "--temperature" << "0.7"
                        << "--top-p" << "0.9"
                        << "--reasoning" << "off"

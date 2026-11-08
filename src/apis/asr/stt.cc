@@ -2,8 +2,11 @@
 
 #include "stt.hpp"
 
+#include <QDir>
+#include <QFileInfo>
 #include <cstring>
 
+#include "../../modules/aimodmgr/catalog.hpp"
 #include "../../modules/log/log.hpp"
 
 static const int SAMPLE_RATE = 16000;
@@ -27,35 +30,54 @@ STT::~STT() {
   }
 }
 
+// The catalog names the files of each model; the folder name selects the entry.
 bool STT::init(const std::string& model_dir) {
-  std::string encoder = model_dir + "/encoder.int8.onnx";
-  std::string decoder = model_dir + "/decoder.int8.onnx";
-  std::string joiner = model_dir + "/joiner.int8.onnx";
-  std::string tokens = model_dir + "/tokens.txt";
-
-  for (const std::string* path : {&encoder, &decoder, &joiner, &tokens}) {
-    if (!SherpaOnnxFileExists(path->c_str())) {
-      qCCritical(lcStt) << "model file not found:" << path->c_str();
-      return false;
-    }
+  const QString dir = QString::fromStdString(model_dir);
+  const auto it = ASR_CATALOG.find(QFileInfo(dir).fileName());
+  if (it == ASR_CATALOG.end()) {
+    qCCritical(lcStt) << "model not in the catalog:" << dir;
+    return false;
   }
+  const AsrFiles& files = it->second.files;
+  const QDir root(dir);
+  const std::string tokens = root.filePath(files.tokens).toStdString();
+  const std::string encoder = root.filePath(files.encoder).toStdString();
+  const std::string decoder = root.filePath(files.decoder).toStdString();
+  const std::string joiner = root.filePath(files.joiner).toStdString();
+  const std::string model_file = root.filePath(files.model).toStdString();
 
   SherpaOnnxOfflineRecognizerConfig config;
   memset(&config, 0, sizeof(config));
-  config.model_config.transducer.encoder = encoder.c_str();
-  config.model_config.transducer.decoder = decoder.c_str();
-  config.model_config.transducer.joiner = joiner.c_str();
   config.model_config.tokens = tokens.c_str();
-  config.model_config.model_type = "nemo_transducer";
   config.model_config.num_threads = 1;
   config.model_config.provider = "cpu";
   config.decoding_method = "greedy_search";
   config.feat_config.sample_rate = SAMPLE_RATE;
   config.feat_config.feature_dim = 80;
+  switch (files.engine) {
+    case AsrEngine::Transducer:
+      config.model_config.transducer.encoder = encoder.c_str();
+      config.model_config.transducer.decoder = decoder.c_str();
+      config.model_config.transducer.joiner = joiner.c_str();
+      config.model_config.model_type = "nemo_transducer";
+      break;
+    case AsrEngine::Whisper:  // multilingual: language detected
+      config.model_config.whisper.encoder = encoder.c_str();
+      config.model_config.whisper.decoder = decoder.c_str();
+      config.model_config.whisper.task = "transcribe";
+      config.model_config.whisper.tail_paddings = -1;
+      config.model_config.model_type = "whisper";
+      break;
+    case AsrEngine::SenseVoice:
+      config.model_config.sense_voice.model = model_file.c_str();
+      config.model_config.sense_voice.use_itn = 1;
+      config.model_config.model_type = "sense_voice";
+      break;
+  }
 
   m_recognizer = SherpaOnnxCreateOfflineRecognizer(&config);
   if (!m_recognizer) {
-    qCCritical(lcStt) << "failed to create recognizer";
+    qCCritical(lcStt) << "failed to create recognizer from:" << dir;
     return false;
   }
 

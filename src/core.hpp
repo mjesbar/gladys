@@ -15,6 +15,8 @@
 #include <QVariantMap>
 #include <functional>
 
+#include "modules/aimodmgr/catalog.hpp"
+
 class Paste;
 
 class Core : public QObject {
@@ -30,12 +32,14 @@ class Core : public QObject {
   void hotkey_down();  // Toggle flips recording; Hold starts it
   void hotkey_up();    // Hold stops it
   void update_config(const QVariantMap& config);
+  void reload(ModelKind kind);  // restarts the child of the kind on its selected model
 
  signals:
   void READY();
   void FAILED(const QString& reason);
   void RECORDING_CHANGED(bool recording);
   void PROCESSING_CHANGED(bool processing);
+  void LOADING_CHANGED(bool loading);  // true while a child is starting, false once both are ready
 
  private:
   struct Child {

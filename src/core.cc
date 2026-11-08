@@ -13,6 +13,7 @@
 
 #include "apis/llm/llm.hpp"
 #include "apis/server.hpp"
+#include "modules/aimodmgr/aimodmgr.hpp"
 #include "modules/data/data.hpp"
 #include "modules/keypaste/paste.hpp"
 #include "modules/log/log.hpp"
@@ -114,6 +115,7 @@ void Core::on_exit(Child& child) {
     return;
   }
   child.ready = false;
+  emit LOADING_CHANGED(true);
 
   if (&child == &m_asr && m_recording) {
     m_recording = false;
@@ -160,7 +162,20 @@ void Core::check_ready() {
     return;
   }
   m_probe_timer.stop();
+  emit LOADING_CHANGED(false);
   emit READY();
+}
+
+// The child exits on its old model; on_exit restarts it with the new args. The UI is locked until it is ready.
+void Core::reload(ModelKind kind) {
+  emit LOADING_CHANGED(true);
+  if (kind == ModelKind::Asr) {
+    m_asr.args = {selected_model_path(kind)};
+    m_asr.process.closeWriteChannel();  // gladys-asr quits when its stdin closes
+  } else {
+    m_llm.args = llama_server_args();
+    m_llm.process.terminate();
+  }
 }
 
 // POST JSON to an API. done gets the reply body, or an empty object on any failure.

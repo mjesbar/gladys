@@ -1,4 +1,4 @@
-// Tabs - Tab bar over a stack. Each child is one page, titled by model[index].
+// Tabs - Full-width pill switch over a stack. Each child is one page, titled by model[index].
 
 pragma ComponentBehavior: Bound
 
@@ -22,7 +22,14 @@ Column {
     id: bar
 
     width: tabs.width
-    spacing: 8
+    padding: Theme.spacingXs
+    spacing: Theme.spacingXs
+
+    background: Rectangle {
+      radius: Theme.radiusPill
+      color: Theme.surface
+      border.color: Theme.border
+    }
 
     Repeater {
       model: tabs.model
@@ -32,26 +39,24 @@ Column {
 
         required property string modelData
 
-        padding: 8
+        width: (bar.width - bar.leftPadding - bar.rightPadding - bar.spacing * (tabs.model.length - 1)) / tabs.model.length
+        height: 36
+        padding: 0
         contentItem: Ui.Text {
+          width: tab.width
           text: tab.modelData
-          color: tab.checked || tab.hovered ? Theme.text : Theme.muted
+          color: tab.checked ? Theme.background : Theme.muted
           font.bold: tab.checked
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
 
           Behavior on color { ColorAnimation { duration: Theme.durationBase } }
         }
         background: Rectangle {
-          color: "transparent"
+          radius: Theme.radiusPill
+          color: tab.checked ? Theme.accent : tab.hovered ? Theme.hover : "transparent"
 
-          Rectangle {
-            anchors.bottom: parent.bottom
-            width: parent.width
-            height: 2
-            color: Theme.accent
-            opacity: tab.checked ? 1 : 0
-
-            Behavior on opacity { NumberAnimation { duration: Theme.durationBase } }
-          }
+          Behavior on color { ColorAnimation { duration: Theme.durationBase } }
         }
       }
     }

@@ -193,9 +193,22 @@ int main(int argc, char* argv[]) {
   }
   QObject* splash = engine.rootObjects().first();
 
-  // gladys-asr and gladys-llm are separate processes owned by the core.
-  const QString model_dir = default_model_path(ModelKind::Asr);
+  // Storage opens before settings load. A failure raises the popup; the app keeps running on
+  // defaults. The popup is appended after the splash, so rootObjects().first() and .last() stay
+  // valid.
+  QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
+    engine.loadFromModule("Gladys", "StorageError");
+    QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
+  });
+  QMetaObject::invokeMethod(data, "open", Qt::BlockingQueuedConnection);
+  QMetaObject::invokeMethod(setting, "load", Qt::BlockingQueuedConnection);
+
+  // gladys-asr and gladys-llm are separate processes owned by the core. Models come from the settings, so this follows open.
+  const QString model_dir = selected_model_path(ModelKind::Asr);
   Core core(model_dir, paste);
+  QObject::connect(&models_bridge, &ModelsBridge::selected, &core,
+    [&core](int kind) { core.reload(static_cast<ModelKind>(kind)); });
+  QObject::connect(&core, &Core::LOADING_CHANGED, &models_bridge, &ModelsBridge::set_loading);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &core, &Core::update_config);
   // The lambda's context is data, so it runs on the Data thread.
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, data, [data](const QVariantMap& s) {
@@ -214,16 +227,6 @@ int main(int argc, char* argv[]) {
   QObject::connect(&core, &Core::RECORDING_CHANGED, &levels, &AudioLevels::set_active);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &sfx, &Sfx::update);
   QObject::connect(&core, &Core::RECORDING_CHANGED, &sfx, &Sfx::play_toggle);
-  // Storage opens before settings load. A failure raises the popup; the app keeps running on
-  // defaults. The popup is appended after the splash, so rootObjects().first() and .last() stay
-  // valid.
-  QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
-    engine.loadFromModule("Gladys", "StorageError");
-    QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
-  });
-  QMetaObject::invokeMethod(data, "open", Qt::BlockingQueuedConnection);
-  QMetaObject::invokeMethod(setting, "load", Qt::BlockingQueuedConnection);
-
   // Publish after the connections exist, so the initial settings are not lost.
   QMetaObject::invokeMethod(setting, "publish");
   QObject::connect(&core, &Core::FAILED, &app, [&app](const QString& reason) {
