@@ -1,11 +1,10 @@
 // Gladys - Entry point. Starts the module threads, the core and the UI. Owns shutdown.
 
 #include <QApplication>
+#include <QEventLoop>
 #include <QFont>
 #include <QFontDatabase>
 #include <QIcon>
-#include <QEventLoop>
-#include <vector>
 #include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -13,21 +12,23 @@
 #include <QSocketNotifier>
 #include <QThread>
 #include <QWindow>
+#include <vector>
 
 #include "core.hpp"
+#include "modules/aimodmgr/aimodmgr.hpp"
+#include "modules/audio/levels.hpp"
+#include "modules/audio/sfx.hpp"
 #include "modules/data/data.hpp"
 #include "modules/keypaste/paste.hpp"
 #include "modules/keytoggle/toggle.hpp"
-#include "modules/audio/levels.hpp"
-#include "modules/audio/sfx.hpp"
 #include "modules/log/log.hpp"
 #include "modules/settings/setting.hpp"
 #include "modules/ui/history.hpp"
+#include "modules/ui/osshadow.hpp"
 #include "modules/ui/overlay.hpp"
-#include "modules/ui/waves.hpp"
 #include "modules/ui/settings.hpp"
 #include "modules/ui/tray.hpp"
-#include "modules/ui/osshadow.hpp"
+#include "modules/ui/waves.hpp"
 #ifdef __APPLE__
 #include "modules/ui/macos.hpp"
 #endif
@@ -113,7 +114,8 @@ int main(int argc, char* argv[]) {
   app.setFont(ui_font);
   qCInfo(lcMain) << "started";
 
-  // Each module runs on its own thread. Settings owns the in-memory preferences and the device list.
+  // Each module runs on its own thread. Settings owns the in-memory preferences and the device
+  // list.
   Setting* setting = new Setting();
   QThread* settings_thread = new QThread(&app);
   setting->moveToThread(settings_thread);
@@ -174,12 +176,14 @@ int main(int argc, char* argv[]) {
   sfx.init();
   SettingsBridge settings_bridge(setting);
   HistoryBridge history_bridge;
+  ModelsBridge models_bridge;
   OverlayBridge overlay_bridge;
   QQmlApplicationEngine engine;
   engine.rootContext()->setContextProperty("waves", &waves);
   engine.rootContext()->setContextProperty("sfx", &sfx);
   engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
   engine.rootContext()->setContextProperty("historyBridge", &history_bridge);
+  engine.rootContext()->setContextProperty("modelsBridge", &models_bridge);
   engine.rootContext()->setContextProperty("overlayBridge", &overlay_bridge);
 
   engine.loadFromModule("Gladys", "Splash");
@@ -190,8 +194,7 @@ int main(int argc, char* argv[]) {
   QObject* splash = engine.rootObjects().first();
 
   // gladys-asr and gladys-llm are separate processes owned by the core.
-  const QString model_dir = QCoreApplication::applicationDirPath() +
-    "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8";
+  const QString model_dir = default_model_path(ModelKind::Asr);
   Core core(model_dir, paste);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &core, &Core::update_config);
   // The lambda's context is data, so it runs on the Data thread.
@@ -211,8 +214,9 @@ int main(int argc, char* argv[]) {
   QObject::connect(&core, &Core::RECORDING_CHANGED, &levels, &AudioLevels::set_active);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &sfx, &Sfx::update);
   QObject::connect(&core, &Core::RECORDING_CHANGED, &sfx, &Sfx::play_toggle);
-  // Storage opens before settings load. A failure raises the popup; the app keeps running on defaults.
-  // The popup is appended after the splash, so rootObjects().first() and .last() stay valid.
+  // Storage opens before settings load. A failure raises the popup; the app keeps running on
+  // defaults. The popup is appended after the splash, so rootObjects().first() and .last() stay
+  // valid.
   QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
     engine.loadFromModule("Gladys", "StorageError");
     QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
@@ -262,7 +266,8 @@ int main(int argc, char* argv[]) {
     overlay_window->setScreen(screen_named(s.value("screen").toString()));
   };
   QVariantMap current;
-  QMetaObject::invokeMethod(setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
+  QMetaObject::invokeMethod(
+    setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
   apply_appearance(current);
   sfx.update(current);
   toggle->set_profile(current.value("hotkeyProfile").toString());
@@ -281,13 +286,14 @@ int main(int argc, char* argv[]) {
     QMetaObject::invokeMethod(overlay, "openSettings");
   });
 
-  QObject::connect(&core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
-    qCInfo(lcToggle) << (recording ? "window open" : "window close");
-    overlay->setProperty("recording", recording);
+  QObject::connect(
+    &core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
+      qCInfo(lcToggle) << (recording ? "window open" : "window close");
+      overlay->setProperty("recording", recording);
 #ifndef _WIN32
-    overlay_window->requestActivate();
+      overlay_window->requestActivate();
 #endif
-  });
+    });
   QObject::connect(&core, &Core::PROCESSING_CHANGED, overlay, [overlay](bool processing) {
     overlay->setProperty("processing", processing);
   });

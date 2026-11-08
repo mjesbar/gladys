@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QJsonArray>
 
+#include "../../modules/aimodmgr/aimodmgr.hpp"
 #include "../server.hpp"
 #include "prompt.hpp"
 
@@ -22,8 +23,7 @@ static QString llama_dir() {
 QString llama_server_program() { return llama_dir() + "/" + LLAMA_SERVER_BINARY; }
 
 QStringList llama_server_args() {
-  return QStringList() << "--model" << llama_dir() + "/models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
-                       << "--ctx-size" << "4096"
+  return QStringList() << "--model" << default_model_path(ModelKind::Llm) << "--ctx-size" << "4096"
                        << "--temperature" << "0.7"
                        << "--top-p" << "0.9"
                        << "--reasoning" << "off"

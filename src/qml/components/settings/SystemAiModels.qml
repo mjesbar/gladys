@@ -1,11 +1,11 @@
-// SystemAiModels - System > AI Models. Not implemented yet.
+// SystemAiModels - System > AI Models: install or uninstall the LLM and ASR models.
 
 pragma ComponentBehavior: Bound
 
 import ".."
 
 Section {
-  title: qsTr("AI Models")
+    title: qsTr("AI Models")
 
-  Note { text: qsTr("Not implemented yet") }
+    SystemModelList {}
 }

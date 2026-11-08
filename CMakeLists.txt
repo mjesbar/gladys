@@ -39,6 +39,7 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/core.cc
   src/apis/llm/llm.cc
   src/apis/llm/prompt.cc
+  src/modules/aimodmgr/aimodmgr.cc
   src/modules/data/data.cc
   src/modules/log/log.cc
   src/modules/keytoggle/toggle.cc
@@ -127,6 +128,7 @@ qt_add_qml_module(gladys
     src/qml/components/settings/FormatEnableLlm.qml
     src/qml/components/settings/SystemCloudLocal.qml
     src/qml/components/settings/SystemAiModels.qml
+    src/qml/components/settings/SystemModelList.qml
     src/qml/components/settings/SoundEnableSoundEffects.qml
     src/qml/components/settings/SoundFxs.qml
     src/qml/components/settings/AppearanceOverlaySize.qml

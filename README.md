@@ -127,8 +127,6 @@ export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/msvc2022_64    # Windows (Git Bash)
 git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
-scripts/fetch-deps.sh                                   # host OS/arch (default)
-scripts/fetch-deps.sh --os linux --arch x64             # --os: linux | macos | windows
                                                         # --arch: x64 | arm64
 
 scripts/build.sh                                        # host OS/arch (default)
@@ -177,7 +175,6 @@ Artifacts land in `$GLADYS_SPACE/release/`.
 
 - [Qt 6.8+](https://www.qt.io/) — Core, Gui, Qml, Quick, QuickControls2, Widgets, Network, Svg, HttpServer, Sql
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text, bundled libs in `src/include/sherpa-onnx`
-- [llama.cpp](https://github.com/ggml-org/llama.cpp) — local `llama-server` (fetched by `scripts/fetch-deps.sh`)
 - [miniaudio](https://miniaud.io/) — audio capture (single header, bundled in `src/include/miniaudio`)
 - [Vulkan](https://www.vulkan.org/) — GPU acceleration for llama.cpp on Windows and Linux (optional, recommended)
 - X11 development headers (Linux build)
@@ -191,10 +188,8 @@ Artifacts land in `$GLADYS_SPACE/release/`.
 gladys/
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── dist/                    # runtime deps (fetch-deps.sh); build output is in the build space
 ├── scripts/
 │   ├── build.sh
-│   ├── fetch-deps.sh
 │   ├── package.sh
 │   ├── qt-install.sh
 │   ├── linux/uinput.sh

@@ -13,7 +13,6 @@
 ```txt
 scripts/qt-install.sh linux              # Qt -> $HOME/gladys/qt-6.8.3/gcc_64
 export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64
-scripts/fetch-deps.sh                    # llama.cpp + models -> $HOME/gladys/dist/
 scripts/build.sh                         # build -> $HOME/gladys/build, install -> $HOME/gladys/dist/
 ```
 
