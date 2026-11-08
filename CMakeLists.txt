@@ -54,6 +54,7 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/ui/osshadow.cc
   src/modules/ui/waves.cc
   src/modules/ui/history.cc
+  src/modules/ui/overlay.cc
   src/modules/ui/settings.cc
   src/modules/ui/tray.cc
 )
@@ -79,7 +80,6 @@ qt_add_qml_module(gladys
     src/qml/components/MicGreat.qml
     src/qml/components/MicMinimal.qml
     src/qml/components/MicBasic.qml
-    src/qml/components/overlay/OverlayProfiles.js
     src/qml/components/Section.qml
     src/qml/components/Note.qml
     src/qml/components/PagedList.qml

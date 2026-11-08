@@ -3,7 +3,6 @@
 import QtQuick
 import QtQuick.Window
 import "../components"
-import "../components/overlay/OverlayProfiles.js" as Profiles
 
 Window {
     id: overlay
@@ -13,8 +12,8 @@ Window {
     property string placement: "up"
     property string overlaySize: "Minimal"
     readonly property bool expanded: recording || processing
-    readonly property var profile: Profiles.profile(overlaySize, placement)
-    readonly property var anchor: Profiles.dotCenter(placement, Screen.width, Screen.height)
+    readonly property var profile: overlayBridge.profile(overlaySize, placement)
+    readonly property var anchor: overlayBridge.dot_center(placement, Screen.width, Screen.height)
 
     width: profile.width
     height: profile.height

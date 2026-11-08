@@ -23,6 +23,7 @@
 #include "modules/log/log.hpp"
 #include "modules/settings/setting.hpp"
 #include "modules/ui/history.hpp"
+#include "modules/ui/overlay.hpp"
 #include "modules/ui/waves.hpp"
 #include "modules/ui/settings.hpp"
 #include "modules/ui/tray.hpp"
@@ -173,11 +174,13 @@ int main(int argc, char* argv[]) {
   sfx.init();
   SettingsBridge settings_bridge(setting);
   HistoryBridge history_bridge;
+  OverlayBridge overlay_bridge;
   QQmlApplicationEngine engine;
   engine.rootContext()->setContextProperty("waves", &waves);
   engine.rootContext()->setContextProperty("sfx", &sfx);
   engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
   engine.rootContext()->setContextProperty("historyBridge", &history_bridge);
+  engine.rootContext()->setContextProperty("overlayBridge", &overlay_bridge);
 
   engine.loadFromModule("Gladys", "Splash");
   if (engine.rootObjects().isEmpty()) {
