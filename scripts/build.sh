@@ -79,7 +79,7 @@ esac
 
 
 sha256_of() {
-  if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi
+  if command -v sha256sum >/dev/null; then sha256sum < "$1" | cut -d' ' -f1; else shasum -a 256 < "$1" | cut -d' ' -f1; fi
 }
 
 
@@ -95,6 +95,7 @@ fetch() {
     echo "[build] checksum mismatch: $(basename "$dest")" >&2
     exit 1
   fi
+  echo "[build] checksum OK: $(basename "$dest")"
   mv "$dest.part" "$dest"
   echo "[build] download $(basename "$dest") OK"
 }
