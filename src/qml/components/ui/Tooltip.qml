@@ -3,7 +3,7 @@
 import QtQuick
 import QtQuick.Controls.Basic as Basic
 import "." as Ui
-import ".."
+import "../.."
 
 Basic.ToolTip {
   id: tip
@@ -11,7 +11,7 @@ Basic.ToolTip {
   delay: 500
 
   background: Rectangle {
-    radius: Theme.radius
+    radius: Theme.radiusMd
     color: Theme.surface
     border.color: Theme.border
   }

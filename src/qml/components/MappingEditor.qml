@@ -5,11 +5,20 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic
 import "ui" as Ui
+import ".."
 
 Column {
   id: editor
 
   property string toHint: qsTr("Replacement")
+
+  signal edited()
+
+  readonly property bool hovered: hover.hovered
+
+  HoverHandler {
+    id: hover
+  }
 
   width: parent.width
   spacing: 12
@@ -45,6 +54,7 @@ Column {
     fromField.clear();
     toField.clear();
     fromField.forceActiveFocus();
+    editor.edited();
   }
 
   ListModel {
@@ -56,8 +66,14 @@ Column {
 
     width: parent.width
     height: 180
+    spacing: 8
     clip: true
     model: mappingModel
+
+    ScrollBar.vertical: ScrollBar {
+      policy: ScrollBar.AsNeeded
+      width: Theme.spacingMd
+    }
 
     delegate: Row {
       id: row
@@ -66,7 +82,7 @@ Column {
       required property string from
       required property string to
 
-      width: aliasView.width
+      width: aliasView.width - Theme.spacingMd  // rows stop at the scrollbar lane
       height: 40
       spacing: 8
 
@@ -74,13 +90,19 @@ Column {
         width: (row.width - 56) / 2
         height: parent.height
         text: row.from
-        onEditingFinished: mappingModel.setProperty(row.index, "from", text.trim())
+        onEditingFinished: {
+          mappingModel.setProperty(row.index, "from", text.trim());
+          editor.edited();
+        }
       }
       Ui.Input {
         width: (row.width - 56) / 2
         height: parent.height
         text: row.to
-        onEditingFinished: mappingModel.setProperty(row.index, "to", text.trim())
+        onEditingFinished: {
+          mappingModel.setProperty(row.index, "to", text.trim());
+          editor.edited();
+        }
       }
       Ui.Button {
         y: (parent.height - height) / 2
@@ -88,7 +110,10 @@ Column {
         iconSource: "qrc:/icons/trash.svg"
         ToolTip.visible: hovered
         ToolTip.text: qsTr("Remove")
-        onClicked: mappingModel.remove(row.index)
+        onClicked: {
+          mappingModel.remove(row.index);
+          editor.edited();
+        }
       }
     }
   }

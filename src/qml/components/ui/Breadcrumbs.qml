@@ -4,7 +4,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import "." as Ui
-import ".."
+import "../.."
 
 Row {
   id: trail

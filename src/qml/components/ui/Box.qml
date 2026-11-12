@@ -1,7 +1,7 @@
 // Box - Bordered surface that holds its content with padding.
 
 import QtQuick
-import ".."
+import "../.."
 
 Rectangle {
   id: box
@@ -11,7 +11,7 @@ Rectangle {
 
   color: Theme.surface
   border.color: Theme.border
-  radius: Theme.radius
+  radius: Theme.radiusMd
   implicitHeight: body.childrenRect.height + 2 * padding
 
   Item {

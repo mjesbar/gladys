@@ -3,7 +3,7 @@
 import QtQuick
 import "." as Ui
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.RadioButton {
   id: radio
@@ -18,8 +18,11 @@ Basic.RadioButton {
     implicitWidth: 16
     implicitHeight: 16
     radius: 8
-    color: Theme.surface
-    border.color: radio.checked ? Theme.accent : Theme.border
+    color: radio.hovered ? Theme.hover : Theme.surface
+    border.color: radio.checked ? Theme.accent : radio.hovered ? Theme.muted : Theme.border
+
+    Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+    Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
 
     Rectangle {
       anchors.centerIn: parent

@@ -1,6 +1,7 @@
 // Note - Muted text note for hints and placeholders.
 
 import QtQuick
+import ".."
 
 Text {
   color: Theme.text

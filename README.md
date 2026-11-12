@@ -6,135 +6,131 @@
   <img src="src/assets/icons/title.svg" alt="Gladys" height="72">
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-PolyForm%20Shield%201.0.0-blue" alt="License: PolyForm Shield 1.0.0">
+  <img src="https://img.shields.io/badge/Qt-6.8%2B-41CD52" alt="Qt 6.8+">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C" alt="C++17">
+  <img src="https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey" alt="Linux | Windows | macOS">
+</p>
+
 **Fully local, cross-platform dictation tool.**  
 Speak, and your words appear where you need them — no cloud, no API keys, no AI agent services.
 
-Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) for speech-to-text and [llama.cpp](https://github.com/ggml-org/llama.cpp) for local transcription formatting. It works on **Windows** and **Linux** (Vulkan GPU support, any vendor). **macOS** is in progress.
+Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) for speech-to-text and [llama.cpp](https://github.com/ggml-org/llama.cpp) for local transcription formatting. It runs on **Windows**, **Linux** and **macOS** (Vulkan GPU support on Windows and Linux, any vendor).
 
 ---
 
-## Supported platforms
+# Product
 
-| Platform | Architecture | Build host |
-|---|---|---|
-| Linux | x64 | Linux x86_64 |
-| Windows | x64 | Windows x86_64 |
-| macOS | arm64 | Apple Silicon (Intel host can build, cannot run) |
+### Features
 
----
-
-## Features
-
-| Feature | Description |
-|---|---|
-| 100% local | No remote API calls, no data leaves your machine |
-| Direct paste | Text is copied and pasted into the focused input (chat, search, editors) |
-| Global hotkey | Toggles recording on/off from any application |
-| Microphone selection | Choose the capture device in Settings |
-| Dictionary | Word replacements applied during formatting (e.g. `gladys` → `Gladys`) |
-| Style options | Markdown mode, allow accents, allow punctuation |
+| Feature              | Description                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| 100% local           | No remote API calls, no data leaves your machine                                     |
+| Direct paste         | Text is copied and pasted into the focused input                                     |
+| Global hotkey        | Toggle or Hold to record from any application. Profiles: `Ctrl+Alt+P`, `Fn`, `AltGr` |
+| Microphone selection | Choose the capture device in Settings                                                |
+| Dictionary           | Word replacements applied during formatting (e.g. `gladys` → `Gladys`)               |
+| Style options        | Markdown mode, allow accents, allow punctuation                                      |
 
 ---
 
-## How it works
+### Architecture
+
+![Architecture](src/assets/Architecture.png)
+
+---
+
+### Usage
 
 ```txt
- ┌──────────┐  hotkey  ┌───────────────┐  final text  ┌──────────────────┐
- │ Hotkey   │ ───────► │ STT           │ ───────────► │ LLM (llama-server)│
- │ toggle   │          │ miniaudio +   │              │ 127.0.0.1:8080   │
- └──────────┘          │ sherpa-onnx   │              └────────┬─────────┘
-                       └───────┬───────┘                       │ formatted text
-                               │ audio levels                  ▼
-                       ┌───────▼───────┐              ┌──────────────────┐
-                       │ Mic overlay   │              │ Paste            │
-                       │ (wave bars)   │              │ copy + Ctrl+Shift+V
-                       └───────────────┘              └──────────────────┘
+ Settings
+ ├── System      Store transcriptions
+ ├── Sound       Input source (microphone), sound effects
+ ├── Appearance  Theme, overlay size, position
+ ├── Format      Dictionary, snippets, modes, enable LLM
+ ├── Keyboard    Push to talk / toggle, shortcuts
+ └── History     Logs, status, errors, activity
 ```
 
-1. Press the hotkey — the mic overlay opens and audio is captured.
-2. Speech is buffered while recording and transcribed by sherpa-onnx on stop.
-3. On stop, the raw text is sent to the local `llama-server` for formatting (casing, punctuation, dictionary).
-4. The result is copied to the clipboard and pasted with `Ctrl+Shift+V` (plain text).
-
-If the LLM fails, the raw transcription is pasted, so no dictation is lost.
+1. Launch Gladys — a splash screen loads, then the tray icon appears.
+2. Press the hotkey (default `Ctrl+Alt+P`) to start recording.
+3. Speak; the overlay shows live audio levels.
+4. Press the hotkey again to stop. The formatted text is pasted automatically.
 
 ---
 
-## Hotkeys
+### Platform Security Notes
 
-| Platform | Toggle recording | Backend |
-|---|---|---|
-| Linux | `Ctrl+Alt+P` | X11 `XGrabKey` |
-| Windows | `Ctrl+Alt+P` | `SetWindowsHookEx` (low-level keyboard) |
-| macOS | `Ctrl+Option+P` | `CGEventTap` |
+Gladys listens to global keystrokes to detect the hotkey and injects keystrokes to paste. Both behaviours are similar to a keylogger, so this table lists exactly what is used under the hood.
 
----
+| Platform | Hotkey capture (keystrokes in)        | Paste injection (keystrokes out) | Clipboard                | Permissions                   |
+| -------- | ------------------------------------- | -------------------------------- | ------------------------ | ----------------------------- |
+| Linux    | evdev, reads `/dev/input/event*`      | `/dev/uinput` virtual keyboard   | `wl-copy` (wl-clipboard) | uinput access, `wl-clipboard` |
+| Windows  | `SetWindowsHookEx` (`WH_KEYBOARD_LL`) | `SendInput`                      | Qt `QClipboard`          | Run as Administrator          |
+| macOS    | `CGEventTap`                          | `CGEvent`                        | Qt `QClipboard`          | Accessibility permission      |
 
-## Platform notes
-
-| Platform | Clipboard | Paste backend | Extra setup |
-|---|---|---|---|
-| Linux | `wl-copy` | `/dev/uinput` virtual keyboard | `wl-clipboard`, uinput access |
-| Windows | Qt clipboard | `SendInput` | None |
-| macOS | Qt clipboard | `CGEvent` | Accessibility permission |
+- Audio is captured with [miniaudio](https://miniaud.io/) and transcribed locally. Nothing is sent over the network.
+- Transcription history is stored in plaintext in a local SQLite database (`history.db`).
+- Keystrokes are only used for the hotkey and the paste shortcut. Keystroke content is not logged.
 
 ---
 
-## Dependencies
-
-- [Qt 6.8+](https://www.qt.io/) — Core, Gui, Widgets, Network, Svg
-- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text (bundled libs in `src/include/sherpa-onnx`)
-- [llama.cpp](https://github.com/ggml-org/llama.cpp) — local `llama-server` (fetched by script)
-- [miniaudio](https://miniaud.io/) — audio capture (single header, bundled)
-- [Vulkan](https://www.vulkan.org/) — GPU acceleration for llama.cpp (optional, recommended)
-- X11 development headers (Linux)
-- `wl-clipboard` (Linux runtime)
-
----
-
-## Models
-
-| Component | Model | Purpose |
-|---|---|---|
-| STT | `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8` | Multilingual offline speech recognition |
-| LLM | `Llama-3.2-1B-Instruct-Q4_K_M.gguf` | Transcription formatting |
-
----
-
-## Build from source
+# Build
 
 ### Prerequisites
 
-| Tool | Version |
-|---|---|
-| CMake | 3.21+ |
-| C++ compiler | C++17 |
-| Qt | 6.8+ |
+| Tool         | Version |
+| ------------ | ------- |
+| CMake        | 3.21+   |
+| C++ compiler | C++17   |
+| Qt           | 6.8+    |
 
-Install Qt with [aqt](https://github.com/miurahr/aqtinstall) (requires `pip install aqtinstall`):
+#### 1. Install aqtinstall
 
 ```bash
-scripts/qt-install.sh linux     # or: windows / macos
+pip install aqtinstall
+```
+
+#### 2. Install Qt
+
+```bash
+scripts/qt-install.sh                                    # host OS/arch (default)
+scripts/qt-install.sh --os linux --arch x64              # --os: linux | macos | windows
+                                                         # --arch: x64 | arm64
 ```
 
 Installs into the build space and prints the `QT_ROOT_DIR` export line.
 
-Linux only:
+#### 3. Install Linux packages (Linux only)
 
 ```bash
 # Debian/Ubuntu
 sudo apt install libx11-dev wl-clipboard
 ```
 
-### Build
+---
+
+### Build from source
+
+#### 1. Set QT_ROOT_DIR
+
+```bash
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64         # Linux
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/macos          # macOS
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/msvc2022_64    # Windows (Git Bash)
+```
+
+#### 2. Clone, fetch dependencies and build
 
 ```bash
 git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
-export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64
-scripts/fetch-deps.sh
-scripts/build.sh
+                                                        # --arch: x64 | arm64
+
+scripts/build.sh                                        # host OS/arch (default)
+scripts/build.sh --os linux --arch x64 --ma-debug off   # --ma-debug: on | off (miniaudio debug output)
 ```
 
 Build space (default `$HOME/gladys`, override with `GLADYS_SPACE`):
@@ -147,57 +143,53 @@ $GLADYS_SPACE/
 └── qt-6.8.3/   Qt install (QT_ROOT_DIR)
 ```
 
-### Run
+#### 3. Run
 
 ```bash
 $HOME/gladys/dist/gladys
 ```
 
-### Linux: enable paste (uinput)
+#### 4. Package
 
 ```bash
-scripts/linux/uinput.sh allow   # asks for root via pkexec
-# log out and back in
-scripts/linux/uinput.sh deny    # revoke
-```
-
-### Package
-
-```bash
-# Set QT_ROOT_DIR, then:
-scripts/package.sh linux x64 1.0.0   # or: windows x64 / macos arm64 1.0.0
+scripts/package.sh --version 1.0.0                      # host OS/arch (default)
+scripts/package.sh --os linux --arch x64 --version 1.0.0  # --os: linux | macos | windows
+                                                        # --arch: x64 | arm64
+                                                        # --version: release version (required)
 ```
 
 Artifacts land in `$GLADYS_SPACE/release/`.
 
----
-
-## Usage
-
-```txt
- Tray icon ──► Right-click ──► Settings
-                              ├── Input source (microphone)
-                              ├── Dictionary (from → to)
-                              └── Style: markdown / accents / punctuation
-```
-
-1. Launch Gladys — a splash screen loads the models, then the tray icon appears.
-2. Press `Ctrl+Alt+P` (`Ctrl+Option+P` on macOS) to start recording.
-3. Speak; the overlay shows live audio levels.
-4. Press the hotkey again to stop. The formatted text is pasted automatically.
+> [!WARNING]
+> **Linux: enable paste (uinput)**
+>
+> ```bash
+> scripts/linux/uinput.sh allow   # allow: grant /dev/uinput access (asks for root via pkexec)
+> # log out and back in
+> scripts/linux/uinput.sh deny    # deny: revoke /dev/uinput access
+> ```
 
 ---
 
-## Project structure
+### Dependencies
+
+- [Qt 6.8+](https://www.qt.io/) — Core, Gui, Qml, Quick, QuickControls2, Widgets, Network, Svg, HttpServer, Sql
+- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text, bundled libs in `src/include/sherpa-onnx`
+- [miniaudio](https://miniaud.io/) — audio capture (single header, bundled in `src/include/miniaudio`)
+- [Vulkan](https://www.vulkan.org/) — GPU acceleration for llama.cpp on Windows and Linux (optional, recommended)
+- X11 development headers (Linux build)
+- `wl-clipboard` (Linux runtime)
+
+---
+
+### Project structure
 
 ```txt
 gladys/
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── dist/                    # runtime deps (fetch-deps.sh); build output is in the build space
 ├── scripts/
 │   ├── build.sh
-│   ├── fetch-deps.sh
 │   ├── package.sh
 │   ├── qt-install.sh
 │   ├── linux/uinput.sh
@@ -205,33 +197,45 @@ gladys/
 │   └── windows/README.md
 └── src/
     ├── main.cc              # entry point, wires modules, shutdown
-    ├── assets/              # fonts, icons, QSS theme
+    ├── core.cc/.hpp         # pipeline: hotkey -> ASR -> LLM -> clipboard -> paste
+    ├── assets/              # fonts, icons, keyboard, overlay, sfx, QSS/QML theme
     ├── include/             # miniaudio, sherpa-onnx headers + libs
-    └── modules/
-        ├── ai/              # stt (sherpa-onnx), llm (llama-server)
-        ├── key/             # toggle (hotkey), paste (keystrokes)
-        ├── log/             # per-module Qt logging categories
-        ├── setting/         # persistent preferences (QSettings)
-        └── ui/              # app_window, mic, splash, setting_window
+    ├── apis/
+    │   ├── asr/             # gladys-asr process: stt (sherpa-onnx), HTTP server
+    │   ├── llm/             # llama-server launch, prompt, chat request
+    │   └── server.hpp       # ports and endpoints
+    ├── modules/
+    │   ├── audio/           # levels, sfx
+    │   ├── data/            # SQLite owner (history.db)
+    │   ├── keypaste/        # paste: uinput / CGEvent / SendInput
+    │   ├── keytoggle/       # toggle: evdev / CGEventTap / SetWindowsHookEx
+    │   ├── log/             # per-module Qt logging categories
+    │   ├── settings/        # persistent preferences per menu
+    │   └── ui/              # tray, overlay, settings window, history, waves
+    └── qml/
+        ├── Theme.qml
+        ├── components/      # ui/ kit, settings/ pages, mic widgets
+        └── windows/         # Overlay, Splash, Settings, StorageError
 ```
 
 ---
 
-## License
+# License
 
-[GNU General Public License v3.0](LICENSE)
+[PolyForm Shield License 1.0.0](LICENSE)
 
 ---
 
-## Acknowledgements
+# Acknowledgements
 
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) — local LLM inference
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text engine
 - [miniaudio](https://miniaud.io/) — audio capture library
+- [Kompute](https://github.com/KomputeProject/kompute) — Vulkan compute
 
 ---
 
-## Contributing
+# Contributing
 
 Contributions, issues, and feature requests are welcome.  
 Open an [issue](https://github.com/mjesbar/gladys/issues) or submit a pull request.

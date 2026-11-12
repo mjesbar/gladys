@@ -64,7 +64,7 @@ mkdir -p "$SPACE" && [ -w "$SPACE" ] || { echo "Build space not writable: $SPACE
 [ ! -e "$QT_DIR/$DIR" ] || { echo "Already installed: $QT_DIR/$DIR" >&2; exit 1; }
 
 echo "[qt] aqt install $QT_VER $AQT_ARCH ..."
-# qthttpserver: Qt6::HttpServer (used by gladys-asr and gladys-llm); needs qtwebsockets.
+# qthttpserver: Qt6::HttpServer (used by gladys-asr and gladys); needs qtwebsockets.
 LOG_CFG=$(pwd)/scripts/aqtinstall.ini aqt install-qt \
   -O "$QT_DIR" \
   "$HOST" desktop "$QT_VER" "$AQT_ARCH" \

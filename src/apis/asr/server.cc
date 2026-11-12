@@ -1,4 +1,4 @@
-// gladys-asr - Speech-to-text API: GET /alive, POST /transcribe on 127.0.0.1:8081.
+// gladys-asr - Speech-to-text API: GET /alive, POST /transcribe on 127.0.0.1:26000.
 // Usage: gladys-asr <model_dir>. Exits when its stdin closes.
 
 #include <QCoreApplication>

@@ -1,28 +1,34 @@
 // Gladys - Entry point. Starts the module threads, the core and the UI. Owns shutdown.
 
 #include <QApplication>
+#include <QEventLoop>
 #include <QFont>
 #include <QFontDatabase>
 #include <QIcon>
-#include <QEventLoop>
-#include <vector>
 #include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QScreen>
 #include <QSocketNotifier>
 #include <QThread>
 #include <QWindow>
+#include <vector>
 
 #include "core.hpp"
+#include "modules/aimodmgr/aimodmgr.hpp"
+#include "modules/audio/levels.hpp"
+#include "modules/audio/sfx.hpp"
+#include "modules/data/data.hpp"
 #include "modules/keypaste/paste.hpp"
 #include "modules/keytoggle/toggle.hpp"
-#include "modules/audio/levels.hpp"
 #include "modules/log/log.hpp"
 #include "modules/settings/setting.hpp"
-#include "modules/ui/waves.hpp"
+#include "modules/ui/history.hpp"
+#include "modules/ui/osshadow.hpp"
+#include "modules/ui/overlay.hpp"
 #include "modules/ui/settings.hpp"
 #include "modules/ui/tray.hpp"
-#include "modules/ui/osshadow.hpp"
+#include "modules/ui/waves.hpp"
 #ifdef __APPLE__
 #include "modules/ui/macos.hpp"
 #endif
@@ -77,6 +83,16 @@ static void load_fonts() {
   QFontDatabase::addApplicationFont(":/fonts/Molle-Regular.ttf");
 }
 
+// The connected screen with this name, or the primary screen when it is not connected.
+static QScreen* screen_named(const QString& name) {
+  for (QScreen* screen : QGuiApplication::screens()) {
+    if (screen->name() == name) {
+      return screen;
+    }
+  }
+  return QGuiApplication::primaryScreen();
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
   if (!set_dll_directory()) return 1;
@@ -98,7 +114,8 @@ int main(int argc, char* argv[]) {
   app.setFont(ui_font);
   qCInfo(lcMain) << "started";
 
-  // Each module runs on its own thread. Settings owns QSettings and the device list.
+  // Each module runs on its own thread. Settings owns the in-memory preferences and the device
+  // list.
   Setting* setting = new Setting();
   QThread* settings_thread = new QThread(&app);
   setting->moveToThread(settings_thread);
@@ -121,24 +138,33 @@ int main(int argc, char* argv[]) {
   QThread* paste_thread = new QThread(&app);
   paste->moveToThread(paste_thread);
 
-  for (QThread* t : {settings_thread, toggle_thread, paste_thread}) {
+  // Data is the only module that touches SQLite. It owns its thread and its single connection.
+  Data* data = Data::create();
+  QThread* data_thread = new QThread(&app);
+  data->moveToThread(data_thread);
+
+  for (QThread* t : {settings_thread, toggle_thread, paste_thread, data_thread}) {
     t->start();
   }
   // Stops the module threads on every return path, including startup failures.
+  // Data closes after the queued writes, which sit ahead of the close call in its queue.
   struct ThreadStopper {
     std::vector<QThread*> threads;
     Toggle* toggle;
+    Data* data;
     ~ThreadStopper() {
       qCInfo(lcMain) << "quitting";
 #ifdef __APPLE__
       toggle->stop();  // the macOS hotkey loop runs inside start(), so quit() cannot end it
 #endif
+      QMetaObject::invokeMethod(data, "close", Qt::BlockingQueuedConnection);
       for (QThread* t : threads) {
         t->quit();
         t->wait();
       }
+      delete data;
     }
-  } stop_threads{{settings_thread, toggle_thread, paste_thread}, toggle};
+  } stop_threads{{settings_thread, toggle_thread, paste_thread, data_thread}, toggle, data};
 
   // Settings bridge calls the settings thread, so it starts after the thread.
   Waves waves;
@@ -146,10 +172,19 @@ int main(int argc, char* argv[]) {
   if (!levels.init()) {
     return 1;
   }
+  Sfx sfx;
+  sfx.init();
   SettingsBridge settings_bridge(setting);
+  HistoryBridge history_bridge;
+  ModelsBridge models_bridge;
+  OverlayBridge overlay_bridge;
   QQmlApplicationEngine engine;
   engine.rootContext()->setContextProperty("waves", &waves);
+  engine.rootContext()->setContextProperty("sfx", &sfx);
   engine.rootContext()->setContextProperty("settingsBridge", &settings_bridge);
+  engine.rootContext()->setContextProperty("historyBridge", &history_bridge);
+  engine.rootContext()->setContextProperty("modelsBridge", &models_bridge);
+  engine.rootContext()->setContextProperty("overlayBridge", &overlay_bridge);
 
   engine.loadFromModule("Gladys", "Splash");
   if (engine.rootObjects().isEmpty()) {
@@ -158,17 +193,40 @@ int main(int argc, char* argv[]) {
   }
   QObject* splash = engine.rootObjects().first();
 
-  // gladys-asr and gladys-llm are separate processes owned by the core.
-  const QString model_dir = QCoreApplication::applicationDirPath() +
-    "/sherpaonnx/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8";
+  // Storage opens before settings load. A failure raises the popup; the app keeps running on
+  // defaults. The popup is appended after the splash, so rootObjects().first() and .last() stay
+  // valid.
+  QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
+    engine.loadFromModule("Gladys", "StorageError");
+    QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
+  });
+  QMetaObject::invokeMethod(data, "open", Qt::BlockingQueuedConnection);
+  QMetaObject::invokeMethod(setting, "load", Qt::BlockingQueuedConnection);
+
+  // gladys-asr and gladys-llm are separate processes owned by the core. Models come from the settings, so this follows open.
+  const QString model_dir = selected_model_path(ModelKind::Asr);
   Core core(model_dir, paste);
+  QObject::connect(&models_bridge, &ModelsBridge::selected, &core,
+    [&core](int kind) { core.reload(static_cast<ModelKind>(kind)); });
+  QObject::connect(&core, &Core::LOADING_CHANGED, &models_bridge, &ModelsBridge::set_loading);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &core, &Core::update_config);
-  QObject::connect(toggle, &Toggle::KEY_PRESSED, &core, &Core::toggle_recording);
+  // The lambda's context is data, so it runs on the Data thread.
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, data, [data](const QVariantMap& s) {
+    data->set_toggles(s.value("storeTranscriptions").toBool(), s.value("storeLogs").toBool());
+  });
+  QObject::connect(toggle, &Toggle::KEY_PRESSED, &core, &Core::hotkey_down);
+  QObject::connect(toggle, &Toggle::KEY_RELEASED, &core, &Core::hotkey_up);
+  // Runs on the GUI thread: the macOS hotkey loop does not process queued Qt events.
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &app, [toggle](const QVariantMap& s) {
+    toggle->set_profile(s.value("hotkeyProfile").toString());
+  });
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &levels, [&levels](const QVariantMap& s) {
     levels.set_source(s.value("inputSource").toString());
   });
   QObject::connect(&levels, &AudioLevels::LEVELS_UPDATED, &waves, &Waves::update_levels);
   QObject::connect(&core, &Core::RECORDING_CHANGED, &levels, &AudioLevels::set_active);
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, &sfx, &Sfx::update);
+  QObject::connect(&core, &Core::RECORDING_CHANGED, &sfx, &Sfx::play_toggle);
   // Publish after the connections exist, so the initial settings are not lost.
   QMetaObject::invokeMethod(setting, "publish");
   QObject::connect(&core, &Core::FAILED, &app, [&app](const QString& reason) {
@@ -204,6 +262,19 @@ int main(int argc, char* argv[]) {
     qCCritical(lcMain) << "overlay root is not a window";
     return 1;
   }
+  // Position, Overlay Size and Screen: current values now, then every change.
+  auto apply_appearance = [overlay, overlay_window](const QVariantMap& s) {
+    overlay->setProperty("placement", s.value("position"));
+    overlay->setProperty("overlaySize", s.value("overlaySize"));
+    overlay_window->setScreen(screen_named(s.value("screen").toString()));
+  };
+  QVariantMap current;
+  QMetaObject::invokeMethod(
+    setting, "snapshot", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QVariantMap, current));
+  apply_appearance(current);
+  sfx.update(current);
+  toggle->set_profile(current.value("hotkeyProfile").toString());
+  QObject::connect(setting, &Setting::SETTINGS_CHANGED, overlay, apply_appearance);
   remove_x11_shadow(overlay_window->winId());
 #ifdef __APPLE__
   configure_macos_overlay(overlay_window->winId());
@@ -218,13 +289,14 @@ int main(int argc, char* argv[]) {
     QMetaObject::invokeMethod(overlay, "openSettings");
   });
 
-  QObject::connect(&core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
-    qCInfo(lcToggle) << (recording ? "window open" : "window close");
-    overlay->setProperty("recording", recording);
+  QObject::connect(
+    &core, &Core::RECORDING_CHANGED, &app, [overlay, overlay_window](bool recording) {
+      qCInfo(lcToggle) << (recording ? "window open" : "window close");
+      overlay->setProperty("recording", recording);
 #ifndef _WIN32
-    overlay_window->requestActivate();
+      overlay_window->requestActivate();
 #endif
-  });
+    });
   QObject::connect(&core, &Core::PROCESSING_CHANGED, overlay, [overlay](bool processing) {
     overlay->setProperty("processing", processing);
   });

@@ -2,7 +2,7 @@
 
 import QtQuick
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.Popup {
   id: pop

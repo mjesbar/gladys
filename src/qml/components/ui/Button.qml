@@ -5,7 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import "." as Ui
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.Button {
   id: button
@@ -15,6 +15,10 @@ Basic.Button {
 
   readonly property bool primary: variant === "primary"
   readonly property bool iconOnly: variant === "icon"
+
+  HoverHandler {
+    cursorShape: Qt.PointingHandCursor
+  }
 
   implicitHeight: 40
   leftPadding: iconOnly ? 11 : 16

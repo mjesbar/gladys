@@ -3,7 +3,7 @@
 import QtQuick
 import "." as Ui
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.CheckBox {
   id: check
@@ -18,10 +18,11 @@ Basic.CheckBox {
     implicitWidth: 16
     implicitHeight: 16
     radius: 4
-    color: check.checked ? Theme.accent : Theme.surface
-    border.color: check.checked ? Theme.accent : Theme.border
+    color: check.checked ? Theme.accent : check.hovered ? Theme.hover : Theme.surface
+    border.color: check.checked ? Theme.accent : check.hovered ? Theme.muted : Theme.border
 
-    Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+    Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+    Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
 
     Rectangle {
       anchors.centerIn: parent

@@ -15,8 +15,8 @@
 #include <iostream>
 #include <string>
 
-constexpr quint16 ASR_PORT = 8081;  // GET /alive, POST /transcribe
-constexpr quint16 LLM_PORT = 8082;  // GET /alive, POST /format
+constexpr quint16 ASR_PORT = 26000;  // gladys-asr: GET /alive, POST /transcribe
+constexpr quint16 LLM_PORT = 26001;  // llama-server: GET /health, POST /v1/chat/completions
 
 static const qsizetype MAX_BODY_BYTES = 64 * 1024;
 

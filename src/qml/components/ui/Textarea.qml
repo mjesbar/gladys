@@ -2,7 +2,7 @@
 
 import QtQuick
 import QtQuick.Controls.Basic as Basic
-import ".."
+import "../.."
 
 Basic.TextArea {
   id: area
@@ -26,7 +26,7 @@ Basic.TextArea {
   }
 
   background: Rectangle {
-    radius: Theme.radius
+    radius: Theme.radiusMd
     color: Theme.surface
     border.color: area.invalid ? Theme.danger : area.activeFocus ? Theme.accent : Theme.border
 

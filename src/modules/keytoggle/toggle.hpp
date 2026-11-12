@@ -1,11 +1,15 @@
-// Toggle Module - Global hotkey (Ctrl+Alt+P) detection.
+// Toggle Module - Global hotkey for the active profile (Ctrl+Alt+P, Fn or AltGr).
 // Cross-platform: evdev /dev/input (Linux), CGEventTap (macOS), SetWindowsHookEx (Windows).
 
 #ifndef KEY_TOGGLE_HPP
 #define KEY_TOGGLE_HPP
 
 #include <QObject>
+#include <QElapsedTimer>
+#include <QString>
 #include <QTimer>
+
+#include <atomic>
 
 #ifdef __linux__
 #include <vector>
@@ -13,12 +17,12 @@
 
 #ifdef __APPLE__
 #include <CoreGraphics/CoreGraphics.h>
-
-#include <atomic>
 #endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+enum class HotkeyProfile { CtrlAltP, Fn, AltGr };
 
 class Toggle : public QObject {
   Q_OBJECT
@@ -26,6 +30,9 @@ class Toggle : public QObject {
  public:
   explicit Toggle(QObject* parent = nullptr);
   ~Toggle() override;
+
+  // Any thread: the profile is atomic, so the keytoggle thread reads it on the next key event.
+  void set_profile(const QString& name);
 
  public slots:
   void start();  // call on the keytoggle thread: the hook must live on it
@@ -36,19 +43,22 @@ class Toggle : public QObject {
 
  signals:
   void STARTED(bool ok);
-  void KEY_PRESSED();
+  void KEY_PRESSED();   // once per press; key repeat is ignored
+  void KEY_RELEASED();  // once per release of the trigger
 
  private:
   bool init();
+  void on_trigger(bool down);
 
   QTimer* m_poll_timer;
-  unsigned int m_keycode;
-  unsigned int m_modifiers;
+  std::atomic<HotkeyProfile> m_profile{HotkeyProfile::CtrlAltP};
+  std::atomic<bool> m_held{false};  // trigger is down
+  QElapsedTimer m_edge_clock;       // time since the last accepted press or release
 
 #ifdef __linux__
   std::vector<int> m_fds;  // keyboard devices in /dev/input
-  bool m_ctrl_down;
-  bool m_alt_down;
+  bool m_ctrl_down = false;
+  bool m_alt_down = false;
 #endif
 
 #ifdef __APPLE__

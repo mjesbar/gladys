@@ -74,7 +74,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-linux-x64-*.tar.gz
+          files: release/gladys-linux-x64-*
 
   # ----------------------------------------------------------------
   # Windows
@@ -109,6 +109,9 @@ jobs:
       - name: Install zip
         run: choco install zip --no-progress -y
 
+      - name: Install WiX
+        run: dotnet tool install --global wix --version 5.0.2
+
       - name: Package release
         run: scripts/package.sh --os windows --arch x64 --version ${{ needs.version.outputs.version }}
         shell: bash
@@ -121,7 +124,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-win-x64-*.zip
+          files: release/gladys-win-x64-*
 
   # ----------------------------------------------------------------
   # macOS
@@ -166,4 +169,4 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-macos-arm64-*.zip
+          files: release/gladys-macos-arm64-*

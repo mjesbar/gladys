@@ -6,314 +6,407 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import ".."
 import "../components"
 import "../components/settings"
 import "../components/ui" as Ui
 
 Window {
-  id: settings
+    id: settings
 
-  readonly property var menus: [qsTr("System"), qsTr("Sound"), qsTr("Appearance"), qsTr("Format"), qsTr("Keyboard"), qsTr("Meetings"), qsTr("History")]
-  property int current: 1  // index in menus, Sound by default
+    readonly property var menus: [qsTr("System"), qsTr("Sound"), qsTr("Appearance"), qsTr("Format"), qsTr("Keyboard"), qsTr("Meetings"), qsTr("History")]
+    property int current: 1  // index in menus, Sound by default
 
-  width: 880
-  height: 800
-  minimumWidth: 640
-  minimumHeight: 480
-  title: qsTr("Gladys Settings")
-  color: "transparent"
-  flags: Qt.Window | Qt.FramelessWindowHint
-  transientParent: null
-  visible: false
+    readonly property int sidebarWidth: 220
 
-  palette.text: Theme.text
-  palette.buttonText: Theme.text
-  palette.windowText: Theme.text
-  palette.base: Theme.surface
-  palette.highlight: Theme.hover
-  palette.highlightedText: Theme.text
+    // Narrowest window that keeps the 3 overlay cards (196 px preview + card padding) on one row.
+    width: minimumWidth
+    height: 800
+    minimumWidth: sidebarWidth + 2 * Theme.spacingXxl + 3 * (196 + 2 * Theme.spacingMd) + 2 * Theme.spacingMd
+    // Tallest the sidebar needs: title bar, top margin, all menus, bottom margin.
+    minimumHeight: titleBar.height + Theme.spacingLg + sidebar.height + Theme.spacingLg
+    title: qsTr("Gladys Settings")
+    color: "transparent"
+    flags: Qt.Window | Qt.FramelessWindowHint
+    transientParent: null
+    visible: false
 
-  onVisibleChanged: if (visible)
-    load()
+    palette.text: Theme.text
+    palette.buttonText: Theme.text
+    palette.windowText: Theme.text
+    palette.base: Theme.surface
+    palette.highlight: Theme.hover
+    palette.highlightedText: Theme.text
 
-  function load() {
-    const s = settingsBridge.load();
-    soundInputSource.load(s);
-    formatDictionary.load(s);
-    formatSnippets.load(s);
-    formatModes.load(s);
-  }
+    onVisibleChanged: if (visible)
+        load()
 
-  function apply() {
-    settingsBridge.apply(Object.assign({}, soundInputSource.values(), formatDictionary.values(), formatSnippets.values(), formatModes.values()));
-  }
+    // Live updates while the window is open; a hidden window reads nothing.
+    Connections {
+        target: historyBridge
 
-  // Rounded pseudoframe: square when maximized, since the window fills the screen.
-  Rectangle {
-    anchors.fill: parent
-    radius: settings.visibility === Window.Maximized ? 0 : Theme.radius
-    color: Theme.background
-    clip: true
-  }
-
-  // Sidebar: the main menus only.
-  Column {
-    id: sidebar
-
-    anchors.left: parent.left
-    anchors.top: titleBar.bottom
-    anchors.leftMargin: 12
-    anchors.topMargin: 16
-    width: 196
-    spacing: 4
-
-    Repeater {
-      model: settings.menus
-
-      delegate: ItemDelegate {
-        id: menuItem
-
-        required property int index
-        required property string modelData
-
-        width: sidebar.width
-        text: modelData
-        highlighted: settings.current === index
-        onClicked: settings.current = index
-
-        background: Rectangle {
-          radius: 12
-          color: menuItem.highlighted ? Theme.hover : "transparent"
+        function onTranscriptionsChanged() {
+            if (settings.visible) {
+                historyActivity.refresh();
+            }
         }
-        contentItem: Text {
-          text: menuItem.text
-          color: Theme.text
-          font: menuItem.font
-          verticalAlignment: Text.AlignVCenter
+        function onLogsChanged() {
+            if (settings.visible) {
+                historyLogs.refresh();
+                historyStatus.reload();
+                historyErrors.reload();
+            }
         }
-      }
-    }
-  }
-
-  // Page area with the apply button pinned at the bottom. Flickable margins give each page its padding.
-  Item {
-    anchors.left: sidebar.right
-    anchors.right: parent.right
-    anchors.top: titleBar.bottom
-    anchors.bottom: parent.bottom
-
-    Flickable {
-      id: flick
-
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: parent.top
-      anchors.bottom: applyButton.top
-      anchors.bottomMargin: 16
-      contentWidth: width
-      // Current page's implicit height plus 32 px padding top and bottom. StackLayout is as tall as its tallest page.
-      contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 64
-      interactive: contentHeight > height
-      clip: true
-
-      ScrollBar.vertical: ScrollBar {
-        policy: ScrollBar.AsNeeded
-      }
-
-      StackLayout {
-        id: stack
-
-        x: 32
-        y: 32
-        width: flick.width - 64
-        currentIndex: settings.current
-
-        // 0: System
-        Column {
-          spacing: 24
-
-          SystemCloudLocal {}
-          SystemAiModels {}
-          SystemStoreTranscriptions {
-            divided: false
-          }
-        }
-
-        // 1: Sound
-        Column {
-          spacing: 24
-
-          SoundInputSource {
-            id: soundInputSource
-          }
-          SoundEnableSoundEffects {}
-          SoundEnableLlm {}
-          SoundFxs {
-            divided: false
-          }
-        }
-
-        // 2: Appearance
-        Column {
-          spacing: 24
-
-          AppearanceTheme {}
-          AppearanceOverlaySize {}
-          AppearancePosition {
-            divided: false
-          }
-        }
-
-        // 3: Format
-        Column {
-          spacing: 24
-
-          FormatDictionary {
-            id: formatDictionary
-          }
-          FormatSnippets {
-            id: formatSnippets
-          }
-          FormatModes {
-            id: formatModes
-          }
-        }
-
-        // 4: Keyboard
-        Column {
-          spacing: 24
-
-          KeyboardPushToTalkToggle {}
-          KeyboardShortcuts {
-            divided: false
-          }
-        }
-
-        // 5: Meetings
-        Column {
-          spacing: 24
-
-          MeetingsMeetings {
-            divided: false
-          }
-        }
-
-        // 6: History
-        Column {
-          spacing: 24
-
-          HistoryActivity {}
-          HistoryStatus {}
-          HistoryErrors {}
-          HistoryLogs {
-            divided: false
-          }
-        }
-      }
     }
 
-    Ui.Button {
-      id: applyButton
-
-      variant: "primary"
-      text: qsTr("Apply")
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
-      anchors.margins: 32
-      onClicked: settings.apply()
+    function load() {
+        const s = settingsBridge.load();
+        soundInputSource.load(s);
+        soundEffects.load(s);
+        soundFxs.load(s);
+        appearanceOverlaySize.load(s);
+        appearancePosition.load(s);
+        appearanceScreen.load(s);
+        formatLlm.load(s);
+        formatDictionary.load(s);
+        formatSnippets.load(s);
+        formatModes.load(s);
+        hotkeyMode.load(s);
+        hotkeyProfile.load(s);
+        historyActivity.load(s);
+        historyLogs.load(s);
+        historyActivity.reload();
+        historyStatus.reload();
+        historyErrors.reload();
+        historyLogs.reload();
     }
-  }
 
-  Ui.TitleBar {
-    id: titleBar
+    Item {
+        id: frame
 
-    window: settings
-    title: settings.title
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: parent.top
-  }
+        anchors.fill: parent
 
-  // Resize grips: thin edges and corners. A drag starts a native resize. Off while maximized.
-  component Grip: MouseArea {
-    required property int edges
+        Rectangle {
+            anchors.fill: parent
+            radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
+            color: Theme.background
+        }
 
-    enabled: settings.visibility !== Window.Maximized
-    hoverEnabled: true
-    onPressed: settings.startSystemResize(edges)
-  }
+        // Sidebar: full height behind the transparent title bar. Its rounded edge is
+        // the window corner radius; the square edge strip hides its rounded right side.
 
-  Grip {
-    edges: Qt.LeftEdge
-    cursorShape: Qt.SizeHorCursor
-    width: 6
-    anchors.left: parent.left
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    anchors.topMargin: 12
-    anchors.bottomMargin: 12
-  }
-  Grip {
-    edges: Qt.RightEdge
-    cursorShape: Qt.SizeHorCursor
-    width: 6
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    anchors.topMargin: 12
-    anchors.bottomMargin: 12
-  }
-  Grip {
-    edges: Qt.TopEdge
-    cursorShape: Qt.SizeVerCursor
-    height: 6
-    anchors.top: parent.top
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.leftMargin: 12
-    anchors.rightMargin: 12
-  }
-  Grip {
-    edges: Qt.BottomEdge
-    cursorShape: Qt.SizeVerCursor
-    height: 6
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.leftMargin: 12
-    anchors.rightMargin: 12
-  }
-  Grip {
-    edges: Qt.LeftEdge | Qt.TopEdge
-    cursorShape: Qt.SizeFDiagCursor
-    width: 12
-    height: 12
-    anchors.left: parent.left
-    anchors.top: parent.top
-  }
-  Grip {
-    edges: Qt.RightEdge | Qt.TopEdge
-    cursorShape: Qt.SizeBDiagCursor
-    width: 12
-    height: 12
-    anchors.right: parent.right
-    anchors.top: parent.top
-  }
-  Grip {
-    edges: Qt.LeftEdge | Qt.BottomEdge
-    cursorShape: Qt.SizeBDiagCursor
-    width: 12
-    height: 12
-    anchors.left: parent.left
-    anchors.bottom: parent.bottom
-  }
-  Grip {
-    edges: Qt.RightEdge | Qt.BottomEdge
-    cursorShape: Qt.SizeFDiagCursor
-    width: 12
-    height: 12
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-  }
+        Rectangle {
+            id: sidebarPanel
+
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: settings.sidebarWidth + Theme.radiusLg
+            radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
+            color: Theme.sidebar
+        }
+        Rectangle {
+            x: settings.sidebarWidth
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: Theme.radiusLg
+            color: Theme.background
+        }
+
+        // Sidebar: the main menus only.
+        Column {
+            id: sidebar
+
+            anchors.left: parent.left
+            anchors.top: titleBar.bottom
+            anchors.leftMargin: Theme.spacingMd
+            anchors.topMargin: Theme.spacingLg
+            width: 196
+            spacing: Theme.spacingXs
+
+            Repeater {
+                model: settings.menus
+
+                delegate: ItemDelegate {
+                    id: menuItem
+
+                    required property int index
+                    required property string modelData
+
+                    width: sidebar.width
+                    text: modelData
+                    highlighted: settings.current === index
+                    onClicked: settings.current = index
+
+                    HoverHandler {
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
+                    background: Rectangle {
+                        radius: Theme.radiusMd
+                        color: Theme.hover  // fixed fill: only opacity animates, so no colour flicker
+                        opacity: menuItem.highlighted ? 1 : menuItem.hovered ? 0.5 : 0
+
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Theme.durationBase
+                            }
+                        }
+                    }
+                    contentItem: Text {
+                        text: menuItem.text
+                        color: Theme.text
+                        font: menuItem.font
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+        }
+
+        // Page area: config panel, darker grey than the sidebar. Each page gets its padding from the StackLayout.
+        Item {
+            anchors.left: parent.left
+            anchors.leftMargin: settings.sidebarWidth
+            anchors.right: parent.right
+            anchors.top: titleBar.bottom
+            anchors.bottom: parent.bottom
+
+            Flickable {
+                id: flick
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                contentWidth: width
+                // Current page's implicit height plus padding top and bottom. StackLayout is as tall as its tallest page.
+                contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 2 * Theme.spacingXxl
+                // While the pointer is over a list, the list takes the wheel and the page never scrolls, even at its ends.
+                interactive: contentHeight > height && !(formatDictionary.hovered || formatSnippets.hovered || historyActivity.hovered || historyLogs.hovered)
+                clip: true
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                }
+
+                StackLayout {
+                    id: stack
+
+                    x: Theme.spacingXxl
+                    y: Theme.spacingXxl
+                    width: flick.width - 2 * Theme.spacingXxl
+                    currentIndex: settings.current
+
+                    // 0: System
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        SystemCloudLocal {}
+                        SystemAiModels {
+                            divided: false
+                        }
+                    }
+
+                    // 1: Sound
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        SoundInputSource {
+                            id: soundInputSource
+                        }
+                        SoundEnableSoundEffects {
+                            id: soundEffects
+                        }
+                        SoundFxs {
+                            id: soundFxs
+
+                            divided: false
+                        }
+                    }
+
+                    // 2: Appearance
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        AppearanceOverlaySize {
+                            id: appearanceOverlaySize
+                        }
+                        AppearancePosition {
+                            id: appearancePosition
+                        }
+                        AppearanceScreen {
+                            id: appearanceScreen
+                        }
+                    }
+
+                    // 3: Format
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        FormatEnableLlm {
+                            id: formatLlm
+                        }
+                        FormatDictionary {
+                            id: formatDictionary
+                        }
+                        FormatSnippets {
+                            id: formatSnippets
+                        }
+                        FormatModes {
+                            id: formatModes
+                        }
+                    }
+
+                    // 4: Keyboard
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        KeyboardPushToTalkToggle {
+                            id: hotkeyMode
+                        }
+                        KeyboardShortcuts {
+                            id: hotkeyProfile
+
+                            divided: false
+                        }
+                    }
+
+                    // 5: Meetings
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        MeetingsMeetings {
+                            divided: false
+                        }
+                    }
+
+                    // 6: History
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        HistoryActivity {
+                            id: historyActivity
+                        }
+                        HistoryStatus {
+                            id: historyStatus
+                        }
+                        HistoryErrors {
+                            id: historyErrors
+                        }
+                        HistoryLogs {
+                            id: historyLogs
+
+                            divided: false
+                        }
+                    }
+                }
+            }
+        }
+
+        Ui.TitleBar {
+            id: titleBar
+
+            z: 1  // paints above sidebar and config panel
+
+            window: settings
+            title: settings.title
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+        }
+
+        // Window hairline: 1px stroke over the frame edge, hidden while maximized.
+        Rectangle {
+            anchors.fill: parent
+            radius: Theme.radiusLg
+            color: "transparent"
+            border.color: Theme.border
+            border.width: 1
+            visible: settings.visibility !== Window.Maximized
+            z: 2
+        }
+
+        Grip {
+            edges: Qt.LeftEdge
+            cursorShape: Qt.SizeHorCursor
+            width: 6
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.topMargin: 12
+            anchors.bottomMargin: 12
+        }
+        Grip {
+            edges: Qt.RightEdge
+            cursorShape: Qt.SizeHorCursor
+            width: 6
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.topMargin: 12
+            anchors.bottomMargin: 12
+        }
+        Grip {
+            edges: Qt.TopEdge
+            cursorShape: Qt.SizeVerCursor
+            height: 6
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+        }
+        Grip {
+            edges: Qt.BottomEdge
+            cursorShape: Qt.SizeVerCursor
+            height: 6
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+        }
+        Grip {
+            edges: Qt.LeftEdge | Qt.TopEdge
+            cursorShape: Qt.SizeFDiagCursor
+            width: 12
+            height: 12
+            anchors.left: parent.left
+            anchors.top: parent.top
+        }
+        Grip {
+            edges: Qt.RightEdge | Qt.TopEdge
+            cursorShape: Qt.SizeBDiagCursor
+            width: 12
+            height: 12
+            anchors.right: parent.right
+            anchors.top: parent.top
+        }
+        Grip {
+            edges: Qt.LeftEdge | Qt.BottomEdge
+            cursorShape: Qt.SizeBDiagCursor
+            width: 12
+            height: 12
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+        }
+        Grip {
+            edges: Qt.RightEdge | Qt.BottomEdge
+            cursorShape: Qt.SizeFDiagCursor
+            width: 12
+            height: 12
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+        }
+    }
+
+    // Resize grips: thin edges and corners. A drag starts a native resize. Off while maximized.
+    component Grip: MouseArea {
+        required property int edges
+
+        z: 3  // above titleBar (z 1), so top edge and corners receive the press
+        enabled: settings.visibility !== Window.Maximized
+        hoverEnabled: true
+        onPressed: settings.startSystemResize(edges)
+    }
 }

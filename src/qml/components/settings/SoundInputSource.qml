@@ -1,4 +1,4 @@
-// SoundInputSource - Sound > Input Source: capture device, saved on Apply.
+// SoundInputSource - Sound > Input Source: capture device, saved on change.
 
 pragma ComponentBehavior: Bound
 
@@ -13,16 +13,13 @@ Section {
     inputCombo.currentIndex = index >= 0 ? index : 0;
   }
 
-  function values() {
-    return {
-      inputSource: inputCombo.currentText
-    };
-  }
-
   Ui.Select {
     id: inputCombo
 
     width: parent.width
     model: settingsBridge.inputSources
+    onActivated: settingsBridge.apply({
+      inputSource: currentText
+    })
   }
 }

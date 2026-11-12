@@ -1,4 +1,4 @@
-// Tabs - Tab bar over a stack. Each child is one page, titled by model[index].
+// Tabs - Fitted pill switch over a stack. A pill slides under the current tab; each child is one page.
 
 pragma ComponentBehavior: Bound
 
@@ -6,7 +6,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic as Basic
 import "." as Ui
-import ".."
+import "../.."
 
 Column {
   id: tabs
@@ -14,6 +14,8 @@ Column {
   property var model: []
   property alias currentIndex: bar.currentIndex
   default property alias pages: stack.data
+  readonly property int tabWidth: 80
+  readonly property int tabHeight: 32
 
   width: parent.width
   spacing: Theme.gap
@@ -21,8 +23,27 @@ Column {
   Basic.TabBar {
     id: bar
 
-    width: tabs.width
-    spacing: 8
+    width: tabs.tabWidth * tabs.model.length + spacing * (tabs.model.length - 1) + leftPadding + rightPadding
+    height: tabs.tabHeight + topPadding + bottomPadding
+    padding: Theme.spacingXs
+    spacing: Theme.spacingXs
+
+    background: Rectangle {
+      radius: Theme.radiusPill
+      color: Theme.surface
+      border.color: Theme.border
+
+      Rectangle {
+        x: bar.leftPadding + bar.currentIndex * (tabs.tabWidth + bar.spacing)
+        y: bar.topPadding
+        width: tabs.tabWidth
+        height: bar.height - bar.topPadding - bar.bottomPadding
+        radius: Theme.radiusPill
+        color: Theme.accent
+
+        Behavior on x { NumberAnimation { duration: Theme.durationBase; easing.type: Easing.OutCubic } }
+      }
+    }
 
     Repeater {
       model: tabs.model
@@ -32,23 +53,25 @@ Column {
 
         required property string modelData
 
-        padding: 8
-        contentItem: Ui.Text {
-          text: tab.modelData
-          color: tab.checked ? Theme.text : Theme.muted
-          font.bold: tab.checked
+        HoverHandler {
+          cursorShape: Qt.PointingHandCursor
         }
-        background: Rectangle {
-          color: "transparent"
 
-          Rectangle {
-            anchors.bottom: parent.bottom
-            width: parent.width
-            height: 2
-            color: Theme.accent
-            opacity: tab.checked ? 1 : 0
+        width: tabs.tabWidth
+        height: tabs.tabHeight
+        padding: 0
+        background: Item {}
+        contentItem: Item {
+          implicitWidth: tab.width
+          implicitHeight: tab.height
 
-            Behavior on opacity { NumberAnimation { duration: Theme.durationBase } }
+          Ui.Text {
+            anchors.centerIn: parent
+            text: tab.modelData
+            color: tab.checked ? Theme.background : Theme.muted
+            font.bold: tab.checked
+
+            Behavior on color { ColorAnimation { duration: Theme.durationBase } }
           }
         }
       }

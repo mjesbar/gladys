@@ -7,20 +7,17 @@
 #include <QStringList>
 #include <QVariantMap>
 
-class QSettings;
-
 class Format {
  public:
   static QStringList available_styles();  // Casual | Formal | Email
 
-  void load(QSettings& s);
-  void save(QSettings& s) const;
   QVariantMap to_map() const;
   void from_map(const QVariantMap& values);  // unknown styles are ignored
 
  private:
   QString m_style = "Casual";
   bool m_markdown_mode = false;
+  bool m_llm = true;                    // false: ASR text is pasted as is
   QMap<QString, QString> m_dictionary;  // rare word -> brief description
   QMap<QString, QString> m_snippets;    // literal text -> replacement (post-LLM)
 };

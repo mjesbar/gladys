@@ -1,7 +1,7 @@
 // Flex - Row that wraps, or a column when vertical is true.
 
 import QtQuick
-import ".."
+import "../.."
 
 Flow {
   property bool vertical: false

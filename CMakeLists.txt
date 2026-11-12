@@ -15,7 +15,7 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0 CACHE STRING "" FORCE)
 project(Gladys VERSION 1.0.0 LANGUAGES CXX)
 
 # Find Qt6 modules and set C++17
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Widgets Network Svg HttpServer)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Widgets Network Svg HttpServer Sql)
 qt_standard_project_setup(REQUIRES 6.8)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,10 +37,15 @@ option(GLADYS_MA_DEBUG "Enable miniaudio debug output" OFF)
 qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/main.cc
   src/core.cc
+  src/apis/llm/llm.cc
+  src/apis/llm/prompt.cc
+  src/modules/aimodmgr/aimodmgr.cc
+  src/modules/data/data.cc
   src/modules/log/log.cc
   src/modules/keytoggle/toggle.cc
   src/modules/keypaste/paste.cc
   src/modules/audio/levels.cc
+  src/modules/audio/sfx.cc
   src/modules/settings/setting.cc
   src/modules/settings/system.cc
   src/modules/settings/sound.cc
@@ -51,6 +56,8 @@ qt_add_executable(gladys WIN32 MACOSX_BUNDLE
   src/modules/settings/history.cc
   src/modules/ui/osshadow.cc
   src/modules/ui/waves.cc
+  src/modules/ui/history.cc
+  src/modules/ui/overlay.cc
   src/modules/ui/settings.cc
   src/modules/ui/tray.cc
 )
@@ -67,17 +74,21 @@ elseif(APPLE)
 endif()
 
 # QML module and its files; Theme is a singleton
-set_source_files_properties(src/qml/components/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(src/qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 qt_add_qml_module(gladys
   URI Gladys
   VERSION 1.0
   QML_FILES
-    src/qml/components/Theme.qml
-    src/qml/components/Mic.qml
+    src/qml/Theme.qml
+    src/qml/components/MicGreat.qml
+    src/qml/components/MicMinimal.qml
+    src/qml/components/MicBasic.qml
     src/qml/components/Section.qml
     src/qml/components/Note.qml
+    src/qml/components/PagedList.qml
     src/qml/components/MappingEditor.qml
     src/qml/components/ui/Text.qml
+    src/qml/components/ui/Selectable.qml
     src/qml/components/ui/Heading.qml
     src/qml/components/ui/Icon.qml
     src/qml/components/ui/Box.qml
@@ -92,6 +103,7 @@ qt_add_qml_module(gladys
     src/qml/components/ui/Checkbox.qml
     src/qml/components/ui/Radio.qml
     src/qml/components/ui/RadioGroup.qml
+    src/qml/components/ui/RadioCard.qml
     src/qml/components/ui/Switch.qml
     src/qml/components/ui/Link.qml
     src/qml/components/ui/FormField.qml
@@ -113,14 +125,14 @@ qt_add_qml_module(gladys
     src/qml/components/settings/FormatDictionary.qml
     src/qml/components/settings/FormatSnippets.qml
     src/qml/components/settings/FormatModes.qml
+    src/qml/components/settings/FormatEnableLlm.qml
     src/qml/components/settings/SystemCloudLocal.qml
     src/qml/components/settings/SystemAiModels.qml
-    src/qml/components/settings/SystemStoreTranscriptions.qml
+    src/qml/components/settings/SystemModelList.qml
     src/qml/components/settings/SoundEnableSoundEffects.qml
-    src/qml/components/settings/SoundEnableLlm.qml
     src/qml/components/settings/SoundFxs.qml
-    src/qml/components/settings/AppearanceTheme.qml
     src/qml/components/settings/AppearanceOverlaySize.qml
+    src/qml/components/settings/AppearanceScreen.qml
     src/qml/components/settings/AppearancePosition.qml
     src/qml/components/settings/KeyboardPushToTalkToggle.qml
     src/qml/components/settings/KeyboardShortcuts.qml
@@ -128,10 +140,12 @@ qt_add_qml_module(gladys
     src/qml/components/settings/HistoryActivity.qml
     src/qml/components/settings/HistoryStatus.qml
     src/qml/components/settings/HistoryErrors.qml
+    src/qml/components/settings/HistoryTranscription.qml
     src/qml/components/settings/HistoryLogs.qml
     src/qml/windows/Overlay.qml
     src/qml/windows/Splash.qml
     src/qml/windows/Settings.qml
+    src/qml/windows/StorageError.qml
 )
 
 # Embed fonts and icons into the binary
@@ -145,7 +159,30 @@ qt_add_resources(gladys app_resources PREFIX "/" BASE src/assets FILES
   src/assets/icons/icon-app.svg
   src/assets/icons/plus.svg
   src/assets/icons/trash.svg
+  src/assets/icons/download.svg
+  src/assets/icons/check.svg
   src/assets/icons/chevron-right.svg
+  src/assets/icons/chevron-down.svg
+  src/assets/icons/play.svg
+  src/assets/icons/copy.svg
+  src/assets/overlay/minimal.png
+  src/assets/overlay/basic.png
+  src/assets/overlay/great.png
+  src/assets/keyboard/AltGr.png
+  src/assets/keyboard/CtrlAltP.png
+  src/assets/keyboard/CtrlOptP.png
+  src/assets/keyboard/Fn.png
+  src/assets/sfx/beep.mp3
+  src/assets/sfx/bell.mp3
+  src/assets/sfx/end.mp3
+  src/assets/sfx/notification.mp3
+  src/assets/sfx/pump.mp3
+  src/assets/sfx/switcher.mp3
+  src/assets/sfx/ui1.mp3
+  src/assets/sfx/ui2.mp3
+  src/assets/sfx/ui3.mp3
+  src/assets/sfx/ui4.mp3
+  src/assets/sfx/ui5.mp3
 )
 
 # Miniaudio: device enumeration lives in the Sound menu
@@ -154,7 +191,7 @@ set_source_files_properties(src/modules/settings/sound.cc PROPERTIES
 )
 
 target_include_directories(gladys PRIVATE src src/include)
-target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Widgets Qt6::Network Qt6::Svg Qt6::HttpServer)
+target_link_libraries(gladys PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::Widgets Qt6::Network Qt6::Svg Qt6::HttpServer Qt6::Sql)
 
 # OS-specific system libraries
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -175,10 +212,11 @@ install(TARGETS gladys RUNTIME DESTINATION . BUNDLE DESTINATION .)
 qt_add_executable(gladys-asr
   src/apis/asr/server.cc
   src/apis/asr/stt.cc
+  src/modules/data/data.cc
   src/modules/log/log.cc
 )
 target_include_directories(gladys-asr PRIVATE src src/include)
-target_link_libraries(gladys-asr PRIVATE Qt6::Core Qt6::HttpServer)
+target_link_libraries(gladys-asr PRIVATE Qt6::Core Qt6::HttpServer Qt6::Sql)
 set_source_files_properties(src/apis/asr/stt.cc PROPERTIES
   COMPILE_DEFINITIONS "MINIAUDIO_IMPLEMENTATION"
 )
@@ -238,20 +276,8 @@ else()
   message(FATAL_ERROR "sherpa-onnx library not found: ${SHERPA_ONNX_LIB_DIR}")
 endif()
 
-# ---------------------------------------------------------------------------
-# gladys-llm: transcription formatting process (owns llama-server)
-# ---------------------------------------------------------------------------
-qt_add_executable(gladys-llm
-  src/apis/llm/server.cc
-  src/apis/llm/llm.cc
-  src/apis/llm/prompt.cc
-  src/modules/log/log.cc
-)
-target_include_directories(gladys-llm PRIVATE src)
-target_link_libraries(gladys-llm PRIVATE Qt6::Core Qt6::Network Qt6::HttpServer)
-
 # Helpers sit next to gladys (macOS: inside the bundle, next to the llama.cpp folder)
-foreach(helper gladys-asr gladys-llm)
+foreach(helper gladys-asr)
   set_target_properties(${helper} PROPERTIES
     INSTALL_RPATH "${GLADYS_RPATH}"
     BUILD_WITH_INSTALL_RPATH TRUE
@@ -262,7 +288,7 @@ set_target_properties(gladys PROPERTIES
   BUILD_WITH_INSTALL_RPATH TRUE
 )
 if(APPLE)
-  install(TARGETS gladys-asr gladys-llm RUNTIME DESTINATION gladys.app/Contents/MacOS)
+  install(TARGETS gladys-asr RUNTIME DESTINATION gladys.app/Contents/MacOS)
 else()
-  install(TARGETS gladys-asr gladys-llm RUNTIME DESTINATION .)
+  install(TARGETS gladys-asr RUNTIME DESTINATION .)
 endif()

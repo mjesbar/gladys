@@ -1,7 +1,7 @@
 // Divider - 1px rule, horizontal by default.
 
 import QtQuick
-import ".."
+import "../.."
 
 Rectangle {
   property bool vertical: false

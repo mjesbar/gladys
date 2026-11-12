@@ -1,12 +1,12 @@
 // Skeleton - Placeholder block that pulses while content loads.
 
 import QtQuick
-import ".."
+import "../.."
 
 Rectangle {
   implicitWidth: 120
   implicitHeight: 16
-  radius: Theme.radius
+  radius: Theme.radiusMd
   color: Theme.border
 
   SequentialAnimation on opacity {
