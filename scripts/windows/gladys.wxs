@@ -1,0 +1,31 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Gladys" Manufacturer="Gladys" Version="$(var.Version)" UpgradeCode="c75b9474-e266-43c5-8ac2-ad837acd499c" Scope="perUser">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Gladys is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Feature Id="Main" Title="Gladys" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Gladys" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="eb92cbe1-05fd-4b8a-a251-97cb3985f792">
+        <Shortcut Id="GladysShortcut" Name="Gladys" Target="[INSTALLFOLDER]gladys.exe" WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU" Key="Software\Gladys" Name="Shortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.SourceDir)\**">
+        <Exclude Files="$(var.SourceDir)\vc_redist.x64.exe" />
+      </Files>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

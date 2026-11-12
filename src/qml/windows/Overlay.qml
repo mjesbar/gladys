@@ -1,4 +1,4 @@
-// Overlay - Frameless bottom-center window hosting the Mic and the Settings loader.
+// Overlay - Frameless window at the screen spot set by Position, hosting the profile of the Overlay Size and the Settings loader.
 
 import QtQuick
 import QtQuick.Window
@@ -7,16 +7,20 @@ import "../components"
 Window {
     id: overlay
 
-    readonly property int navBarPadding: 60 // keeps the mic clear of the OS nav bar
-    property bool expanded: false
+    property bool recording: false
+    property bool processing: false
+    property string placement: "up"
+    property string overlaySize: "Minimal"
+    readonly property bool expanded: recording || processing
+    readonly property var profile: overlayBridge.profile(overlaySize, placement)
+    readonly property var anchor: overlayBridge.dot_center(placement, Screen.width, Screen.height)
 
-    width: 119
-    height: 130
+    width: profile.width
+    height: profile.height
+    x: Screen.virtualX + anchor.x - profile.dotX
+    y: Screen.virtualY + anchor.y - profile.dotY
     color: "transparent"
     flags: (Qt.platform.os === "osx" ? Qt.Tool : Qt.ToolTip) | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.NoDropShadowWindowHint | Qt.WindowTransparentForInput | (Qt.platform.os === "windows" ? Qt.WindowDoesNotAcceptFocus : 0)
-    // Centered on the screen the window is on (desktopAvailable* spans all screens).
-    x: Screen.virtualX + (Screen.width - width) / 2
-    y: Screen.desktopAvailableHeight - navBarPadding + 1 - height
     visible: true
 
     NumberAnimation on opacity {
@@ -33,9 +37,44 @@ Window {
         settingsLoader.item.requestActivate();
     }
 
-    Mic {
+    Component {
+        id: minimalMic
+
+        MicMinimal {
+            dotX: overlay.profile.dotX
+            dotY: overlay.profile.dotY
+            recording: overlay.recording
+            processing: overlay.processing
+        }
+    }
+
+    Component {
+        id: basicMic
+
+        MicBasic {
+            dotX: overlay.profile.dotX
+            dotY: overlay.profile.dotY
+            recording: overlay.recording
+            processing: overlay.processing
+        }
+    }
+
+    Component {
+        id: greatMic
+
+        MicGreat {
+            dotX: overlay.profile.dotX
+            dotY: overlay.profile.dotY
+            expansion: overlay.profile.expansion
+            expanded: overlay.expanded
+            recording: overlay.recording
+            processing: overlay.processing
+        }
+    }
+
+    Loader {
         anchors.fill: parent
-        expanded: overlay.expanded
+        sourceComponent: overlay.overlaySize === "Great" ? greatMic : overlay.overlaySize === "Basic" ? basicMic : minimalMic
     }
 
     Loader {

@@ -18,7 +18,6 @@ Run from **Git Bash** (the scripts are bash). Replace `X:` with your real drive:
 export GLADYS_SPACE=X:/Users/mjesbar/gladys
 scripts/qt-install.sh windows            # Qt -> X:/Users/mjesbar/gladys/qt-6.8.3/msvc2022_64
 export QT_ROOT_DIR=X:/Users/mjesbar/gladys/qt-6.8.3/msvc2022_64
-scripts/fetch-deps.sh                    # llama.cpp + models -> X:/Users/mjesbar/gladys/dist/
 scripts/build.sh                         # build -> X:/Users/mjesbar/gladys/build, install -> dist/
 ```
 

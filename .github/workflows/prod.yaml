@@ -52,8 +52,10 @@ jobs:
           target: "desktop"
           arch: "linux_gcc_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           install-deps: true
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os linux --arch x64 --ma-debug off
@@ -72,7 +74,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-linux-x64-*.tar.gz
+          files: release/gladys-linux-x64-*
 
   # ----------------------------------------------------------------
   # Windows
@@ -93,7 +95,9 @@ jobs:
           target: "desktop"
           arch: "win64_msvc2022_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os windows --arch x64 --ma-debug off
@@ -104,6 +108,9 @@ jobs:
 
       - name: Install zip
         run: choco install zip --no-progress -y
+
+      - name: Install WiX
+        run: dotnet tool install --global wix --version 5.0.2
 
       - name: Package release
         run: scripts/package.sh --os windows --arch x64 --version ${{ needs.version.outputs.version }}
@@ -117,7 +124,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-win-x64-*.zip
+          files: release/gladys-win-x64-*
 
   # ----------------------------------------------------------------
   # macOS
@@ -138,7 +145,9 @@ jobs:
           target: "desktop"
           arch: "clang_64"
           dir: ${{ github.workspace }}/Qt
+          modules: "qthttpserver qtwebsockets"
           cache: true
+          cache-key-prefix: install-qt-httpserver
 
       - name: Build
         run: scripts/build.sh --os macos --arch arm64 --ma-debug off
@@ -160,4 +169,4 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-macos-arm64-*.zip
+          files: release/gladys-macos-arm64-*

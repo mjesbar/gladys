@@ -3,7 +3,7 @@ services:
     image: dockurr/macos
     container_name: macos
     privileged: true
-    stop_grace_period: 5s
+    stop_grace_period: 10s
     environment:
       VERSION: "14"
       # CPU_MODEL: "Haswell-noTSX"

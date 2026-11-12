@@ -7,19 +7,37 @@
 #include <QStringList>
 #include <QVariantMap>
 
+class Setting;
+
 class SettingsBridge : public QObject {
   Q_OBJECT
   Q_PROPERTY(QStringList inputSources READ input_sources CONSTANT)
   Q_PROPERTY(QStringList styles READ styles CONSTANT)
+  Q_PROPERTY(QStringList sfxs READ sfxs CONSTANT)
+  Q_PROPERTY(QStringList hotkeyModes READ hotkey_modes CONSTANT)
+  Q_PROPERTY(QStringList hotkeyProfiles READ hotkey_profiles CONSTANT)
+  Q_PROPERTY(QStringList positions READ positions CONSTANT)
+  Q_PROPERTY(QStringList overlaySizes READ overlay_sizes CONSTANT)
+  Q_PROPERTY(QStringList screens READ screens)
 
  public:
-  explicit SettingsBridge(QObject* parent = nullptr);
+  // setting lives on the settings thread; every call blocks until it answers.
+  explicit SettingsBridge(Setting* setting, QObject* parent = nullptr);
 
   QStringList input_sources() const;
   QStringList styles() const;
+  QStringList sfxs() const;
+  QStringList hotkey_modes() const;
+  QStringList hotkey_profiles() const;
+  QStringList positions() const;
+  QStringList overlay_sizes() const;
+  QStringList screens() const;  // read on the GUI thread, where QScreen lives
 
   Q_INVOKABLE QVariantMap load() const;
   Q_INVOKABLE void apply(const QVariantMap& values);
+
+ private:
+  Setting* m_setting;
 };
 
 #endif  // UI_SETTINGS_BRIDGE_HPP

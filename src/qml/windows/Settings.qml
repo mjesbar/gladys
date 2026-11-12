@@ -1,20 +1,33 @@
-// Settings - Input source, dictionary, snippets and style flags. Lazy-loaded.
+// Settings - Main menus in the sidebar; each menu's sub-sections on the right. Lazy-loaded.
 
 pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Basic
+import QtQuick.Layouts
+import ".."
 import "../components"
+import "../components/settings"
+import "../components/ui" as Ui
 
 Window {
     id: settings
 
-    width: 800
+    readonly property var menus: [qsTr("System"), qsTr("Sound"), qsTr("Appearance"), qsTr("Format"), qsTr("Keyboard"), qsTr("Meetings"), qsTr("History")]
+    property int current: 1  // index in menus, Sound by default
+
+    readonly property int sidebarWidth: 220
+
+    // Narrowest window that keeps the 3 overlay cards (196 px preview + card padding) on one row.
+    width: minimumWidth
     height: 800
-    minimumWidth: 480
+    minimumWidth: sidebarWidth + 2 * Theme.spacingXxl + 3 * (196 + 2 * Theme.spacingMd) + 2 * Theme.spacingMd
+    // Tallest the sidebar needs: title bar, top margin, all menus, bottom margin.
+    minimumHeight: titleBar.height + Theme.spacingLg + sidebar.height + Theme.spacingLg
     title: qsTr("Gladys Settings")
-    color: Theme.background
+    color: "transparent"
+    flags: Qt.Window | Qt.FramelessWindowHint
     transientParent: null
     visible: false
 
@@ -28,354 +41,372 @@ Window {
     onVisibleChanged: if (visible)
         load()
 
-    ListModel {
-        id: dictionaryModel
-    }
+    // Live updates while the window is open; a hidden window reads nothing.
+    Connections {
+        target: historyBridge
 
-    ListModel {
-        id: snippetModel
-    }
-
-    function fill(model, pairs) {
-        model.clear();
-        for (const from of Object.keys(pairs)) {
-            model.append({
-                from: from,
-                to: pairs[from]
-            });
+        function onTranscriptionsChanged() {
+            if (settings.visible) {
+                historyActivity.refresh();
+            }
         }
-    }
-
-    function collect(model) {
-        const pairs = {};
-        for (let i = 0; i < model.count; ++i) {
-            const row = model.get(i);
-            pairs[row.from] = row.to;
+        function onLogsChanged() {
+            if (settings.visible) {
+                historyLogs.refresh();
+                historyStatus.reload();
+                historyErrors.reload();
+            }
         }
-        return pairs;
     }
 
     function load() {
         const s = settingsBridge.load();
-        const index = inputCombo.find(s.inputSource);
-        inputCombo.currentIndex = index >= 0 ? index : 0;
-        fill(dictionaryModel, s.dictionary);
-        fill(snippetModel, s.snippets);
-        markdownCombo.currentIndex = s.markdown ? 0 : 1;
-        styleCombo.currentIndex = Math.max(0, styleCombo.find(s.style));
+        soundInputSource.load(s);
+        soundEffects.load(s);
+        soundFxs.load(s);
+        appearanceOverlaySize.load(s);
+        appearancePosition.load(s);
+        appearanceScreen.load(s);
+        formatLlm.load(s);
+        formatDictionary.load(s);
+        formatSnippets.load(s);
+        formatModes.load(s);
+        hotkeyMode.load(s);
+        hotkeyProfile.load(s);
+        historyActivity.load(s);
+        historyLogs.load(s);
+        historyActivity.reload();
+        historyStatus.reload();
+        historyErrors.reload();
+        historyLogs.reload();
     }
 
-    function apply() {
-        settingsBridge.apply({
-            inputSource: inputCombo.currentText,
-            style: styleCombo.currentText,
-            markdown: markdownCombo.currentIndex === 0,
-            dictionary: collect(dictionaryModel),
-            snippets: collect(snippetModel)
-        });
-    }
+    Item {
+        id: frame
 
-    component AliasCard: Card {
-        id: card
-
-        required property ListModel aliasModel
-        property string toHint: qsTr("Replacement")
-
-        function addAlias() {
-            const from = fromField.text.trim();
-            if (from === "") {
-                return;
-            }
-            card.aliasModel.append({
-                from: from,
-                to: toField.text.trim()
-            });
-            fromField.clear();
-            toField.clear();
-            fromField.forceActiveFocus();
-        }
-
-        ListView {
-            id: aliasView
-
-            width: parent.width
-            height: 180
-            clip: true
-            model: card.aliasModel
-
-            delegate: Row {
-                id: row
-
-                required property int index
-                required property string from
-                required property string to
-
-                width: aliasView.width
-                height: 40
-                spacing: 8
-
-                Field {
-                    width: (row.width - 52) / 2
-                    height: parent.height
-                    text: row.from
-                    onEditingFinished: card.aliasModel.setProperty(row.index, "from", text.trim())
-                }
-                Field {
-                    width: (row.width - 52) / 2
-                    height: parent.height
-                    text: row.to
-                    onEditingFinished: card.aliasModel.setProperty(row.index, "to", text.trim())
-                }
-                IconButton {
-                    y: (parent.height - height) / 2
-                    iconSource: "qrc:/icons/trash.svg"
-                    ToolTip.visible: hovered
-                    ToolTip.text: qsTr("Remove")
-                    onClicked: card.aliasModel.remove(row.index)
-                }
-            }
-        }
-
-        Row {
-            id: addRow
-
-            width: parent.width
-            spacing: 8
-
-            Field {
-                id: fromField
-
-                width: (addRow.width - 18 - 36 - 32) / 2
-                placeholderText: qsTr("Original word")
-                onAccepted: card.addAlias()
-            }
-            Item {
-                width: 18
-                height: 36
-                Image {
-                    anchors.centerIn: parent
-                    source: "qrc:/icons/chevron-right.svg"
-                    sourceSize: Qt.size(18, 18)
-                }
-            }
-            Field {
-                id: toField
-
-                width: (addRow.width - 18 - 36 - 32) / 2
-                placeholderText: card.toHint
-                onAccepted: card.addAlias()
-            }
-            IconButton {
-                iconSource: "qrc:/icons/plus.svg"
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Add Alias")
-                onClicked: card.addAlias()
-            }
-        }
-    }
-
-    Flickable {
         anchors.fill: parent
-        contentHeight: content.height + 64
-        clip: true
 
-        ScrollBar.vertical: ScrollBar {}
+        Rectangle {
+            anchors.fill: parent
+            radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
+            color: Theme.background
+        }
 
+        // Sidebar: full height behind the transparent title bar. Its rounded edge is
+        // the window corner radius; the square edge strip hides its rounded right side.
+
+        Rectangle {
+            id: sidebarPanel
+
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: settings.sidebarWidth + Theme.radiusLg
+            radius: settings.visibility === Window.Maximized ? 0 : Theme.radiusLg
+            color: Theme.sidebar
+        }
+        Rectangle {
+            x: settings.sidebarWidth
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: Theme.radiusLg
+            color: Theme.background
+        }
+
+        // Sidebar: the main menus only.
         Column {
-            id: content
+            id: sidebar
 
-            x: 32
-            y: 32
-            width: parent.width - 64
-            spacing: 16
+            anchors.left: parent.left
+            anchors.top: titleBar.bottom
+            anchors.leftMargin: Theme.spacingMd
+            anchors.topMargin: Theme.spacingLg
+            width: 196
+            spacing: Theme.spacingXs
 
-            Card {
-                width: parent.width
-                title: qsTr("Input Source")
+            Repeater {
+                model: settings.menus
 
-                ComboBox {
-                    id: inputCombo
+                delegate: ItemDelegate {
+                    id: menuItem
 
-                    width: parent.width
-                    leftPadding: 16
-                    rightPadding: 16
-                    model: settingsBridge.inputSources
+                    required property int index
+                    required property string modelData
+
+                    width: sidebar.width
+                    text: modelData
+                    highlighted: settings.current === index
+                    onClicked: settings.current = index
+
+                    HoverHandler {
+                        cursorShape: Qt.PointingHandCursor
+                    }
+
                     background: Rectangle {
-                        implicitHeight: 40
-                        radius: 20
-                        color: Theme.surface
-                        border.color: inputCombo.activeFocus ? Theme.accent : Theme.border
-                    }
-                    popup.background: Rectangle {
-                        radius: 12
-                        color: Theme.surface
-                        border.color: Theme.border
-                    }
-                    delegate: ItemDelegate {
-                        required property int index
-                        required property string modelData
+                        radius: Theme.radiusMd
+                        color: Theme.hover  // fixed fill: only opacity animates, so no colour flicker
+                        opacity: menuItem.highlighted ? 1 : menuItem.hovered ? 0.5 : 0
 
-                        width: inputCombo.width
-                        highlighted: inputCombo.highlightedIndex === index
-                        contentItem: Text {
-                            text: modelData
-                            color: Theme.text
-                            font: inputCombo.font
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Rectangle {
-                            radius: 12
-                            color: highlighted ? Theme.hover : "transparent"
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Theme.durationBase
+                            }
                         }
                     }
-                }
-            }
-
-            AliasCard {
-                width: parent.width
-                title: qsTr("Dictionary")
-                toHint: qsTr("Brief description")
-                aliasModel: dictionaryModel
-            }
-
-            AliasCard {
-                width: parent.width
-                title: qsTr("Snippets")
-                aliasModel: snippetModel
-            }
-
-            Card {
-                width: parent.width
-                title: qsTr("Style")
-
-                Row {
-                    id: styleRow
-
-                    width: parent.width
-                    spacing: 12
-
-                    Text {
-                        id: styleLabel
-
-                        width: 80
-                        height: 40
-                        text: qsTr("Style")
+                    contentItem: Text {
+                        text: menuItem.text
                         color: Theme.text
+                        font: menuItem.font
                         verticalAlignment: Text.AlignVCenter
                     }
-                    ComboBox {
-                        id: styleCombo
-
-                        width: styleRow.width - styleLabel.width - styleRow.spacing
-                        leftPadding: 16
-                        rightPadding: 16
-                        model: settingsBridge.styles
-                        background: Rectangle {
-                            implicitHeight: 40
-                            radius: 20
-                            color: Theme.surface
-                            border.color: styleCombo.activeFocus ? Theme.accent : Theme.border
-                        }
-                        popup.background: Rectangle {
-                            radius: 12
-                            color: Theme.surface
-                            border.color: Theme.border
-                        }
-                        delegate: ItemDelegate {
-                            required property int index
-                            required property string modelData
-
-                            width: styleCombo.width
-                            highlighted: styleCombo.highlightedIndex === index
-                            contentItem: Text {
-                                text: modelData
-                                color: Theme.text
-                                font: styleCombo.font
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            background: Rectangle {
-                                radius: 12
-                                color: highlighted ? Theme.hover : "transparent"
-                            }
-                        }
-                    }
-                }
-                Row {
-                    id: markdownRow
-
-                    width: parent.width
-                    spacing: 12
-
-                    Text {
-                        id: markdownLabel
-
-                        width: 80
-                        height: 40
-                        text: qsTr("Markdown")
-                        color: Theme.text
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    ComboBox {
-                        id: markdownCombo
-
-                        width: markdownRow.width - markdownLabel.width - markdownRow.spacing
-                        leftPadding: 16
-                        rightPadding: 16
-                        model: [qsTr("Yes"), qsTr("No")]
-                        background: Rectangle {
-                            implicitHeight: 40
-                            radius: 20
-                            color: Theme.surface
-                            border.color: markdownCombo.activeFocus ? Theme.accent : Theme.border
-                        }
-                        popup.background: Rectangle {
-                            radius: 12
-                            color: Theme.surface
-                            border.color: Theme.border
-                        }
-                        delegate: ItemDelegate {
-                            required property int index
-                            required property string modelData
-
-                            width: markdownCombo.width
-                            highlighted: markdownCombo.highlightedIndex === index
-                            contentItem: Text {
-                                text: modelData
-                                color: Theme.text
-                                font: markdownCombo.font
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            background: Rectangle {
-                                radius: 12
-                                color: highlighted ? Theme.hover : "transparent"
-                            }
-                        }
-                    }
-                }
-            }
-
-            Button {
-                id: applyButton
-
-                width: parent.width
-                text: qsTr("Apply")
-                font.bold: true
-                onClicked: settings.apply()
-
-                background: Rectangle {
-                    implicitHeight: 40
-                    radius: 20
-                    color: applyButton.hovered ? Theme.text : Theme.accent
-                    border.color: Theme.accent
-                }
-                contentItem: Text {
-                    text: applyButton.text
-                    font: applyButton.font
-                    color: Theme.background
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
                 }
             }
         }
+
+        // Page area: config panel, darker grey than the sidebar. Each page gets its padding from the StackLayout.
+        Item {
+            anchors.left: parent.left
+            anchors.leftMargin: settings.sidebarWidth
+            anchors.right: parent.right
+            anchors.top: titleBar.bottom
+            anchors.bottom: parent.bottom
+
+            Flickable {
+                id: flick
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                contentWidth: width
+                // Current page's implicit height plus padding top and bottom. StackLayout is as tall as its tallest page.
+                contentHeight: (stack.children.length ? stack.children[stack.currentIndex].implicitHeight : 0) + 2 * Theme.spacingXxl
+                // While the pointer is over a list, the list takes the wheel and the page never scrolls, even at its ends.
+                interactive: contentHeight > height && !(formatDictionary.hovered || formatSnippets.hovered || historyActivity.hovered || historyLogs.hovered)
+                clip: true
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                }
+
+                StackLayout {
+                    id: stack
+
+                    x: Theme.spacingXxl
+                    y: Theme.spacingXxl
+                    width: flick.width - 2 * Theme.spacingXxl
+                    currentIndex: settings.current
+
+                    // 0: System
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        SystemCloudLocal {}
+                        SystemAiModels {
+                            divided: false
+                        }
+                    }
+
+                    // 1: Sound
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        SoundInputSource {
+                            id: soundInputSource
+                        }
+                        SoundEnableSoundEffects {
+                            id: soundEffects
+                        }
+                        SoundFxs {
+                            id: soundFxs
+
+                            divided: false
+                        }
+                    }
+
+                    // 2: Appearance
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        AppearanceOverlaySize {
+                            id: appearanceOverlaySize
+                        }
+                        AppearancePosition {
+                            id: appearancePosition
+                        }
+                        AppearanceScreen {
+                            id: appearanceScreen
+                        }
+                    }
+
+                    // 3: Format
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        FormatEnableLlm {
+                            id: formatLlm
+                        }
+                        FormatDictionary {
+                            id: formatDictionary
+                        }
+                        FormatSnippets {
+                            id: formatSnippets
+                        }
+                        FormatModes {
+                            id: formatModes
+                        }
+                    }
+
+                    // 4: Keyboard
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        KeyboardPushToTalkToggle {
+                            id: hotkeyMode
+                        }
+                        KeyboardShortcuts {
+                            id: hotkeyProfile
+
+                            divided: false
+                        }
+                    }
+
+                    // 5: Meetings
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        MeetingsMeetings {
+                            divided: false
+                        }
+                    }
+
+                    // 6: History
+                    Column {
+                        spacing: Theme.spacingXl
+
+                        HistoryActivity {
+                            id: historyActivity
+                        }
+                        HistoryStatus {
+                            id: historyStatus
+                        }
+                        HistoryErrors {
+                            id: historyErrors
+                        }
+                        HistoryLogs {
+                            id: historyLogs
+
+                            divided: false
+                        }
+                    }
+                }
+            }
+        }
+
+        Ui.TitleBar {
+            id: titleBar
+
+            z: 1  // paints above sidebar and config panel
+
+            window: settings
+            title: settings.title
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+        }
+
+        // Window hairline: 1px stroke over the frame edge, hidden while maximized.
+        Rectangle {
+            anchors.fill: parent
+            radius: Theme.radiusLg
+            color: "transparent"
+            border.color: Theme.border
+            border.width: 1
+            visible: settings.visibility !== Window.Maximized
+            z: 2
+        }
+
+        Grip {
+            edges: Qt.LeftEdge
+            cursorShape: Qt.SizeHorCursor
+            width: 6
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.topMargin: 12
+            anchors.bottomMargin: 12
+        }
+        Grip {
+            edges: Qt.RightEdge
+            cursorShape: Qt.SizeHorCursor
+            width: 6
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.topMargin: 12
+            anchors.bottomMargin: 12
+        }
+        Grip {
+            edges: Qt.TopEdge
+            cursorShape: Qt.SizeVerCursor
+            height: 6
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+        }
+        Grip {
+            edges: Qt.BottomEdge
+            cursorShape: Qt.SizeVerCursor
+            height: 6
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+        }
+        Grip {
+            edges: Qt.LeftEdge | Qt.TopEdge
+            cursorShape: Qt.SizeFDiagCursor
+            width: 12
+            height: 12
+            anchors.left: parent.left
+            anchors.top: parent.top
+        }
+        Grip {
+            edges: Qt.RightEdge | Qt.TopEdge
+            cursorShape: Qt.SizeBDiagCursor
+            width: 12
+            height: 12
+            anchors.right: parent.right
+            anchors.top: parent.top
+        }
+        Grip {
+            edges: Qt.LeftEdge | Qt.BottomEdge
+            cursorShape: Qt.SizeBDiagCursor
+            width: 12
+            height: 12
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+        }
+        Grip {
+            edges: Qt.RightEdge | Qt.BottomEdge
+            cursorShape: Qt.SizeFDiagCursor
+            width: 12
+            height: 12
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+        }
+    }
+
+    // Resize grips: thin edges and corners. A drag starts a native resize. Off while maximized.
+    component Grip: MouseArea {
+        required property int edges
+
+        z: 3  // above titleBar (z 1), so top edge and corners receive the press
+        enabled: settings.visibility !== Window.Maximized
+        hoverEnabled: true
+        onPressed: settings.startSystemResize(edges)
     }
 }
