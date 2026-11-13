@@ -6,6 +6,7 @@ import QtQuick.Window
 Window {
     id: splash
 
+    signal fadeInFinished
     signal fadeOutFinished
 
     width: 260
@@ -25,6 +26,7 @@ Window {
         to: 1
         duration: 300
         easing.type: Easing.InOutQuad
+        onFinished: splash.fadeInFinished()
     }
 
     NumberAnimation {

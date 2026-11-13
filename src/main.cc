@@ -93,6 +93,15 @@ static QScreen* screen_named(const QString& name) {
   return QGuiApplication::primaryScreen();
 }
 
+// Fades a splash or setup window out, then deletes it.
+static void fade_out(QObject* window) {
+  QEventLoop fading;
+  QObject::connect(window, SIGNAL(fadeOutFinished()), &fading, SLOT(quit()));
+  QMetaObject::invokeMethod(window, "fadeOut");
+  fading.exec();
+  window->deleteLater();
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
   if (!set_dll_directory()) return 1;
@@ -186,22 +195,39 @@ int main(int argc, char* argv[]) {
   engine.rootContext()->setContextProperty("modelsBridge", &models_bridge);
   engine.rootContext()->setContextProperty("overlayBridge", &overlay_bridge);
 
-  engine.loadFromModule("Gladys", "Splash");
-  if (engine.rootObjects().isEmpty()) {
-    qCCritical(lcMain) << "failed to load splash";
-    return 1;
-  }
-  QObject* splash = engine.rootObjects().first();
-
   // Storage opens before settings load. A failure raises the popup; the app keeps running on
-  // defaults. The popup is appended after the splash, so rootObjects().first() and .last() stay
-  // valid.
+  // defaults. The popup is loaded before the splash, so rootObjects().last() is the splash after load.
   QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
     engine.loadFromModule("Gladys", "StorageError");
     QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
   });
   QMetaObject::invokeMethod(data, "open", Qt::BlockingQueuedConnection);
   QMetaObject::invokeMethod(setting, "load", Qt::BlockingQueuedConnection);
+
+  // First run with a missing default model: Setup replaces the first Splash, then Splash shows again.
+  if (needs_setup()) {
+    engine.loadFromModule("Gladys", "Setup");
+    QObject* setup = engine.rootObjects().last();
+    QEventLoop downloading;
+    QObject::connect(setup, SIGNAL(finished()), &downloading, SLOT(quit()));
+    QObject::connect(setup, SIGNAL(aborted()), &downloading, SLOT(quit()));
+    downloading.exec();
+    if (!setup->property("confirmed").toBool()) {  // quit or closed before the models were ready
+      return 1;
+    }
+    setup->deleteLater();
+  }
+
+  engine.loadFromModule("Gladys", "Splash");
+  if (engine.rootObjects().isEmpty()) {
+    qCCritical(lcMain) << "failed to load splash";
+    return 1;
+  }
+  QObject* splash = engine.rootObjects().last();
+  // Fade-in ends before Core can finish, so a fast READY never cuts the splash short.
+  QEventLoop showing;
+  QObject::connect(splash, SIGNAL(fadeInFinished()), &showing, SLOT(quit()));
+  showing.exec();
 
   // gladys-asr and gladys-llm are separate processes owned by the core. Models come from the settings, so this follows open.
   const QString model_dir = selected_model_path(ModelKind::Asr);
@@ -244,12 +270,7 @@ int main(int argc, char* argv[]) {
   if (starting.exec() != 0) {
     return 1;
   }
-
-  QEventLoop fading;
-  QObject::connect(splash, SIGNAL(fadeOutFinished()), &fading, SLOT(quit()));
-  QMetaObject::invokeMethod(splash, "fadeOut");
-  fading.exec();
-  splash->deleteLater();
+  fade_out(splash);
 
   engine.loadFromModule("Gladys", "Overlay");
   if (engine.rootObjects().isEmpty()) {
