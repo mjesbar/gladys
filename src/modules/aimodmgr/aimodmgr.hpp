@@ -18,6 +18,7 @@
 
 QString models_dir(ModelKind kind);           // cache folder of the kind
 QString selected_model_path(ModelKind kind);  // installed path of the model Gladys runs with
+bool needs_setup();                           // the default model of either kind is not installed
 
 // Settings bridge: kind is 0 for LLM and 1 for ASR, as ModelKind. Runs on the GUI thread.
 class ModelsBridge : public QObject {
@@ -30,7 +31,7 @@ class ModelsBridge : public QObject {
 
   bool loading() const;
 
-  // Rows: file, name, installed, selected, busy, progress (percent while busy).
+  // Rows: file, name, installed, selected, default, busy, progress (percent while busy).
   Q_INVOKABLE QVariantList models(int kind) const;
   Q_INVOKABLE void install(int kind, const QString& file);
   Q_INVOKABLE void uninstall(int kind, const QString& file);
