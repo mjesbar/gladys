@@ -13,8 +13,10 @@
   <img src="https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey" alt="Linux | Windows | macOS">
 </p>
 
-**Fully local, cross-platform dictation tool.**  
+<p align="center">
+<strong>Fully local, cross-platform dictation tool.</strong>  
 Speak, and your words appear where you need them — no cloud, no API keys, no AI agent services.
+</p>
 
 Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) for speech-to-text and [llama.cpp](https://github.com/ggml-org/llama.cpp) for local transcription formatting. It runs on **Windows**, **Linux** and **macOS** (Vulkan GPU support on Windows and Linux, any vendor).
 
@@ -24,14 +26,12 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 ### Features
 
-| Feature              | Description                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------ |
-| 100% local           | No remote API calls, no data leaves your machine                                     |
-| Direct paste         | Text is copied and pasted into the focused input                                     |
-| Global hotkey        | Toggle or Hold to record from any application. Profiles: `Ctrl+Alt+P`, `Fn`, `AltGr` |
-| Microphone selection | Choose the capture device in Settings                                                |
-| Dictionary           | Word replacements applied during formatting (e.g. `gladys` → `Gladys`)               |
-| Style options        | Markdown mode, allow accents, allow punctuation                                      |
+| Feature             | Description                                      |
+| ------------------- | ------------------------------------------------ |
+| 100% local          | No remote API calls, no data leaves your machine |
+| Paste everywhere    | Text is copied and pasted into the focused input |
+| Dictionary/Snippets | Word replacements applied during formatting      |
+| Style options       | Markdown mode, allow accents, allow punctuation  |
 
 ---
 
@@ -43,20 +43,10 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 ### Usage
 
-```txt
- Settings
- ├── System      Store transcriptions
- ├── Sound       Input source (microphone), sound effects
- ├── Appearance  Theme, overlay size, position
- ├── Format      Dictionary, snippets, modes, enable LLM
- ├── Keyboard    Push to talk / toggle, shortcuts
- └── History     Logs, status, errors, activity
-```
-
 1. Launch Gladys — a splash screen loads, then the tray icon appears.
-2. Press the hotkey (default `Ctrl+Alt+P`) to start recording.
-3. Speak; the overlay shows live audio levels.
-4. Press the hotkey again to stop. The formatted text is pasted automatically.
+2. Press the hotkey to start recording - default `Ctrl+Alt+P`.
+3. Speak - the overlay shows live audio levels.
+4. Press the hotkey again to stop - The formatted text is pasted automatically.
 
 ---
 
@@ -72,7 +62,7 @@ Gladys listens to global keystrokes to detect the hotkey and injects keystrokes 
 
 - Audio is captured with [miniaudio](https://miniaud.io/) and transcribed locally. Nothing is sent over the network.
 - Transcription history is stored in plaintext in a local SQLite database (`history.db`).
-- Keystrokes are only used for the hotkey and the paste shortcut. Keystroke content is not logged.
+- Keystrokes are only used for the hotkey and the paste shortcut. **Neither Transcription nor Keystroke content is not logged**.
 
 ---
 
@@ -111,26 +101,24 @@ sudo apt install libx11-dev wl-clipboard
 
 ---
 
-### Build from source
-
-#### 1. Set QT_ROOT_DIR
+#### 4. Set QT_ROOT_DIR
 
 ```bash
 export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/gcc_64         # Linux
 export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/macos          # macOS
-export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/msvc2022_64    # Windows (Git Bash)
+export QT_ROOT_DIR=$HOME/gladys/qt-6.8.3/msvc2022_64    # Windows
 ```
 
-#### 2. Clone, fetch dependencies and build
+#### 5. Clone, fetch dependencies and build
 
 ```bash
 git clone https://github.com/mjesbar/gladys.git
 cd gladys
 
-                                                        # --arch: x64 | arm64
-
 scripts/build.sh                                        # host OS/arch (default)
-scripts/build.sh --os linux --arch x64 --ma-debug off   # --ma-debug: on | off (miniaudio debug output)
+scripts/build.sh --os linux --arch x64 --ma-debug off   # --os: linux | macos | windows
+                                                        # --arch: x64 | arm64
+                                                        # --ma-debug: on | off (miniaudio debug output)
 ```
 
 Build space (default `$HOME/gladys`, override with `GLADYS_SPACE`):
@@ -143,22 +131,7 @@ $GLADYS_SPACE/
 └── qt-6.8.3/   Qt install (QT_ROOT_DIR)
 ```
 
-#### 3. Run
-
-```bash
-$HOME/gladys/dist/gladys
-```
-
-#### 4. Package
-
-```bash
-scripts/package.sh --version 1.0.0                      # host OS/arch (default)
-scripts/package.sh --os linux --arch x64 --version 1.0.0  # --os: linux | macos | windows
-                                                        # --arch: x64 | arm64
-                                                        # --version: release version (required)
-```
-
-Artifacts land in `$GLADYS_SPACE/release/`.
+#### 6. Run
 
 > [!WARNING]
 > **Linux: enable paste (uinput)**
@@ -168,54 +141,13 @@ Artifacts land in `$GLADYS_SPACE/release/`.
 > # log out and back in
 > scripts/linux/uinput.sh deny    # deny: revoke /dev/uinput access
 > ```
+>
+> Without this step, Gladys couldn't work properly in Wayland.
 
----
+Run the gladys executable:
 
-### Dependencies
-
-- [Qt 6.8+](https://www.qt.io/) — Core, Gui, Qml, Quick, QuickControls2, Widgets, Network, Svg, HttpServer, Sql
-- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text, bundled libs in `src/include/sherpa-onnx`
-- [miniaudio](https://miniaud.io/) — audio capture (single header, bundled in `src/include/miniaudio`)
-- [Vulkan](https://www.vulkan.org/) — GPU acceleration for llama.cpp on Windows and Linux (optional, recommended)
-- X11 development headers (Linux build)
-- `wl-clipboard` (Linux runtime)
-
----
-
-### Project structure
-
-```txt
-gladys/
-├── CMakeLists.txt
-├── CMakePresets.json
-├── scripts/
-│   ├── build.sh
-│   ├── package.sh
-│   ├── qt-install.sh
-│   ├── linux/uinput.sh
-│   ├── macos/README.md
-│   └── windows/README.md
-└── src/
-    ├── main.cc              # entry point, wires modules, shutdown
-    ├── core.cc/.hpp         # pipeline: hotkey -> ASR -> LLM -> clipboard -> paste
-    ├── assets/              # fonts, icons, keyboard, overlay, sfx, QSS/QML theme
-    ├── include/             # miniaudio, sherpa-onnx headers + libs
-    ├── apis/
-    │   ├── asr/             # gladys-asr process: stt (sherpa-onnx), HTTP server
-    │   ├── llm/             # llama-server launch, prompt, chat request
-    │   └── server.hpp       # ports and endpoints
-    ├── modules/
-    │   ├── audio/           # levels, sfx
-    │   ├── data/            # SQLite owner (history.db)
-    │   ├── keypaste/        # paste: uinput / CGEvent / SendInput
-    │   ├── keytoggle/       # toggle: evdev / CGEventTap / SetWindowsHookEx
-    │   ├── log/             # per-module Qt logging categories
-    │   ├── settings/        # persistent preferences per menu
-    │   └── ui/              # tray, overlay, settings window, history, waves
-    └── qml/
-        ├── Theme.qml
-        ├── components/      # ui/ kit, settings/ pages, mic widgets
-        └── windows/         # Overlay, Splash, Settings, StorageError
+```bash
+$HOME/gladys/dist/gladys
 ```
 
 ---
