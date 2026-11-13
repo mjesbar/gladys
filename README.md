@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="src/assets/icons/title.svg" alt="Gladys" height="72">
+  <img src="src/assets/icons/title.svg" alt="Gladys" height="160">
 </p>
 
 <p align="center">
