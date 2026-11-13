@@ -90,7 +90,6 @@ Window {
         source: "qrc:/icons/spinner.svg"
         sourceSize: Qt.size(24, 24)
         smooth: true
-        antialiasing: true
 
         NumberAnimation on rotation {
             from: 0

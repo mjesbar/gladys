@@ -75,6 +75,8 @@ Window {
     Loader {
         anchors.fill: parent
         sourceComponent: overlay.overlaySize === "Great" ? greatMic : overlay.overlaySize === "Basic" ? basicMic : minimalMic
+        layer.enabled: true
+        layer.samples: 4
     }
 
     Loader {
