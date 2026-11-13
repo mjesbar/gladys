@@ -1,4 +1,5 @@
-// AI Models - Installs, uninstalls and selects the LLM (GGUF) and ASR (sherpa-onnx) models in the user cache.
+// AI Models - Installs, uninstalls and selects the LLM (GGUF) and ASR (sherpa-onnx) models in the
+// user cache.
 
 #include "aimodmgr.hpp"
 
@@ -15,9 +16,11 @@
 QString models_dir(ModelKind kind) {
   const bool llm = kind == ModelKind::Llm;
 #if defined(Q_OS_WIN)
-  return qEnvironmentVariable("LOCALAPPDATA") + (llm ? "/Gladys/Cache/Models/LLM" : "/Gladys/Cache/Models/ASR");
+  return qEnvironmentVariable("LOCALAPPDATA") +
+    (llm ? "/Gladys/Cache/Models/LLM" : "/Gladys/Cache/Models/ASR");
 #elif defined(Q_OS_MACOS)
-  return QDir::homePath() + (llm ? "/Library/Caches/Gladys/Models/LLM" : "/Library/Caches/Gladys/Models/ASR");
+  return QDir::homePath() +
+    (llm ? "/Library/Caches/Gladys/Models/LLM" : "/Library/Caches/Gladys/Models/ASR");
 #else
   return QDir::homePath() + (llm ? "/.cache/gladys/models/llm" : "/.cache/gladys/models/asr");
 #endif
@@ -33,21 +36,29 @@ static const Model* find_model(ModelKind kind, const QString& key) {
   return it == models.end() ? nullptr : &it->second;
 }
 
-static QString installed_path(ModelKind kind, const QString& key) { return models_dir(kind) + "/" + key; }
+static QString installed_path(ModelKind kind, const QString& key) {
+  return models_dir(kind) + "/" + key;
+}
 
-// GGUF downloads straight to <key>.part; an ASR archive downloads to <key>.tar.bz2.part, then extracts to <key>.extract.
+// GGUF downloads straight to <key>.part; an ASR archive downloads to <key>.tar.bz2.part, then
+// extracts to <key>.extract.
 static QString download_path(ModelKind kind, const QString& key) {
   return installed_path(kind, key) + (kind == ModelKind::Asr ? ".tar.bz2.part" : ".part");
 }
 
-static QString extract_path(ModelKind kind, const QString& key) { return installed_path(kind, key) + ".extract"; }
+static QString extract_path(ModelKind kind, const QString& key) {
+  return installed_path(kind, key) + ".extract";
+}
 
-static bool is_installed(ModelKind kind, const QString& key) { return QFileInfo::exists(installed_path(kind, key)); }
+static bool is_installed(ModelKind kind, const QString& key) {
+  return QFileInfo::exists(installed_path(kind, key));
+}
 
 static int installed_count(ModelKind kind) {
   const auto& models = catalog(kind);
-  return std::count_if(models.begin(), models.end(),
-    [kind](const auto& entry) { return is_installed(kind, entry.first); });
+  return std::count_if(models.begin(), models.end(), [kind](const auto& entry) {
+    return is_installed(kind, entry.first);
+  });
 }
 
 // Removes what a failed install left behind.
@@ -59,31 +70,39 @@ static void discard(ModelKind kind, const QString& key) {
 }
 
 // Selection is stored per kind in the settings table, as the catalog key of the model.
-static QString selection_key(ModelKind kind) { return kind == ModelKind::Llm ? "llmModel" : "asrModel"; }
+static QString selection_key(ModelKind kind) {
+  return kind == ModelKind::Llm ? "llmModel" : "asrModel";
+}
 
 static QString stored_selection(ModelKind kind) {
   QVariantMap settings;
-  QMetaObject::invokeMethod(Data::instance(), "read_settings", Qt::BlockingQueuedConnection,
+  QMetaObject::invokeMethod(Data::instance(),
+    "read_settings",
+    Qt::BlockingQueuedConnection,
     Q_RETURN_ARG(QVariantMap, settings));
   return settings.value(selection_key(kind)).toString();
 }
 
 static void store_selection(ModelKind kind, const QString& key) {
   bool ok = false;
-  QMetaObject::invokeMethod(Data::instance(), "update_setting", Qt::BlockingQueuedConnection,
-    Q_RETURN_ARG(bool, ok), Q_ARG(QString, selection_key(kind)), Q_ARG(QVariant, QVariant(key)));
+  QMetaObject::invokeMethod(Data::instance(),
+    "update_setting",
+    Qt::BlockingQueuedConnection,
+    Q_RETURN_ARG(bool, ok),
+    Q_ARG(QString, selection_key(kind)),
+    Q_ARG(QVariant, QVariant(key)));
   if (!ok) {
-    QMetaObject::invokeMethod(Data::instance(), "create_setting", Qt::BlockingQueuedConnection,
-      Q_RETURN_ARG(bool, ok), Q_ARG(QString, selection_key(kind)), Q_ARG(QVariant, QVariant(key)));
+    QMetaObject::invokeMethod(Data::instance(),
+      "create_setting",
+      Qt::BlockingQueuedConnection,
+      Q_RETURN_ARG(bool, ok),
+      Q_ARG(QString, selection_key(kind)),
+      Q_ARG(QVariant, QVariant(key)));
   }
 }
 
-// Key of the model Gladys runs: the stored selection when installed, else the default of the kind.
-static QString selected_key(ModelKind kind) {
-  const QString stored = stored_selection(kind);
-  if (find_model(kind, stored) && is_installed(kind, stored)) {
-    return stored;
-  }
+// Key of the model flagged default in the catalog of the kind.
+static QString default_key(ModelKind kind) {
   for (const auto& [key, model] : catalog(kind)) {
     if (model.is_default) {
       return key;
@@ -92,9 +111,23 @@ static QString selected_key(ModelKind kind) {
   return {};
 }
 
+// Key of the model Gladys runs: the stored selection when installed, else the default of the kind.
+static QString selected_key(ModelKind kind) {
+  const QString stored = stored_selection(kind);
+  if (find_model(kind, stored) && is_installed(kind, stored)) {
+    return stored;
+  }
+  return default_key(kind);
+}
+
 QString selected_model_path(ModelKind kind) {
   const QString key = selected_key(kind);
   return key.isEmpty() ? QString() : installed_path(kind, key);
+}
+
+bool needs_setup() {
+  return !is_installed(ModelKind::Llm, default_key(ModelKind::Llm)) ||
+    !is_installed(ModelKind::Asr, default_key(ModelKind::Asr));
 }
 
 ModelsBridge::ModelsBridge(QObject* parent) : QObject(parent) {}
@@ -122,6 +155,7 @@ QVariantList ModelsBridge::models(int kind) const {
       {"name", model.name},
       {"installed", is_installed(k, key)},
       {"selected", key == selected},
+      {"default", model.is_default},
       {"busy", job != nullptr},
       {"progress", job ? job->percent : 0}});
   }
@@ -146,7 +180,9 @@ void ModelsBridge::install(int kind, const QString& file) {
   }
   job->reply = m_network.get(QNetworkRequest(QUrl(model->url)));
   connect(job->reply, &QNetworkReply::readyRead, this, [this, file]() { on_data(file); });
-  connect(job->reply, &QNetworkReply::downloadProgress, this,
+  connect(job->reply,
+    &QNetworkReply::downloadProgress,
+    this,
     [this, file](qint64 received, qint64 total) { on_progress(file, received, total); });
   connect(job->reply, &QNetworkReply::finished, this, [this, file]() { on_downloaded(file); });
   m_jobs.emplace(file, std::move(job));
@@ -167,7 +203,8 @@ void ModelsBridge::uninstall(int kind, const QString& file) {
     return;
   }
   const QString path = installed_path(k, file);
-  const bool removed = QFileInfo(path).isDir() ? QDir(path).removeRecursively() : QFile::remove(path);
+  const bool removed =
+    QFileInfo(path).isDir() ? QDir(path).removeRecursively() : QFile::remove(path);
   if (!removed) {
     emit failed(file, tr("Cannot remove %1").arg(path));
     return;
@@ -179,7 +216,8 @@ void ModelsBridge::uninstall(int kind, const QString& file) {
 // Refused while a model loads, so loads never overlap. Takes effect when the child restarts.
 void ModelsBridge::select(int kind, const QString& file) {
   const ModelKind k = static_cast<ModelKind>(kind);
-  if (!find_model(k, file) || m_loading || m_jobs.count(file) || !is_installed(k, file) || file == selected_key(k)) {
+  if (!find_model(k, file) || m_loading || m_jobs.count(file) || !is_installed(k, file) ||
+    file == selected_key(k)) {
     return;
   }
   store_selection(k, file);
@@ -219,7 +257,8 @@ void ModelsBridge::on_progress(const QString& key, qint64 received, qint64 total
   }
 }
 
-// Checks the SHA-256, then places the file: GGUF is renamed into place, an ASR archive is extracted.
+// Checks the SHA-256, then places the file: GGUF is renamed into place, an ASR archive is
+// extracted.
 void ModelsBridge::on_downloaded(const QString& key) {
   Job* job = find_job(key);
   if (!job) {
@@ -252,7 +291,8 @@ void ModelsBridge::on_downloaded(const QString& key) {
   complete(key);
 }
 
-// Extracts the archive into a staging folder. Its top folder is the catalog key, so it is renamed into place.
+// Extracts the archive into a staging folder. Its top folder is the catalog key, so it is renamed
+// into place.
 void ModelsBridge::extract(const QString& key) {
   const Job* job = find_job(key);
   QDir().mkpath(extract_path(job->kind, key));

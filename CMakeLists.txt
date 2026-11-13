@@ -144,6 +144,7 @@ qt_add_qml_module(gladys
     src/qml/components/settings/HistoryLogs.qml
     src/qml/windows/Overlay.qml
     src/qml/windows/Splash.qml
+    src/qml/windows/Setup.qml
     src/qml/windows/Settings.qml
     src/qml/windows/StorageError.qml
 )

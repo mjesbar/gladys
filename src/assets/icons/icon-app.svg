@@ -1,59 +1,66 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 1024 1024">
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800px" height="800px" viewBox="0 0 1024 1024">
   <defs>
-    <!-- Radial Gradient for Background -->
-    <radialGradient id="bg-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-      <stop offset="0%" style="stop-color:#FFFFFF; stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#FFFFFF; stop-opacity:1" />
-    </radialGradient>
 
     <mask id="grid-mask">
-      <rect x="0" y="0" width="1024" height="1024" fill="white" />
+      <rect x="0" y="0" width="1024" height="1024" fill="white"/>
       <g fill="#404040">
-        <!-- Vertical Gaps -->
-        <rect x="340.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="376.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="412.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="448.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="484.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="520.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="556.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="592.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="628.5" y="190" width="19" height="470" rx="10" ry="10" />
-        <rect x="664.5" y="190" width="19" height="470" rx="10" ry="10" />
-
-        <!-- Horizontal Gaps -->
-        <rect x="370" y="145" width="290" height="10" rx="5" ry="5" />
-        <rect x="335" y="167" width="360" height="12" rx="6" ry="6" />
-        <rect x="310" y="186" width="400" height="14" rx="7" ry="7" />
-        <rect x="300" y="216" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="256" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="297" width="424" height="22" rx="10" ry="10" />
-        <rect x="300" y="336" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="376" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="416" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="457" width="424" height="22" rx="10" ry="10" />
-        <rect x="300" y="496" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="536" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="576" width="424" height="24" rx="10" ry="10" />
-        <rect x="300" y="617" width="424" height="22" rx="10" ry="10" />
-        <rect x="310" y="650" width="400" height="14" rx="7" ry="7" />
-        <rect x="335" y="680" width="360" height="12" rx="6" ry="6" />
-        <rect x="370" y="705" width="290" height="10" rx="5" ry="5" />
+      <rect x="258.8" y="226.0" width="231.2" height="44.0" rx="22" ry="22"/>
+      <rect x="534.0" y="226.0" width="231.2" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="292.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="534.0" y="292.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="358.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="534.0" y="358.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="424.0" width="196.0" height="44.0" rx="22" ry="22"/>
+      <rect x="570.0" y="424.0" width="196.0" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="490.0" width="196.0" height="44.0" rx="22" ry="22"/>
+      <rect x="570.0" y="490.0" width="196.0" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="556.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="534.0" y="556.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="258.0" y="622.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="534.0" y="622.0" width="232.0" height="44.0" rx="22" ry="22"/>
+      <rect x="318.0" y="113.1" width="44.0" height="86.9" rx="22" ry="22"/>
+      <rect x="318.0" y="700.0" width="44.0" height="88.9" rx="22" ry="22"/>
+      <rect x="386.8" y="85.7" width="44.0" height="114.3" rx="22" ry="22"/>
+      <rect x="386.8" y="700.0" width="44.0" height="116.3" rx="22" ry="22"/>
+      <rect x="455.6" y="84.0" width="44.0" height="116.0" rx="22" ry="22"/>
+      <rect x="455.6" y="700.0" width="44.0" height="118.0" rx="22" ry="22"/>
+      <rect x="524.4" y="84.0" width="44.0" height="116.0" rx="22" ry="22"/>
+      <rect x="524.4" y="700.0" width="44.0" height="118.0" rx="22" ry="22"/>
+      <rect x="593.2" y="85.7" width="44.0" height="114.3" rx="22" ry="22"/>
+      <rect x="593.2" y="700.0" width="44.0" height="116.3" rx="22" ry="22"/>
+      <rect x="662.0" y="113.1" width="44.0" height="86.9" rx="22" ry="22"/>
+      <rect x="662.0" y="700.0" width="44.0" height="88.9" rx="22" ry="22"/>
       </g>
     </mask>
+
+    <!-- Mic Body -->
+    <path id="body" d="M592 808H432a160 160 0 0 1-160-160V264A160 160 0 0 1 432 104h160a160 160 0 0 1 160 160v384a160 160 0 0 1-160 160z"/>
+    <!-- Support Gradient -->
+    <linearGradient id="support-gradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:#404040"/>
+      <stop offset="100%" style="stop-color:#171717"/>
+    </linearGradient>
+    <!-- Metallic Head Gradient (light from top-left) -->
+    <linearGradient id="metal-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" style="stop-color:#D4D4D4"/>
+      <stop offset="100%" style="stop-color:#909090"/>
+    </linearGradient>
   </defs>
 
   <!-- Background with Radial Gradient -->
-  <circle cx="512" cy="512" r="512" fill="url(#bg-gradient)" />
+  <circle cx="512" cy="512" r="504" fill="#FFFFFF" stroke="#606060" stroke-width="16"/>
 
   <!-- Trapezoid Support -->
-  <path fill="#000000" d="M387 776H637L612 896Q612 906 582 926H442Q412 906 412 896Z" />
+  <path fill="url(#support-gradient)" d="M387 800H637L612 896Q612 906 582 926H442Q412 906 412 896Z"/>
 
   <!-- Microphone Head -->
-  <path
-    fill="#000000"
-    mask="url(#grid-mask)"
-    d="     M592 808H432a160 160 0 0 1-160-160V264A160 160 0 0 1 432 104h160a160 160 0 0 1 160 160v384a160 160 0 0 1-160 160z   "
-  />
+  <use xlink:href="#body" fill="#121212"/>
+  <use xlink:href="#body" fill="url(#metal-gradient)" mask="url(#grid-mask)"/>
+
+  <!-- Seal "G" -->
+  <g transform="translate(512 476)">
+    <circle r="46" fill="#1E40AF" stroke="#172554" stroke-width="6"/>
+    <path fill="#172554" d="M22 -3.8Q22.3 -2.2 22.3 0.3Q22.3 2.8 21.1 5.9Q20 9 17.9 11.8Q15.8 14.7 13 17.2Q10.2 19.6 6.9 21.4Q-0.2 25.3 -7.4 25.3Q-20.6 25.3 -24.5 16Q-25.8 13 -25.8 9.4Q-25.8 5.8 -24.9 2.8Q-23.9 -0.3 -22.2 -3.3Q-20.4 -6.2 -18.1 -9Q-15.7 -11.8 -12.8 -14.2Q-10 -16.7 -6.7 -18.7Q-3.5 -20.8 -0.1 -22.2Q7.1 -25.3 13.7 -25.3Q25.6 -25.3 25.6 -19.7Q25.6 -18.1 23.2 -16.3Q20.6 -19.9 15.9 -21.4Q14.3 -21.8 12 -21.8Q9.7 -21.8 6.7 -20.9Q3.7 -20 0.8 -18.3Q-2 -16.6 -4.5 -14.3Q-7 -12 -8.9 -9.3Q-12.9 -3.4 -12.9 2.5Q-12.9 8.5 -10 11.5Q-7 14.5 -1.5 14.5Q2.4 14.5 6.8 12.6Q13.8 9.3 16.5 3.4Q17.4 1.3 17.6 -1Q10.7 2.6 4.7 2.6Q-1.2 2.6 -3.4 -0.4Q-4.1 -1.4 -4.1 -2.6Q-4.1 -3.9 -3.2 -4.9Q-2.3 -5.9 -0.9 -6.7Q0.6 -7.6 2.5 -8.2Q4.4 -8.9 6.4 -9.4Q10.5 -10.3 13.7 -10.3Q18.8 -10.3 20.8 -7Q22.5 -8.2 24.4 -9.8Q25.8 -8.6 25.8 -7.7Q25.8 -7.4 24.9 -6.3Q24 -5.3 22 -3.8ZM17.2 -4.7Q16.3 -6.9 13.3 -6.9Q8.7 -6.9 4.7 -5.4Q2.8 -4.6 2.8 -3.8Q2.8 -2 7.1 -2Q11.9 -2 17.2 -4.7Z"/>
+  </g>
 </svg>

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE, install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/,
-# fetch llama.cpp into dist/ and the default AI models into the user cache.
+# fetch llama.cpp into dist/. AI models are not fetched here: the app installs them on first run.
 # Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off]
 # Requires QT_ROOT_DIR (Qt install dir).
 set -euo pipefail
@@ -62,20 +62,6 @@ BUILD="$SPACE/build"
 
 LLAMACPP_VER=llama-b9265
 LLAMACPP_BASE=https://github.com/ggml-org/llama.cpp/releases/download/b9265
-LLM_URL=https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q8_0.gguf
-LLM_FILE=Qwen3.5-0.8B-Q8_0.gguf
-LLM_SHA256=0ad885ffd4bb022fc4f0d33a3308fa108ef8613159d3b3a67e23abca056b7a6c
-ASR_NAME=sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8
-ASR_URL=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/$ASR_NAME.tar.bz2
-ASR_SHA256=1495e91b59d7fc53ddca91f3431758ec99f8fa253fdb0e1e851be0f72b14b0f9
-
-
-# Same location as the app reads at runtime (src/modules/aimodmgr/aimodmgr.cc)
-case "$OS" in
-  linux) CACHE=$HOME/.cache/gladys/models ;;
-  macos) CACHE=$HOME/Library/Caches/Gladys/Models ;;
-  windows) CACHE="$(cygpath -u "$LOCALAPPDATA")/Gladys/Cache/Models" ;;
-esac
 
 
 sha256_of() {
@@ -131,20 +117,6 @@ if [ "$(cat "$LLAMA_DIR/.arch" 2>/dev/null)" != "$ARCH" ]; then
   esac
   echo "$ARCH" > "$LLAMA_DIR/.arch"
   echo "[build] llama.cpp $ARCH extract OK"
-fi
-
-
-# Default models into the cache. The sherpa-onnx archive is extracted into a staging folder, then renamed.
-fetch "$LLM_URL" "$LLM_SHA256" "$CACHE/llm/$LLM_FILE"
-ASR_DIR="$CACHE/asr/$ASR_NAME"
-if [ ! -d "$ASR_DIR" ]; then
-  fetch "$ASR_URL" "$ASR_SHA256" "$ASR_DIR.tar.bz2"
-  rm -rf "$ASR_DIR.extract"
-  mkdir -p "$ASR_DIR.extract"
-  tar -xjf "$ASR_DIR.tar.bz2" -C "$ASR_DIR.extract" --strip-components=1
-  mv "$ASR_DIR.extract" "$ASR_DIR"
-  rm -f "$ASR_DIR.tar.bz2"
-  echo "[build] sherpa-onnx $ASR_NAME extract OK"
 fi
 
 
