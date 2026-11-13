@@ -10,7 +10,7 @@ Window {
     signal fadeOutFinished
 
     width: 440
-    height: 416
+    height: 394
     x: Screen.virtualX + (Screen.width - width) / 2
     y: Screen.virtualY + (Screen.height - height) / 2
     color: "transparent"
@@ -59,7 +59,7 @@ Window {
 
     Image {
         x: (parent.width - width) / 2
-        y: 380
+        y: 358
         width: 24
         height: 24
         source: "qrc:/icons/spinner.svg"
