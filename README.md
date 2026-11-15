@@ -22,6 +22,30 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 ---
 
+# Install
+
+Always installs the latest release.
+
+| OS      | Method                                                                                                      |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| macOS   | `curl -fsSL https://gladys.mjesbar.dev/macos/install.sh \| sh`                                              |
+| macOS   | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-macos-arm64.zip)                   |
+| Linux   | `curl -fsSL https://gladys.mjesbar.dev/linux/install.sh \| sh`                                              |
+| Linux   | [.AppImage](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.AppImage)           |
+| Linux   | [.tar.bz2](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.tar.bz2)             |
+| Windows | [.msi](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.msi)                       |
+| Windows | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.zip)                       |
+
+Uninstall (macOS / Linux): append `-s -- --uninstall` to the install command.
+
+```txt
+~/Applications/gladys.app          macOS install.sh
+~/.local/share/gladys/             Linux install.sh (app)
+~/.local/bin/gladys                Linux install.sh (launcher)
+```
+
+---
+
 # Product
 
 ### Features

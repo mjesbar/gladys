@@ -74,7 +74,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-linux-x64-*
+          files: release/gladys-linux-x64.*
 
   # ----------------------------------------------------------------
   # Windows
@@ -124,7 +124,7 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-win-x64-*
+          files: release/gladys-win-x64.*
 
   # ----------------------------------------------------------------
   # macOS
@@ -169,4 +169,4 @@ jobs:
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Gladys v${{ needs.version.outputs.version }}
-          files: release/gladys-macos-arm64-*
+          files: release/gladys-macos-arm64.*

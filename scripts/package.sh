@@ -75,7 +75,7 @@ echo "[package] archive $OS $ARCH $VERSION ..."
 case "$OS" in
 
   linux)
-    NAME=gladys-linux-$ARCH-$VERSION
+    NAME=gladys-linux-$ARCH
     # Install tree: dev files out, icon in (used by the .desktop launcher)
     cp -a "$DIST" "$STAGE/gladys"
     find "$STAGE/gladys" -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.sh' -o -name '*miniaudio*' -o -name '*.zip' -o -name '*.tar.gz' \) -delete
@@ -100,13 +100,13 @@ EOF
     ;;
 
   macos)
-    NAME=gladys-macos-$ARCH-$VERSION
+    NAME=gladys-macos-$ARCH
     (cd "$DIST" && zip -qry "$RELEASE/$NAME.zip" . "${EXCLUDE[@]}")
     ARTIFACTS+=("$NAME.zip")
     ;;
 
   windows)
-    NAME=gladys-win-$ARCH-$VERSION
+    NAME=gladys-win-$ARCH
     (cd "$DIST" && zip -qr "$RELEASE/$NAME.zip" . "${EXCLUDE[@]}")
     ARTIFACTS+=("$NAME.zip")
     wix build -v "$(cygpath -w scripts/windows/gladys.wxs)" -arch x64 \
