@@ -5,21 +5,21 @@ import "." as Ui
 import "../.."
 
 Box {
-  id: alert
+    id: alert
 
-  property string tone: "info"
-  property string text: ""
+    property string tone: "info"
+    property string text: ""
 
-  border.color: Theme.toneColor(tone)
+    border.color: Theme.toneColor(tone)
 
-  NumberAnimation on opacity {
-    from: 0
-    to: 1
-    duration: Theme.durationSlow
-  }
+    NumberAnimation on opacity {
+        from: 0
+        to: 1
+        duration: Theme.durationSlow
+    }
 
-  Ui.Text {
-    width: parent.width
-    text: alert.text
-  }
+    Ui.Text {
+        width: parent.width
+        text: alert.text
+    }
 }

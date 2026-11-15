@@ -196,7 +196,8 @@ int main(int argc, char* argv[]) {
   engine.rootContext()->setContextProperty("overlayBridge", &overlay_bridge);
 
   // Storage opens before settings load. A failure raises the popup; the app keeps running on
-  // defaults. The popup is loaded before the splash, so rootObjects().last() is the splash after load.
+  // defaults. The popup is loaded before the splash, so rootObjects().last() is the splash after
+  // load.
   QObject::connect(data, &Data::STORAGE_FAILED, &app, [&engine](const QString& what) {
     engine.loadFromModule("Gladys", "StorageError");
     QMetaObject::invokeMethod(engine.rootObjects().last(), "show_error", Q_ARG(QString, what));
@@ -204,7 +205,8 @@ int main(int argc, char* argv[]) {
   QMetaObject::invokeMethod(data, "open", Qt::BlockingQueuedConnection);
   QMetaObject::invokeMethod(setting, "load", Qt::BlockingQueuedConnection);
 
-  // First run with a missing default model: Setup replaces the first Splash, then Splash shows again.
+  // First run with a missing default model: Setup replaces the first Splash, then Splash shows
+  // again.
   if (needs_setup()) {
     engine.loadFromModule("Gladys", "Setup");
     QObject* setup = engine.rootObjects().last();
@@ -229,11 +231,13 @@ int main(int argc, char* argv[]) {
   QObject::connect(splash, SIGNAL(fadeInFinished()), &showing, SLOT(quit()));
   showing.exec();
 
-  // gladys-asr and gladys-llm are separate processes owned by the core. Models come from the settings, so this follows open.
+  // gladys-asr and gladys-llm are separate processes owned by the core. Models come from the
+  // settings, so this follows open.
   const QString model_dir = selected_model_path(ModelKind::Asr);
   Core core(model_dir, paste);
-  QObject::connect(&models_bridge, &ModelsBridge::selected, &core,
-    [&core](int kind) { core.reload(static_cast<ModelKind>(kind)); });
+  QObject::connect(&models_bridge, &ModelsBridge::selected, &core, [&core](int kind) {
+    core.reload(static_cast<ModelKind>(kind));
+  });
   QObject::connect(&core, &Core::LOADING_CHANGED, &models_bridge, &ModelsBridge::set_loading);
   QObject::connect(setting, &Setting::SETTINGS_CHANGED, &core, &Core::update_config);
   // The lambda's context is data, so it runs on the Data thread.

@@ -5,7 +5,9 @@ pragma ComponentBehavior: Bound
 import ".."
 
 Section {
-  title: qsTr("Cloud / Local")
+    title: qsTr("Cloud / Local")
 
-  Note { text: qsTr("Not implemented yet") }
+    Note {
+        text: qsTr("Not implemented yet")
+    }
 }

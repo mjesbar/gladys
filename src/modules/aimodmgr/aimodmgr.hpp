@@ -1,5 +1,6 @@
-// AI Models - Installs, uninstalls and selects the LLM (GGUF) and ASR (sherpa-onnx) models in the user cache.
-// Downloads are SHA-256 checked and staged as .part, so an interrupted install never shows as installed.
+// AI Models - Installs, uninstalls and selects the LLM (GGUF) and ASR (sherpa-onnx) models in the
+// user cache. Downloads are SHA-256 checked and staged as .part, so an interrupted install never
+// shows as installed.
 
 #ifndef AIMODMGR_HPP
 #define AIMODMGR_HPP
@@ -41,7 +42,8 @@ class ModelsBridge : public QObject {
   void set_loading(bool loading);  // a model is loading: selection is refused
 
  signals:
-  void changed();  // an install started, or one finished or failed, or a model was removed or selected
+  void
+  changed();  // an install started, or one finished or failed, or a model was removed or selected
   void progressChanged(const QString& file, int percent);
   void failed(const QString& file, const QString& reason);
   void selected(int kind);  // the child of this kind must restart on its new model
@@ -68,7 +70,8 @@ class ModelsBridge : public QObject {
   void complete(const QString& key);
   void fail(const QString& key, const QString& reason);
 
-  std::map<QString, std::unique_ptr<Job>> m_jobs;  // by key; declared before the network so it outlives it
+  std::map<QString, std::unique_ptr<Job>>
+    m_jobs;  // by key; declared before the network so it outlives it
   QNetworkAccessManager m_network;
   bool m_loading = false;
 };

@@ -203,15 +203,19 @@ void Toggle::process_events() {
 static bool has_accessibility() {
   const void* keys[] = {kAXTrustedCheckOptionPrompt};
   const void* values[] = {kCFBooleanTrue};
-  CFDictionaryRef options = CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1,
-                                               &kCFTypeDictionaryKeyCallBacks,
-                                               &kCFTypeDictionaryValueCallBacks);
+  CFDictionaryRef options = CFDictionaryCreate(kCFAllocatorDefault,
+    keys,
+    values,
+    1,
+    &kCFTypeDictionaryKeyCallBacks,
+    &kCFTypeDictionaryValueCallBacks);
   const bool trusted = AXIsProcessTrustedWithOptions(options);
   CFRelease(options);
   return trusted;
 }
 
-// Virtual key code of the trigger key. Fn and right Option are modifiers: they arrive as flags changed.
+// Virtual key code of the trigger key. Fn and right Option are modifiers: they arrive as flags
+// changed.
 static CGKeyCode trigger_key(HotkeyProfile profile) {
   switch (profile) {
     case HotkeyProfile::Fn:
@@ -231,7 +235,7 @@ bool Toggle::init() {
   }
 
   CGEventMask eventMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp) |
-                          CGEventMaskBit(kCGEventFlagsChanged);
+    CGEventMaskBit(kCGEventFlagsChanged);
   CFMachPortRef tap = CGEventTapCreate(kCGHIDEventTap,
     kCGHeadInsertEventTap,
     kCGEventTapOptionDefault,

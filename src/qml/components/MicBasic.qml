@@ -46,8 +46,16 @@ Item {
         border.color: mic.recording ? "#FF0000" : "#7A7A7A"
         border.width: 2
 
-        Behavior on color { ColorAnimation { duration: 300 } }
-        Behavior on border.color { ColorAnimation { duration: 300 } }
+        Behavior on color {
+            ColorAnimation {
+                duration: 300
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 300
+            }
+        }
     }
 
     // Ring around the dot while the transcription is formatted and pasted.
@@ -58,6 +66,10 @@ Item {
         opacity: mic.processing ? 1 : 0
         visible: opacity > 0
 
-        Behavior on opacity { NumberAnimation { duration: 300 } }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 300
+            }
+        }
     }
 }

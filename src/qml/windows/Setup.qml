@@ -10,8 +10,8 @@ import "../components/ui" as Ui
 Window {
     id: setup
 
-    signal finished()  // models ready and Open Gladys was chosen, by the user or the countdown
-    signal aborted()   // quit or closed before the models were ready
+    signal finished  // models ready and Open Gladys was chosen, by the user or the countdown
+    signal aborted   // quit or closed before the models were ready
 
     property int kind: 0  // ModelKind being fetched: 0 LLM, 1 ASR
     property string file: ""  // catalog key being fetched

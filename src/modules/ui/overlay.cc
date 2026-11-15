@@ -6,8 +6,9 @@
 
 namespace {
 
-constexpr int GREAT_HALF = 75;  // Great window is 150 x 150: fits the bar row (±60 px) around the mic
-constexpr int GREAT_EDGE = 8;   // Great dot center to the window edge it sits on
+constexpr int GREAT_HALF =
+  75;  // Great window is 150 x 150: fits the bar row (±60 px) around the mic
+constexpr int GREAT_EDGE = 8;  // Great dot center to the window edge it sits on
 
 // Great opens away from its border; diagonals follow the vertical rule.
 QString expansion(const QString& position) {
@@ -18,9 +19,8 @@ QString expansion(const QString& position) {
 
 }  // namespace
 
-QVariantMap OverlayBridge::dot_center(const QString& position,
-  int screen_width,
-  int screen_height) const {
+QVariantMap OverlayBridge::dot_center(
+  const QString& position, int screen_width, int screen_height) const {
   const double margin = 0.1 * qMin(screen_width, screen_height);
   const double x = position.contains("left") ? margin
     : position.contains("right")             ? screen_width - margin

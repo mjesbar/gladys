@@ -4,20 +4,20 @@ import QtQuick
 import "../.."
 
 Rectangle {
-  id: box
+    id: box
 
-  property int padding: Theme.padding
-  default property alias content: body.data
+    property int padding: Theme.padding
+    default property alias content: body.data
 
-  color: Theme.surface
-  border.color: Theme.border
-  radius: Theme.radiusMd
-  implicitHeight: body.childrenRect.height + 2 * padding
+    color: Theme.surface
+    border.color: Theme.border
+    radius: Theme.radiusMd
+    implicitHeight: body.childrenRect.height + 2 * padding
 
-  Item {
-    id: body
+    Item {
+        id: body
 
-    anchors.fill: parent
-    anchors.margins: box.padding
-  }
+        anchors.fill: parent
+        anchors.margins: box.padding
+    }
 }

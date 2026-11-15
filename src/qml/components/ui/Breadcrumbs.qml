@@ -7,43 +7,43 @@ import "." as Ui
 import "../.."
 
 Row {
-  id: trail
+    id: trail
 
-  property var model: []
+    property var model: []
 
-  signal picked(int index)
+    signal picked(int index)
 
-  spacing: 8
+    spacing: 8
 
-  Repeater {
-    model: trail.model
+    Repeater {
+        model: trail.model
 
-    delegate: Row {
-      id: crumb
+        delegate: Row {
+            id: crumb
 
-      required property int index
-      required property string modelData
+            required property int index
+            required property string modelData
 
-      readonly property bool last: index === trail.model.length - 1
+            readonly property bool last: index === trail.model.length - 1
 
-      spacing: 8
+            spacing: 8
 
-      Ui.Text {
-        text: crumb.modelData
-        muted: !crumb.last
+            Ui.Text {
+                text: crumb.modelData
+                muted: !crumb.last
 
-        MouseArea {
-          anchors.fill: parent
-          enabled: !crumb.last
-          cursorShape: Qt.PointingHandCursor
-          onClicked: trail.picked(crumb.index)
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: !crumb.last
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: trail.picked(crumb.index)
+                }
+            }
+            Ui.Text {
+                visible: !crumb.last
+                text: "›"
+                muted: true
+            }
         }
-      }
-      Ui.Text {
-        visible: !crumb.last
-        text: "›"
-        muted: true
-      }
     }
-  }
 }

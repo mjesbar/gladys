@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Install the latest Gladys release for the current user (no root): app in ~/.local/share/gladys, launcher in ~/.local/bin.
-# Usage: install.sh [--uninstall]   (remote: curl -fsSL <raw-url> | bash -s -- [--uninstall])
-set -euo pipefail
+# Usage: install.sh [--uninstall]   (remote: curl -fsSL <raw-url> | sh -s -- [--uninstall])
+set -eu
 
 
 REPO=mjesbar/gladys
@@ -27,7 +27,13 @@ esac
 
 if [ "$MODE" = uninstall ]; then
   echo "[gladys] uninstall ..."
-  rm -rf "$APP" "$BIN" "$DESKTOP" "$CACHE"
+  printf '[gladys] keep AI models? (Yes/no) '
+  read -r ANSWER 2>/dev/null < /dev/tty || ANSWER=
+  rm -rf "$APP" "$BIN" "$DESKTOP"
+  case "$ANSWER" in
+    [Nn]|[Nn][Oo]) rm -rf "$CACHE" ;;
+    *) find "$CACHE" -mindepth 1 -maxdepth 1 ! -name models -exec rm -rf {} + 2>/dev/null || true ;;
+  esac
   echo "[gladys] uninstall OK"
   exit 0
 fi
@@ -36,11 +42,8 @@ fi
 [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] || { echo "Unsupported host: $(uname -sm)" >&2; exit 1; }
 
 
-# releases/latest redirects to releases/tag/v<version>
-TAG=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest")
-VERSION=${TAG##*/v}
-NAME=gladys-linux-x64-$VERSION.tar.bz2
-BASE="https://github.com/$REPO/releases/download/v$VERSION"
+NAME=gladys-linux-x64.tar.bz2
+BASE="https://github.com/$REPO/releases/latest/download"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -71,7 +74,7 @@ Terminal=false
 Categories=Utility;
 EOF
 
-echo "[gladys] installed $VERSION in $APP"
+echo "[gladys] installed in $APP"
 case ":$PATH:" in
   *":$HOME/.local/bin:"*) ;;
   *) echo "[gladys] add ~/.local/bin to PATH to run 'gladys' from a shell" ;;

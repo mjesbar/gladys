@@ -20,8 +20,8 @@ class Sfx : public QObject {
   void init();  // starts the playback engine; on failure sfx stay silent
 
  public slots:
-  void update(const QVariantMap& config);  // soundEffects and soundFx from settings
-  void play_toggle(bool recording);        // selected sfx on start, end.mp3 on stop
+  void update(const QVariantMap& config);         // soundEffects and soundFx from settings
+  void play_toggle(bool recording);               // selected sfx on start, end.mp3 on stop
   Q_INVOKABLE void preview(const QString& name);  // plays even when effects are off
 
  private:

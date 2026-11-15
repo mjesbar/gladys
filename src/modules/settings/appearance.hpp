@@ -8,17 +8,20 @@
 
 class Appearance {
  public:
-  static QStringList available_positions();  // up | right | down | left | up right | up left | down right | down left
-  static QStringList available_sizes();      // Minimal | Basic | Great
-  static QStringList available_screens();    // Primary | connected screen names (GUI thread only)
+  static QStringList
+  available_positions();  // up | right | down | left | up right | up left | down right | down left
+  static QStringList available_sizes();    // Minimal | Basic | Great
+  static QStringList available_screens();  // Primary | connected screen names (GUI thread only)
 
   QVariantMap to_map() const;
-  void from_map(const QVariantMap& values);  // unknown positions and sizes are ignored; any screen name is kept
+  void from_map(
+    const QVariantMap& values);  // unknown positions and sizes are ignored; any screen name is kept
 
  private:
   QString m_position = "down";
   QString m_overlay_size = "Basic";
-  QString m_screen = "Primary";  // a disconnected screen keeps its name; the overlay falls back to primary
+  QString m_screen =
+    "Primary";  // a disconnected screen keeps its name; the overlay falls back to primary
 };
 
 #endif  // SETTING_APPEARANCE_HPP

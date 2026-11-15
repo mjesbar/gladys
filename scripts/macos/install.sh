@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Install the latest Gladys release for the current user (no root): app in ~/Applications/gladys.app.
-# Usage: install.sh [--uninstall]   (remote: curl -fsSL <raw-url> | bash -s -- [--uninstall])
-set -euo pipefail
+# Usage: install.sh [--uninstall]   (remote: curl -fsSL <raw-url> | sh -s -- [--uninstall])
+set -eu
 
 
 REPO=mjesbar/gladys
@@ -25,7 +25,13 @@ esac
 
 if [ "$MODE" = uninstall ]; then
   echo "[gladys] uninstall ..."
-  rm -rf "$APP" "$CACHE"
+  printf '[gladys] keep AI models? (Yes/no) '
+  read -r ANSWER 2>/dev/null < /dev/tty || ANSWER=
+  rm -rf "$APP"
+  case "$ANSWER" in
+    [Nn]|[Nn][Oo]) rm -rf "$CACHE" ;;
+    *) find "$CACHE" -mindepth 1 -maxdepth 1 ! -name Models -exec rm -rf {} + 2>/dev/null || true ;;
+  esac
   echo "[gladys] uninstall OK"
   exit 0
 fi
@@ -34,11 +40,8 @@ fi
 [ "$(uname -s)-$(uname -m)" = Darwin-arm64 ] || { echo "Unsupported host: $(uname -sm)" >&2; exit 1; }
 
 
-# releases/latest redirects to releases/tag/v<version>
-TAG=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest")
-VERSION=${TAG##*/v}
-NAME=gladys-macos-arm64-$VERSION.zip
-BASE="https://github.com/$REPO/releases/download/v$VERSION"
+NAME=gladys-macos-arm64.zip
+BASE="https://github.com/$REPO/releases/latest/download"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -60,4 +63,4 @@ mv "$APP.new" "$APP"
 # Skip the Gatekeeper quarantine scan (no-op when the attribute is absent)
 xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
 
-echo "[gladys] installed $VERSION in $APP"
+echo "[gladys] installed in $APP"

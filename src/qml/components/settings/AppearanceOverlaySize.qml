@@ -7,33 +7,33 @@ import ".."
 import "../ui" as Ui
 
 Section {
-  title: qsTr("Overlay Size")
+    title: qsTr("Overlay Size")
 
-  function load(s) {
-    for (let i = 0; i < repeater.count; ++i) {
-      const card = repeater.itemAt(i);
-      card.checked = card.modelData === s.overlaySize;
+    function load(s) {
+        for (let i = 0; i < repeater.count; ++i) {
+            const card = repeater.itemAt(i);
+            card.checked = card.modelData === s.overlaySize;
+        }
     }
-  }
 
-  Row {
-    width: parent.width
-    spacing: Theme.spacingMd
+    Row {
+        width: parent.width
+        spacing: Theme.spacingMd
 
-    Repeater {
-      id: repeater
+        Repeater {
+            id: repeater
 
-      model: settingsBridge.overlaySizes
+            model: settingsBridge.overlaySizes
 
-      delegate: Ui.RadioCard {
-        required property string modelData
+            delegate: Ui.RadioCard {
+                required property string modelData
 
-        text: modelData
-        source: "qrc:/overlay/" + modelData.toLowerCase() + ".png"
-        onClicked: settingsBridge.apply({
-          overlaySize: modelData
-        })
-      }
+                text: modelData
+                source: "qrc:/overlay/" + modelData.toLowerCase() + ".png"
+                onClicked: settingsBridge.apply({
+                    overlaySize: modelData
+                })
+            }
+        }
     }
-  }
 }

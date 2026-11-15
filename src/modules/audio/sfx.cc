@@ -58,7 +58,8 @@ void Sfx::play(const QString& name) {
   m_data = file.readAll();
 
   const ma_decoder_config config = ma_decoder_config_init_default();
-  if (ma_decoder_init_memory(m_data.constData(), m_data.size(), &config, &m_decoder) != MA_SUCCESS) {
+  if (ma_decoder_init_memory(m_data.constData(), m_data.size(), &config, &m_decoder) !=
+    MA_SUCCESS) {
     qCWarning(lcMain) << "failed to decode sound effect" << name;
     m_data.clear();
     return;

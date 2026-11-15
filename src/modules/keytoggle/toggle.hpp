@@ -4,11 +4,10 @@
 #ifndef KEY_TOGGLE_HPP
 #define KEY_TOGGLE_HPP
 
-#include <QObject>
 #include <QElapsedTimer>
+#include <QObject>
 #include <QString>
 #include <QTimer>
-
 #include <atomic>
 
 #ifdef __linux__

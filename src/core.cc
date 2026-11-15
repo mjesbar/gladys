@@ -1,4 +1,5 @@
-// Core - Pipeline and supervisor for gladys-asr and gladys-llm (llama-server). Runs on the GUI thread.
+// Core - Pipeline and supervisor for gladys-asr and gladys-llm (llama-server). Runs on the GUI
+// thread.
 
 #include "core.hpp"
 
@@ -55,7 +56,9 @@ Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
   m_llm.process.setProcessEnvironment(llama_server_env());
 
   for (Child* child : {&m_asr, &m_llm}) {
-    connect(&child->process, &QProcess::readyReadStandardError, this, [this, child]() { read_stderr(*child); });
+    connect(&child->process, &QProcess::readyReadStandardError, this, [this, child]() {
+      read_stderr(*child);
+    });
     connect(&child->process, &QProcess::finished, this, [this, child]() { on_exit(*child); });
   }
 
@@ -70,7 +73,8 @@ Core::Core(const QString& model_dir, Paste* paste, QObject* parent)
   });
 }
 
-// Closing stdin quits gladys-asr; llama-server ignores stdin, so it is terminated. Kill if still running after the timeout.
+// Closing stdin quits gladys-asr; llama-server ignores stdin, so it is terminated. Kill if still
+// running after the timeout.
 Core::~Core() {
   m_stopping = true;
   m_asr.process.closeWriteChannel();
@@ -138,8 +142,9 @@ void Core::read_stderr(Child& child) {
       continue;
     }
     std::fprintf(stderr, "%s\n", qPrintable(line));
-    Data::post_log("[" + child.name + "] " + line, SEVERE_LEVEL.match(line).hasMatch(),
-                   WARN_LEVEL.match(line).hasMatch());
+    Data::post_log("[" + child.name + "] " + line,
+      SEVERE_LEVEL.match(line).hasMatch(),
+      WARN_LEVEL.match(line).hasMatch());
   }
 }
 
@@ -166,7 +171,8 @@ void Core::check_ready() {
   emit READY();
 }
 
-// The child exits on its old model; on_exit restarts it with the new args. The UI is locked until it is ready.
+// The child exits on its old model; on_exit restarts it with the new args. The UI is locked until
+// it is ready.
 void Core::reload(ModelKind kind) {
   emit LOADING_CHANGED(true);
   if (kind == ModelKind::Asr) {
@@ -179,11 +185,13 @@ void Core::reload(ModelKind kind) {
 }
 
 // POST JSON to an API. done gets the reply body, or an empty object on any failure.
-void Core::post(const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done) {
+void Core::post(
+  const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done) {
   QNetworkRequest request{QUrl(url)};
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
   request.setTransferTimeout(REQUEST_TIMEOUT_MS);
-  QNetworkReply* reply = m_network.post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
+  QNetworkReply* reply =
+    m_network.post(request, QJsonDocument(body).toJson(QJsonDocument::Compact));
   connect(reply, &QNetworkReply::finished, this, [reply, url, done]() {
     reply->deleteLater();
     if (reply->error() != QNetworkReply::NoError) {
@@ -218,8 +226,8 @@ void Core::start_recording() {
   }
   m_recording = true;
   emit RECORDING_CHANGED(true);
-  const QJsonObject body{{"action", "start"},
-                         {"inputSource", m_config.value("inputSource", "default").toString()}};
+  const QJsonObject body{
+    {"action", "start"}, {"inputSource", m_config.value("inputSource", "default").toString()}};
   post(m_asr.url + "/transcribe", body, [this](const QJsonObject& reply) {
     if (reply.isEmpty()) {
       m_recording = false;
@@ -232,9 +240,9 @@ void Core::stop_recording() {
   m_recording = false;
   emit RECORDING_CHANGED(false);
   add_pending(1);
-  post(m_asr.url + "/transcribe", QJsonObject{{"action", "stop"}}, [this](const QJsonObject& reply) {
-    format_text(reply.value("text").toString());
-  });
+  post(m_asr.url + "/transcribe",
+    QJsonObject{{"action", "stop"}},
+    [this](const QJsonObject& reply) { format_text(reply.value("text").toString()); });
 }
 
 void Core::update_config(const QVariantMap& config) {
@@ -247,7 +255,8 @@ void Core::add_pending(int delta) {
   emit PROCESSING_CHANGED(m_pending > 0);
 }
 
-// Formats through llama-server. Any failure, or LLM disabled, pastes the raw text, so dictation is never lost.
+// Formats through llama-server. Any failure, or LLM disabled, pastes the raw text, so dictation is
+// never lost.
 void Core::format_text(const QString& text) {
   if (text.isEmpty()) {
     add_pending(-1);
@@ -257,10 +266,11 @@ void Core::format_text(const QString& text) {
     paste_text(text);
     return;
   }
-  post(m_llm.url + "/v1/chat/completions", build_format_request(text, m_config),
-       [this, text](const QJsonObject& reply) {
-         paste_text(read_format_reply(reply, text, m_config.value("snippets").toMap()));
-       });
+  post(m_llm.url + "/v1/chat/completions",
+    build_format_request(text, m_config),
+    [this, text](const QJsonObject& reply) {
+      paste_text(read_format_reply(reply, text, m_config.value("snippets").toMap()));
+    });
 }
 
 // Clipboard is written on the GUI thread; the keystroke runs on the keypaste thread.
