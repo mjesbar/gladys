@@ -69,7 +69,8 @@ class Data : public QObject {
 
   // appearance: single row, keys position, overlaySize and screen
   QVariantMap read_appearance();
-  bool update_appearance(const QString& position, const QString& overlay_size, const QString& screen);
+  bool update_appearance(
+    const QString& position, const QString& overlay_size, const QString& screen);
 
  signals:
   void STORAGE_FAILED(const QString& what);  // raised once per table per session

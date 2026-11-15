@@ -8,80 +8,84 @@ import "." as Ui
 import "../.."
 
 Item {
-  id: bar
+    id: bar
 
-  property Window window
-  property string title: ""
+    property Window window
+    property string title: ""
 
-  height: 40
+    height: 40
 
-  component Light: Rectangle {
-    id: light
+    component Light: Rectangle {
+        id: light
 
-    property string glyph: ""
+        property string glyph: ""
 
-    signal activated()
+        signal activated
 
-    width: 12
-    height: 12
-    radius: 6
+        width: 12
+        height: 12
+        radius: 6
+
+        Ui.Text {
+            anchors.centerIn: parent
+            text: light.glyph
+            size: 10
+            color: "#000000"
+            opacity: hover.hovered ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: Theme.durationFast
+                }
+            }
+        }
+        HoverHandler {
+            id: hover
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: light.activated()
+        }
+    }
+
+    function toggleMaximized() {
+        if (window.visibility === Window.Maximized)
+            window.showNormal();
+        else
+            window.showMaximized();
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onPressed: bar.window.startSystemMove()
+        onDoubleClicked: bar.toggleMaximized()
+    }
 
     Ui.Text {
-      anchors.centerIn: parent
-      text: light.glyph
-      size: 10
-      color: "#000000"
-      opacity: hover.hovered ? 1 : 0
-
-      Behavior on opacity { NumberAnimation { duration: Theme.durationFast } }
+        anchors.centerIn: parent
+        text: bar.title
+        muted: true
     }
-    HoverHandler {
-      id: hover
-    }
-    MouseArea {
-      anchors.fill: parent
-      onClicked: light.activated()
-    }
-  }
 
-  function toggleMaximized() {
-    if (window.visibility === Window.Maximized)
-      window.showNormal();
-    else
-      window.showMaximized();
-  }
+    Row {
+        anchors.verticalCenter: parent.verticalCenter
+        x: Theme.padding
+        spacing: 8
 
-  MouseArea {
-    anchors.fill: parent
-    onPressed: bar.window.startSystemMove()
-    onDoubleClicked: bar.toggleMaximized()
-  }
-
-  Ui.Text {
-    anchors.centerIn: parent
-    text: bar.title
-    muted: true
-  }
-
-  Row {
-    anchors.verticalCenter: parent.verticalCenter
-    x: Theme.padding
-    spacing: 8
-
-    Light {
-      color: "#FF5F57"
-      glyph: "×"
-      onActivated: bar.window.close()
+        Light {
+            color: "#FF5F57"
+            glyph: "×"
+            onActivated: bar.window.close()
+        }
+        Light {
+            color: "#FEBC2E"
+            glyph: "−"
+            onActivated: bar.window.showMinimized()
+        }
+        Light {
+            color: "#28C840"
+            glyph: "+"
+            onActivated: bar.toggleMaximized()
+        }
     }
-    Light {
-      color: "#FEBC2E"
-      glyph: "−"
-      onActivated: bar.window.showMinimized()
-    }
-    Light {
-      color: "#28C840"
-      glyph: "+"
-      onActivated: bar.toggleMaximized()
-    }
-  }
 }

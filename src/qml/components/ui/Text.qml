@@ -4,11 +4,11 @@ import QtQuick as Q
 import "../.."
 
 Q.Text {
-  property bool muted: false
-  property int size: Theme.fontSize
+    property bool muted: false
+    property int size: Theme.fontSize
 
-  color: muted ? Theme.muted : Theme.text
-  font.family: Theme.fontSans
-  font.pixelSize: size
-  wrapMode: Q.Text.WordWrap
+    color: muted ? Theme.muted : Theme.text
+    font.family: Theme.fontSans
+    font.pixelSize: size
+    wrapMode: Q.Text.WordWrap
 }

@@ -4,5 +4,5 @@ import QtQuick
 import "../.."
 
 Grid {
-  spacing: Theme.gap
+    spacing: Theme.gap
 }

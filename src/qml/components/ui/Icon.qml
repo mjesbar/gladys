@@ -3,10 +3,10 @@
 import QtQuick
 
 Image {
-  property int size: 18
+    property int size: 18
 
-  width: size
-  height: size
-  sourceSize: Qt.size(size * 2, size * 2)
-  fillMode: Image.PreserveAspectFit
+    width: size
+    height: size
+    sourceSize: Qt.size(size * 2, size * 2)
+    fillMode: Image.PreserveAspectFit
 }

@@ -3,10 +3,10 @@
 import "../.."
 
 Text {
-  property int level: 2
-  readonly property var sizes: [Theme.fontXl, Theme.fontLg, Theme.fontMd, Theme.fontSm]
+    property int level: 2
+    readonly property var sizes: [Theme.fontXl, Theme.fontLg, Theme.fontMd, Theme.fontSm]
 
-  size: sizes[level - 1]
-  font.family: Theme.fontDisplay
-  font.bold: true
+    size: sizes[level - 1]
+    font.family: Theme.fontDisplay
+    font.bold: true
 }

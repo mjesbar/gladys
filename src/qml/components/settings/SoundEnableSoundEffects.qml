@@ -6,17 +6,17 @@ import ".."
 import "../ui" as Ui
 
 Section {
-  title: qsTr("Enable Sound Effects")
+    title: qsTr("Enable Sound Effects")
 
-  function load(s) {
-    effectsSwitch.checked = s.soundEffects;
-  }
+    function load(s) {
+        effectsSwitch.checked = s.soundEffects;
+    }
 
-  Ui.Switch {
-    id: effectsSwitch
+    Ui.Switch {
+        id: effectsSwitch
 
-    onToggled: settingsBridge.apply({
-      soundEffects: checked
-    })
-  }
+        onToggled: settingsBridge.apply({
+            soundEffects: checked
+        })
+    }
 }

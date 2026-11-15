@@ -5,20 +5,20 @@ pragma ComponentBehavior: Bound
 import ".."
 
 Section {
-  title: qsTr("Dictionary")
+    title: qsTr("Dictionary")
 
-  readonly property bool hovered: editor.hovered
+    readonly property bool hovered: editor.hovered
 
-  function load(s) {
-    editor.load(s.dictionary);
-  }
+    function load(s) {
+        editor.load(s.dictionary);
+    }
 
-  MappingEditor {
-    id: editor
+    MappingEditor {
+        id: editor
 
-    toHint: qsTr("Brief description")
-    onEdited: settingsBridge.apply({
-      dictionary: editor.pairs()
-    })
-  }
+        toHint: qsTr("Brief description")
+        onEdited: settingsBridge.apply({
+            dictionary: editor.pairs()
+        })
+    }
 }
