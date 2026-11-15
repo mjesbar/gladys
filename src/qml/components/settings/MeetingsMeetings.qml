@@ -5,7 +5,9 @@ pragma ComponentBehavior: Bound
 import ".."
 
 Section {
-  title: qsTr("Meetings")
+    title: qsTr("Meetings")
 
-  Note { text: qsTr("Coming soon!") }
+    Note {
+        text: qsTr("Coming soon!")
+    }
 }

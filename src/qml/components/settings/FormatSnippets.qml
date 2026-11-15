@@ -5,19 +5,19 @@ pragma ComponentBehavior: Bound
 import ".."
 
 Section {
-  title: qsTr("Snippets")
+    title: qsTr("Snippets")
 
-  readonly property bool hovered: editor.hovered
+    readonly property bool hovered: editor.hovered
 
-  function load(s) {
-    editor.load(s.snippets);
-  }
+    function load(s) {
+        editor.load(s.snippets);
+    }
 
-  MappingEditor {
-    id: editor
+    MappingEditor {
+        id: editor
 
-    onEdited: settingsBridge.apply({
-      snippets: editor.pairs()
-    })
-  }
+        onEdited: settingsBridge.apply({
+            snippets: editor.pairs()
+        })
+    }
 }

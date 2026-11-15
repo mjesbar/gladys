@@ -6,19 +6,19 @@ import ".."
 import "../ui" as Ui
 
 Section {
-  title: qsTr("Push to talk / Toggle")
+    title: qsTr("Push to talk / Toggle")
 
-  function load(s) {
-    modeCombo.currentIndex = Math.max(0, modeCombo.find(s.hotkeyMode));
-  }
+    function load(s) {
+        modeCombo.currentIndex = Math.max(0, modeCombo.find(s.hotkeyMode));
+    }
 
-  Ui.Select {
-    id: modeCombo
+    Ui.Select {
+        id: modeCombo
 
-    width: parent.width
-    model: settingsBridge.hotkeyModes
-    onActivated: settingsBridge.apply({
-      hotkeyMode: currentText
-    })
-  }
+        width: parent.width
+        model: settingsBridge.hotkeyModes
+        onActivated: settingsBridge.apply({
+            hotkeyMode: currentText
+        })
+    }
 }

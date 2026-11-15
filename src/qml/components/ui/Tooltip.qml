@@ -6,26 +6,35 @@ import "." as Ui
 import "../.."
 
 Basic.ToolTip {
-  id: tip
+    id: tip
 
-  delay: 500
+    delay: 500
 
-  background: Rectangle {
-    radius: Theme.radiusMd
-    color: Theme.surface
-    border.color: Theme.border
-  }
+    background: Rectangle {
+        radius: Theme.radiusMd
+        color: Theme.surface
+        border.color: Theme.border
+    }
 
-  contentItem: Ui.Text {
-    text: tip.text
-    size: Theme.fontSize - 1
-  }
+    contentItem: Ui.Text {
+        text: tip.text
+        size: Theme.fontSize - 1
+    }
 
-  enter: Transition {
-    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.durationFast }
-  }
+    enter: Transition {
+        NumberAnimation {
+            property: "opacity"
+            from: 0
+            to: 1
+            duration: Theme.durationFast
+        }
+    }
 
-  exit: Transition {
-    NumberAnimation { property: "opacity"; to: 0; duration: Theme.durationFast }
-  }
+    exit: Transition {
+        NumberAnimation {
+            property: "opacity"
+            to: 0
+            duration: Theme.durationFast
+        }
+    }
 }

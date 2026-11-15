@@ -6,17 +6,17 @@ import ".."
 import "../ui" as Ui
 
 Section {
-  title: qsTr("Enable LLM")
+    title: qsTr("Enable LLM")
 
-  function load(s) {
-    llmSwitch.checked = s.llm;
-  }
+    function load(s) {
+        llmSwitch.checked = s.llm;
+    }
 
-  Ui.Switch {
-    id: llmSwitch
+    Ui.Switch {
+        id: llmSwitch
 
-    onToggled: settingsBridge.apply({
-      llm: checked
-    })
-  }
+        onToggled: settingsBridge.apply({
+            llm: checked
+        })
+    }
 }

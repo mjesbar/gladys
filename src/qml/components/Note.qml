@@ -4,8 +4,8 @@ import QtQuick
 import ".."
 
 Text {
-  color: Theme.text
-  opacity: 0.6
-  wrapMode: Text.WordWrap
-  width: parent.width
+    color: Theme.text
+    opacity: 0.6
+    wrapMode: Text.WordWrap
+    width: parent.width
 }

@@ -4,8 +4,8 @@ import QtQuick
 import "../.."
 
 Flow {
-  property bool vertical: false
+    property bool vertical: false
 
-  flow: vertical ? Flow.TopToBottom : Flow.LeftToRight
-  spacing: Theme.gap
+    flow: vertical ? Flow.TopToBottom : Flow.LeftToRight
+    spacing: Theme.gap
 }

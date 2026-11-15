@@ -5,31 +5,35 @@ import QtQuick.Controls.Basic as Basic
 import "../.."
 
 Basic.TextArea {
-  id: area
+    id: area
 
-  property bool invalid: false
-  property int rows: 3
+    property bool invalid: false
+    property int rows: 3
 
-  implicitHeight: rows * metrics.lineSpacing + topPadding + bottomPadding
-  leftPadding: 12
-  rightPadding: 12
-  topPadding: 10
-  bottomPadding: 10
-  wrapMode: TextEdit.Wrap
-  color: Theme.text
-  placeholderTextColor: Theme.muted
+    implicitHeight: rows * metrics.lineSpacing + topPadding + bottomPadding
+    leftPadding: 12
+    rightPadding: 12
+    topPadding: 10
+    bottomPadding: 10
+    wrapMode: TextEdit.Wrap
+    color: Theme.text
+    placeholderTextColor: Theme.muted
 
-  FontMetrics {
-    id: metrics
+    FontMetrics {
+        id: metrics
 
-    font: area.font
-  }
+        font: area.font
+    }
 
-  background: Rectangle {
-    radius: Theme.radiusMd
-    color: Theme.surface
-    border.color: area.invalid ? Theme.danger : area.activeFocus ? Theme.accent : Theme.border
+    background: Rectangle {
+        radius: Theme.radiusMd
+        color: Theme.surface
+        border.color: area.invalid ? Theme.danger : area.activeFocus ? Theme.accent : Theme.border
 
-    Behavior on border.color { ColorAnimation { duration: Theme.durationBase } }
-  }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: Theme.durationBase
+            }
+        }
+    }
 }

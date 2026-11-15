@@ -25,7 +25,8 @@ class Setting : public QObject {
   void publish();  // emits SETTINGS_CHANGED with the current values
   QVariantMap snapshot() const;
   QStringList input_sources() const;
-  void apply(const QVariantMap& values);  // validates, updates memory, persists the diff, then publishes
+  void apply(
+    const QVariantMap& values);  // validates, updates memory, persists the diff, then publishes
 
  signals:
   void SETTINGS_CHANGED(const QVariantMap& snapshot);

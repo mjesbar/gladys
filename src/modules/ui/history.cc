@@ -16,7 +16,8 @@ static int call_count(const char* slot) {
 
 // Data is created before this bridge. Queued connections carry its signals to the GUI thread.
 HistoryBridge::HistoryBridge(QObject* parent) : QObject(parent) {
-  connect(Data::instance(), &Data::TRANSCRIPTION_STORED, this, &HistoryBridge::transcriptionsChanged);
+  connect(
+    Data::instance(), &Data::TRANSCRIPTION_STORED, this, &HistoryBridge::transcriptionsChanged);
   connect(Data::instance(), &Data::LOG_STORED, this, &HistoryBridge::logsChanged);
 }
 

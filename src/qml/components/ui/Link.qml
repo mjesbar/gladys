@@ -5,21 +5,25 @@ import "." as Ui
 import "../.."
 
 Ui.Text {
-  id: link
+    id: link
 
-  property url href
+    property url href
 
-  color: mouse.containsMouse ? Theme.text : Theme.accent
-  font.underline: mouse.containsMouse
+    color: mouse.containsMouse ? Theme.text : Theme.accent
+    font.underline: mouse.containsMouse
 
-  Behavior on color { ColorAnimation { duration: Theme.durationBase } }
+    Behavior on color {
+        ColorAnimation {
+            duration: Theme.durationBase
+        }
+    }
 
-  MouseArea {
-    id: mouse
+    MouseArea {
+        id: mouse
 
-    anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    onClicked: Qt.openUrlExternally(link.href)
-  }
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: Qt.openUrlExternally(link.href)
+    }
 }

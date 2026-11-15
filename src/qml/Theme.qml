@@ -70,9 +70,12 @@ QtObject {
     readonly property color info: "#58A6FF"
 
     function toneColor(tone) {
-        if (tone === "success") return success;
-        if (tone === "warning") return warning;
-        if (tone === "error") return danger;
+        if (tone === "success")
+            return success;
+        if (tone === "warning")
+            return warning;
+        if (tone === "error")
+            return danger;
         return info;
     }
 

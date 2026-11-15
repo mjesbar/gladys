@@ -3,7 +3,7 @@
 import QtQuick
 
 Item {
-  parent: Overlay.overlay
-  anchors.fill: parent
-  z: 1000
+    parent: Overlay.overlay
+    anchors.fill: parent
+    z: 1000
 }

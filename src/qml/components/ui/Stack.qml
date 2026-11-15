@@ -4,5 +4,5 @@ import QtQuick
 import "../.."
 
 Column {
-  spacing: Theme.gap
+    spacing: Theme.gap
 }

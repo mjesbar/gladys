@@ -1,6 +1,6 @@
-// Core - Pipeline and supervisor for gladys-asr and gladys-llm (llama-server). Runs on the GUI thread.
-// Flow: hotkey -> asr /transcribe -> llama-server /v1/chat/completions -> clipboard -> paste.
-// Talks to the APIs over HTTP JSON on loopback; restarts a child after a crash.
+// Core - Pipeline and supervisor for gladys-asr and gladys-llm (llama-server). Runs on the GUI
+// thread. Flow: hotkey -> asr /transcribe -> llama-server /v1/chat/completions -> clipboard ->
+// paste. Talks to the APIs over HTTP JSON on loopback; restarts a child after a crash.
 
 #ifndef CORE_HPP
 #define CORE_HPP
@@ -46,7 +46,7 @@ class Core : public QObject {
     QString name;
     QString program;
     QStringList args;
-    QString url;  // API base URL, e.g. http://127.0.0.1:26000
+    QString url;                    // API base URL, e.g. http://127.0.0.1:26000
     QString ready_path = "/alive";  // GET returns 200 once ready
     QProcess process;
     QByteArray err_buf;  // stderr bytes not yet ending in a newline
@@ -56,9 +56,10 @@ class Core : public QObject {
   void spawn(Child& child);
   void on_exit(Child& child);
   void read_stderr(Child& child);  // echoes each line and stores it in logs
-  void probe(Child& child);  // GET ready_path
+  void probe(Child& child);        // GET ready_path
   void check_ready();
-  void post(const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done);
+  void post(
+    const QString& url, const QJsonObject& body, std::function<void(const QJsonObject&)> done);
   void start_recording();
   void stop_recording();
   void format_text(const QString& text);

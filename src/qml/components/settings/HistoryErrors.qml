@@ -6,15 +6,15 @@ import ".."
 import "../ui" as Ui
 
 Section {
-  title: qsTr("Errors")
+    title: qsTr("Errors")
 
-  property int errorCount: 0
+    property int errorCount: 0
 
-  function reload() {
-    errorCount = historyBridge.error_count();
-  }
+    function reload() {
+        errorCount = historyBridge.error_count();
+    }
 
-  Ui.Text {
-    text: qsTr("Errors in the last 30 days: %1").arg(errorCount)
-  }
+    Ui.Text {
+        text: qsTr("Errors in the last 30 days: %1").arg(errorCount)
+    }
 }
