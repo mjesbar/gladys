@@ -12,7 +12,7 @@ Tray::Tray(QObject* parent)
   m_menu->addAction(tr("Settings"), this, [this]() { emit SETTINGS_REQUESTED(); });
   m_menu->addAction(tr("Quit"), []() { QApplication::quit(); });
 
-  m_icon->setIcon(QIcon(":/icons/icon-app.svg"));
+  m_icon->setIcon(QIcon(":/icons/icon.svg"));
   m_icon->setToolTip("Gladys");
   m_icon->setContextMenu(m_menu.get());
 

@@ -24,25 +24,68 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 
 # Install
 
-Always installs the latest release.
+#### 1. Install methods
 
-| OS      | Method                                                                                                      |
-| ------- | ----------------------------------------------------------------------------------------------------------- |
-| macOS   | `curl -fsSL https://gladys.mjesbar.dev/macos/install.sh \| sh`                                              |
-| macOS   | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-macos-arm64.zip)                   |
-| Linux   | `curl -fsSL https://gladys.mjesbar.dev/linux/install.sh \| sh`                                              |
-| Linux   | [.AppImage](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.AppImage)           |
-| Linux   | [.tar.bz2](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.tar.bz2)             |
-| Windows | [.msi](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.msi)                       |
-| Windows | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.zip)                       |
+| OS      | Method                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| macOS   | `curl -fsSL https://gladys.mjesbar.dev/macos/install.sh \| sh`                                    |
+| macOS   | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-macos-arm64.zip)         |
+| Linux   | `curl -fsSL https://gladys.mjesbar.dev/linux/install.sh \| sh`                                    |
+| Linux   | [.AppImage](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.AppImage) |
+| Linux   | [.tar.bz2](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.tar.bz2)   |
+| Windows | [.msi](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.msi)             |
+| Windows | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-win-x64.zip)             |
 
-Uninstall (macOS / Linux): append `-s -- --uninstall` to the install command.
+> [!NOTE]
+>
+> Install locations
+>
+> ```bash
+> # MacOS
+> ~/Applications/gladys.app           # App
+> ~/Library/Caches/Gladys/Models/     # LLM & ASR Models
+>
+> # Linux
+> ~/.local/share/gladys/              # App
+> ~/.local/bin/gladys                 # App Executable
+> ~/.cache/gladys/models/             # LLM & ASR Models
+>
+> # Windows
+> %LOCALAPPDATA%\Programs\gladys\     # App
+> %LOCALAPPDATA%\Gladys\Cache\Models  # LLM & ASR Models
+> ```
 
-```txt
-~/Applications/gladys.app          macOS install.sh
-~/.local/share/gladys/             Linux install.sh (app)
-~/.local/bin/gladys                Linux install.sh (launcher)
+#### 2. Uninstall
+
+**Linux**
+
+- if installed via `install.sh`: append `-s -- --uninstall` to the install command.
+
+```bash
+curl -fsSL https://gladys.mjesbar.dev/linux/install.sh \| sh -s -- --uninstall
 ```
+
+- if installed via `.zip` or `.tar.bz2`: Just delete the extracted folder.
+
+**MacOS**
+
+- if installed via `install.sh`: append `-s -- --uninstall` to the install command.
+
+```bash
+curl -fsSL https://gladys.mjesbar.dev/macos/install.sh \| sh -s -- --uninstall
+```
+
+- if installed via `.zip`: Just delete the extracted folder.
+
+**Windows**
+
+- if installed via `.msi` package installer: Uninstall like any other program. Go to `Applications > Gladys > Uninstall` or `Start Menu > Gladys > right-click > Uninstall`.
+
+- if installed via `.zip`: Just delete the extracted folder.
+
+> [!NOTE]
+>
+> Deleting extracted folders (`.zip, tar.bz2`) doesn't automatically remove the LLM & ASR models.
 
 ---
 
@@ -187,7 +230,6 @@ $HOME/gladys/dist/gladys
 - [llama.cpp](https://github.com/ggml-org/llama.cpp) — local LLM inference
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) — speech-to-text engine
 - [miniaudio](https://miniaud.io/) — audio capture library
-- [Kompute](https://github.com/KomputeProject/kompute) — Vulkan compute
 
 ---
 
