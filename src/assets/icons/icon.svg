@@ -51,23 +51,6 @@
   <!-- Background with Radial Gradient -->
   <circle cx="512" cy="512" r="504" fill="#FFFFFF" stroke="#606060" stroke-width="16"/>
 
-  <!-- Audio Waves (Enlarged but Nearer and Vertically Compact) -->
-  <g id="waves" fill="none" stroke-linecap="round">
-    <!-- Left Waves - Closer to Mic Body (Starting from x=235) -->
-    <path d="M235 340 A 180 180 0 0 0 235 570"/>
-    <path d="M195 300 A 240 240 0 0 0 195 610"/>
-    <path d="M155 260 A 300 300 0 0 0 155 650"/>
-
-    <!-- Right Waves - Closer to Mic Body (Starting from x=789) -->
-    <path d="M789 340 A 180 180 0 0 1 789 570"/>
-    <path d="M829 300 A 240 240 0 0 1 829 610"/>
-    <path d="M869 260 A 300 300 0 0 1 869 650"/>
-  </g>
-
-  <!-- Waves: dark yellow border (wider stroke underneath) + yellow fill stroke -->
-  <use xlink:href="#waves" stroke="#F59E0B" stroke-width="36"/>
-  <use xlink:href="#waves" stroke="#FBBF24" stroke-width="24"/>
-
   <!-- Trapezoid Support -->
   <path fill="url(#support-gradient)" d="M387 800H637L612 896Q612 906 582 926H442Q412 906 412 896Z"/>
 

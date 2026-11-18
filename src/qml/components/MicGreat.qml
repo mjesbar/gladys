@@ -71,7 +71,7 @@ Item {
     }
 
     Image {
-        source: "qrc:/icons/icon-app.svg"
+        source: "qrc:/icons/icon.svg"
         sourceSize: Qt.size(48, 48)
         width: mic.micSize
         height: width
