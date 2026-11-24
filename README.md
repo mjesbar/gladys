@@ -14,8 +14,12 @@
 </p>
 
 <p align="center">
-<strong>Fully local, cross-platform dictation tool.</strong>  
-Speak, and your words appear where you need them — no cloud, no API keys, no AI agent services.
+<strong>Free, open-source voice-to-text dictation app for Mac, Windows and Linux.</strong>  
+Speak and your words appear in any app. Fully local & private. Dictation flow alternative.
+</p>
+
+<p align="center">
+  <a href="https://gladys.mjesbar.dev">https://gladys.mjesbar.dev</a>
 </p>
 
 Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) for speech-to-text and [llama.cpp](https://github.com/ggml-org/llama.cpp) for local transcription formatting. It runs on **Windows**, **Linux** and **macOS** (Vulkan GPU support on Windows and Linux, any vendor).
