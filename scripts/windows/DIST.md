@@ -48,7 +48,7 @@ C:\USERS\DOCKER\GLADYS\DIST
 │       qjpeg.dll
 │       qsvg.dll
 │
-├───llama.cpp
+├───llama
 │   │   llama-b9265-bin-win-vulkan-x64.zip
 │   │
 │   └───llama-b9265

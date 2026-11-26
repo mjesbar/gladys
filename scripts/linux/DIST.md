@@ -95,7 +95,7 @@ NERV🍁 ~/Github/mjesbar/gladys > tree -L2 ~/gladys/dist
 │   ├── libxkbcommon.so.0
 │   ├── libxkbcommon-x11.so.0
 │   └── libzstd.so.1
-├── llama.cpp
+├── llama
 │   ├── llama-b9265
 │   └── llama-b9265-bin-ubuntu-vulkan-x64.tar.gz
 ├── plugins
