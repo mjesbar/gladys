@@ -57,7 +57,7 @@ esac
 
 
 mkdir -p "$RELEASE"
-# llama.cpp release archives stay out of the packages, the extracted binaries stay in
+# llama release archives stay out of the packages, the extracted binaries stay in
 EXCLUDE=(-x '*.h' '*.hpp' '*.sh' '*miniaudio*' '*.zip' '*.tar.gz')
 ARTIFACTS=()
 
@@ -101,7 +101,15 @@ EOF
 
   macos)
     NAME=gladys-macos-$ARCH
-    (cd "$DIST" && zip -qry "$RELEASE/$NAME.zip" . "${EXCLUDE[@]}")
+    # Prune and ad-hoc sign a copy: any edit after signing breaks the seal, so sign last (inner to outer)
+    APP=$STAGE/gladys.app
+    cp -a "$DIST/gladys.app" "$APP"
+    find "$APP" -type f \( -name '*.h' -o -name '*.hpp' -o -name '*.sh' -o -name '*miniaudio*' -o -name '*.zip' -o -name '*.tar.gz' -o -name LICENSE -o -name .arch \) -delete
+    # codesign checks every sibling in the bundle, so per-file signing of gladys/gladys-asr cannot succeed.
+    # One deep pass signs nested code inside-out (dylibs, llama/, frameworks, executables), then seals the bundle.
+    codesign --force --deep --sign - "$APP"
+    codesign --verify --deep --strict "$APP"
+    ditto -c -k --keepParent "$APP" "$RELEASE/$NAME.zip"
     ARTIFACTS+=("$NAME.zip")
     ;;
 

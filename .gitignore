@@ -1,14 +1,14 @@
 dist/gladys
 
 dist/**/*
-!dist/llama.cpp/
-!dist/llama.cpp/README.md
+!dist/llama/
+!dist/llama/README.md
 
 !dist/sherpaonnx/
 !dist/sherpaonnx/README.md
 
-!dist/llama.cpp/
-!dist/llama.cpp/README.md
+!dist/llama/
+!dist/llama/README.md
 
 .cache/
 moc/

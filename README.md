@@ -29,7 +29,6 @@ Gladys runs entirely on your machine using [sherpa-onnx](https://github.com/k2-f
 | OS      | Method                                                                                            |
 | ------- | ------------------------------------------------------------------------------------------------- |
 | macOS   | `curl -fsSL https://gladys.mjesbar.dev/macos/install.sh \| sh`                                    |
-| macOS   | [.zip](https://github.com/mjesbar/gladys/releases/latest/download/gladys-macos-arm64.zip)         |
 | Linux   | `curl -fsSL https://gladys.mjesbar.dev/linux/install.sh \| sh`                                    |
 | Linux   | [.AppImage](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.AppImage) |
 | Linux   | [.tar.bz2](https://github.com/mjesbar/gladys/releases/latest/download/gladys-linux-x64.tar.bz2)   |

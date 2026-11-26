@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build Gladys (Release) in $GLADYS_SPACE, install it with its Qt/ICU runtime into $GLADYS_SPACE/dist/,
-# fetch llama.cpp into dist/. AI models are not fetched here: the app installs them on first run.
+# fetch llama into dist/. AI models are not fetched here: the app installs them on first run.
 # Usage: scripts/build.sh [--os linux|macos|windows] [--arch x64|arm64] [--ma-debug on|off]
 # Requires QT_ROOT_DIR (Qt install dir).
 set -euo pipefail
@@ -89,7 +89,7 @@ fetch() {
 
 # Bring deps back from the bundle (macOS, see below) so the clean step keeps them.
 for loc in MacOS Resources; do
-  [ -d "$DIST/gladys.app/Contents/$loc/llama.cpp" ] && mv "$DIST/gladys.app/Contents/$loc/llama.cpp" "$DIST/llama.cpp"
+  [ -d "$DIST/gladys.app/Contents/$loc/llama" ] && mv "$DIST/gladys.app/Contents/$loc/llama" "$DIST/llama"
 done
 
 
@@ -103,12 +103,12 @@ case "$OS-$ARCH" in
 esac
 
 
-# llama.cpp binaries, extracted into dist/llama.cpp/<ver>/ (re-extracted when the arch changes)
-LLAMA_ARCHIVE="$DIST/llama.cpp/$LLAMACPP_FILE"
-LLAMA_DIR="$DIST/llama.cpp/$LLAMACPP_VER"
+# llama binaries, extracted into dist/llama/<ver>/ (re-extracted when the arch changes)
+LLAMA_ARCHIVE="$DIST/llama/$LLAMACPP_FILE"
+LLAMA_DIR="$DIST/llama/$LLAMACPP_VER"
 fetch "$LLAMACPP_BASE/$LLAMACPP_FILE" "$LLAMACPP_SHA256" "$LLAMA_ARCHIVE"
 if [ "$(cat "$LLAMA_DIR/.arch" 2>/dev/null)" != "$ARCH" ]; then
-  echo "[build] llama.cpp $ARCH extract ..."
+  echo "[build] llama $ARCH extract ..."
   rm -rf "$LLAMA_DIR"
   mkdir -p "$LLAMA_DIR"
   case "$LLAMACPP_FILE" in
@@ -116,13 +116,13 @@ if [ "$(cat "$LLAMA_DIR/.arch" 2>/dev/null)" != "$ARCH" ]; then
     *)     tar xzf "$LLAMA_ARCHIVE" -C "$LLAMA_DIR" --strip-components=1 ;;
   esac
   echo "$ARCH" > "$LLAMA_DIR/.arch"
-  echo "[build] llama.cpp $ARCH extract OK"
+  echo "[build] llama $ARCH extract OK"
 fi
 
 
-# Clean dist/ but keep the downloaded llama.cpp folder.
+# Clean dist/ but keep the downloaded llama folder.
 echo "[build] clean dist ..."
-[ -d "$DIST" ] && find "$DIST" -mindepth 1 -maxdepth 1 ! -name llama.cpp -exec rm -rf {} +
+[ -d "$DIST" ] && find "$DIST" -mindepth 1 -maxdepth 1 ! -name llama -exec rm -rf {} +
 echo "[build] clean dist OK"
 
 
@@ -172,7 +172,7 @@ case "$OS" in
       "$QT_ROOT_DIR/bin/linuxdeploy-x86_64.AppImage" --appdir "$DIST" \
       --executable "$DIST/gladys" --executable "$DIST/gladys-asr" \
       --plugin qt
-    # Flatten usr/ back to dist/ root: the binary locates llama.cpp next to itself
+    # Flatten usr/ back to dist/ root: the binary locates llama next to itself
     mkdir -p "$DIST/lib"
     mv "$DIST"/usr/lib/* "$DIST/lib/"
     mv "$DIST/usr/plugins" "$DIST/plugins"
@@ -189,7 +189,7 @@ case "$OS" in
     echo "[build] macdeployqt bundle Qt OK"
     # Without this key macOS never lists the app in Privacy > Microphone and capture gets silence.
     /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'Gladys records your voice for speech-to-text.'" "$DIST/gladys.app/Contents/Info.plist"
-    if [ -d "$DIST/llama.cpp" ]; then mv "$DIST/llama.cpp" "$DIST/gladys.app/Contents/MacOS/"; fi
+    if [ -d "$DIST/llama" ]; then mv "$DIST/llama" "$DIST/gladys.app/Contents/MacOS/"; fi
     ;;
 
 

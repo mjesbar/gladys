@@ -17,7 +17,7 @@
 #endif
 
 static QString llama_dir() {
-  return QCoreApplication::applicationDirPath() + "/llama.cpp/llama-b9265";
+  return QCoreApplication::applicationDirPath() + "/llama/llama-b9265";
 }
 
 QString llama_server_program() { return llama_dir() + "/" + LLAMA_SERVER_BINARY; }
