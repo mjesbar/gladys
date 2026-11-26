@@ -55,7 +55,7 @@ macOS:~ mjesbar$ tree ~/gladys/dist/ -L 4
         ├── MacOS
         │   ├── gladys
         │   ├── gladys-asr
-        │   └── llama.cpp
+        │   └── llama
         ├── PlugIns
         │   ├── iconengines
         │   ├── imageformats
@@ -72,3 +72,25 @@ macOS:~ mjesbar$ tree ~/gladys/dist/ -L 4
 
 59 directories, 8 files
 ```
+
+## Signing (ad-hoc, no Apple Developer ID)
+
+Apple Silicon kills unsigned or broken-signature bundles. `scripts/package.sh` seals the bundle as the last step:
+
+```
+prune dev files (copy of dist/)
+  ▼
+codesign -s -  Frameworks/*.dylib, PlugIns/*.dylib, MacOS/* (binaries, llama)
+  ▼
+codesign -s -  *.framework
+  ▼
+codesign -s -  gladys.app
+  ▼
+codesign --verify --deep --strict   (fails the package on error)
+  ▼
+ditto -c -k --keepParent  ──► gladys-macos-arm64.zip
+```
+
+- Any edit to the bundle after signing (including `llama` or `Info.plist`) breaks the seal.
+- `ditto` keeps framework symlinks. `zip` does not.
+- Users install through `scripts/macos/install.sh`, which checks the SHA-256 and removes quarantine.

@@ -276,7 +276,7 @@ else()
   message(FATAL_ERROR "sherpa-onnx library not found: ${SHERPA_ONNX_LIB_DIR}")
 endif()
 
-# Helpers sit next to gladys (macOS: inside the bundle, next to the llama.cpp folder)
+# Helpers sit next to gladys (macOS: inside the bundle, next to the llama folder)
 foreach(helper gladys-asr)
   set_target_properties(${helper} PROPERTIES
     INSTALL_RPATH "${GLADYS_RPATH}"
